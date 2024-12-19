@@ -9,7 +9,7 @@ COPY ["./src", "./"]
 # Set the python path:
 ENV PYTHONPATH="$PYTHONPATH:${PWD}"
 
-RUN pip install --upgrade pip && pip install poetry==1.8
+RUN pip install --upgrade pip && pip install poetry==1.8 --break components
 
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi --no-root --only main
