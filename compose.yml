@@ -31,7 +31,7 @@ services:
     platform: linux/amd64 # <- Only one working for Apple M1
     build:
       context: ./api
-      dockerfile: ./backend.dockerfile
+      dockerfile: ./api.dev.dockerfile
     networks:
       - elyte_net
     ports:
