@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "e-shop api"
+version = "1.0"
+description = "e-SHOP"
+authors = ["Ogaga Uti <checkuti@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic = "^2.10.4"
+pyconfs = "^0.5.5"
+sqlmodel = "^0.0.22"
+fastapi = {extras = ["standard"], version = "^0.115.6"}
+aio-pika = "^9.5.4"
+asyncpg = "^0.30.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^6.0.0"
+pytest-mock = "*"

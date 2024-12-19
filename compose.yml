@@ -1,0 +1,80 @@
+version: '3.8'
+networks:
+  elyte_net:
+
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: PostgresCont
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    environment:
+      - POSTGRES_PASSWORD=54321
+      - POSTGRES_USER=userExample
+      - POSTGRES_DB=elyteDB
+    ports:
+      - "5432:5432"
+    volumes:
+      # folder to hold the actual db data
+      - ./persistence:/var/lib/postgresql/data 
+    networks:
+      - elyte_net
+
+  api:
+    container_name: fast-api
+    image: fast-api
+    platform: linux/amd64 # <- Only one working for Apple M1
+    build:
+      context: ./api
+      dockerfile: ./backend.dockerfile
+    networks:
+      - elyte_net
+    ports:
+      # <Port exposed> : < Port running inside container>
+      - "8000:8000"
+    restart: on-failure
+    depends_on:
+      - db
+      #- rabbitQ
+    links:
+      - db
+      #- rabbitQ
+    env_file:
+      - .env
+    volumes:
+      - ./api/src:/code/app
+
+  rabbitQ:
+    hostname: rabbitQ
+    image: rabbitmq:3-management
+    container_name: rabbit
+    ports:
+      - 5672:5672
+      - 15672:15672
+    restart: on-failure
+    networks:
+      - elyte_net
+    env_file:
+      - .env
+    
+  worker:
+    image: worker
+    container_name: main-worker
+    build:
+      context: ./worker/src
+      dockerfile: ./worker.dockerfile
+    restart: on-failure
+    env_file:
+      - .env
+    networks:
+      - elyte_net
+    volumes:
+      - ./api/src:/usr/src
+    links:
+      - db
+      - rabbitQ
