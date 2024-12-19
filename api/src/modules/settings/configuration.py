@@ -2,6 +2,10 @@ import os
 from pathlib import Path
 
 
+class ApiConfig:
+    def __init__(self) -> None:
+        self.sql_url: str = ""
+        pass
 
-class API_CONFIG:
-    pass
+    def from_toml_file(self):
+        pass

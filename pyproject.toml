@@ -2,17 +2,110 @@
 name = "e-shop api"
 version = "1.0"
 description = "e-SHOP"
+license = "Proprietary"
 authors = ["Ogaga Uti <checkuti@gmail.com>"]
 readme = "README.md"
+homepage = "https://github.com/elyte5star"
+repository = "https://github.com/elyte5star/FastAPI.git"
+documentation = "*"
+
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: Proprietary",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[elyte.api.doc]
+description = """
+   #   Interactive Documentation for e-Market
+   """
+name = "Elyte FastAPI Application."
+terms_of_service = "https://github.com/elyte5star/FastAPI.git"
+version = "1.0"
+
+[elyte.doc.contact]
+email = "checkuti@gmail.com"
+name = "Utimore Services AS"
+url = "https://github.com/elyte5star"
+
+[elyte.doc.contact.license]
+name = "Proprietary"
+url = "https://github.com/elyte5star"
+
+
+[elyte.db]
+db = "elyte"
+host = "db"
+port = 5432
+pwd = "54321"
+user = "userExample"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | tests/.*/setup.py
+)/
+'''
+
+[tool.isort]
+float_to_top = true
+force_single_line = false
+include_trailing_comma = true
+known_third_party = ["fastapi", "pydantic", "starlette"]
+line_length = 120
+lines_after_imports = 2
+lines_between_sections = 1
+lines_between_types = 0
+profile = "black"
+use_parentheses = true
+
+
+[tool.mypy]
+plugins = ['pydantic.mypy']
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
+
+
 
 [tool.poetry.dependencies]
 python = "^3.12"
-pydantic = "^2.10.4"
+pydantic = {extras = ["email"], version = "^2.10.4"}
 pyconfs = "^0.5.5"
 sqlmodel = "^0.0.22"
 fastapi = {extras = ["standard"], version = "^0.115.6"}
 aio-pika = "^9.5.4"
 asyncpg = "^0.30.0"
+unicorn = {extras = ["standard"], version = "^2.1.1"}
+bcrypt = "^4.2.1"
+fastapi-sso = "^0.17.0"
+email-validator = "^2.2.0"
+python-multipart = "^0.0.20"
+fastapi-microsoft-identity = "^0.1.6"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+pydocstyle = "^6.3.0"
 
 
 [build-system]
@@ -23,3 +116,14 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.group.dev.dependencies]
 pytest = "^6.0.0"
 pytest-mock = "*"
+black = "^24.10.0"
+asyncmock = "^0.4.2"
+sendgrid = "^6.11.0"
+isort = "^5.13.2"
+mypy = "^1.13.0"
+debugpy = "^1.8.11"
+pytest-sugar = "^1.0.0"
+pytest-cov = "^6.0.0"
+flake8 = "^7.1.1"
+locust = "^2.32.4"
+types-requests = "^2.32.0.20241016"
