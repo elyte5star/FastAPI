@@ -2,11 +2,16 @@ from pathlib import Path
 from os import getenv, path
 from pyconfs import Configuration
 import json
+from pprint import pprint
+from dotenv import load_dotenv
+import logging
 
 
-project_root = Path(__file__).parent.parent.parent
+load_dotenv()
+
+
+project_root = Path(__file__).parent.parent.parent.parent.parent
 toml_path = path.join(project_root, "pyproject.toml")
-print(toml_path)
 config = Configuration.from_file(toml_path)
 
 
@@ -15,6 +20,7 @@ class ApiConfig:
     def __init__(self) -> None:
         # API
         self.log_type: str = ""
+        self.log_file_path: str = ""
         self.host_url: str = ""
         self.debug: bool = False
         self.auth_type: str = ""
@@ -23,6 +29,7 @@ class ApiConfig:
         self.round: int = 0
         self.encoding: str = ""
         self.sql_url: str = ""
+        self.logger: logging.Logger = None
 
         # PROJECT DETAILS
         self.name: str = ""
@@ -54,8 +61,9 @@ class ApiConfig:
         self.sql_host = config.database.host
         self.sql_port = config.database.port
         self.sql_db = config.database.db
-        self.db_url = f"postgresql://{self.sql_username}:{self.sql_password}@{self.sql_host}:{self.sql_port}/{self.sql_db}"
+        self.db_url = f"postgresql+asyncpg://{self.sql_username}:{self.sql_password}@{self.sql_host}:{self.sql_port}/{self.sql_db}"
         self.log_type = config.api.log_type
+        self.log_file_path = config.api.log_file_path
         self.host_url = config.api.host_url
         self.debug = config.api.debug
         self.auth_type = config.api.auth_type
@@ -64,25 +72,34 @@ class ApiConfig:
         self.rounds = config.encryption.rounds
         self.encoding = config.encryption.encoding
 
-        self.name = config.elyte.api.app["name"]
-        self.terms = config.elyte.api.app.terms_of_service
+        self.name = config.api.doc["name"]
+        self.terms = config.api.doc.terms_of_service
         self.version = config.tool.poetry.version
-        self.description = config.elyte.api.app.description
-        self.contacts = config.elyte.contact.as_dict()
-        self.license = config.elyte.contact.license.as_dict()
+        self.description = config.api.doc.description
+        self.contacts = config.api.doc.contact.as_dict()
+        self.license = config.api.doc.contact.license.as_dict()
 
         self.algorithm = config.encryption.algorithm
         self.secret_key = config.encryption.secret_key
         self.token_expire_min = config.encryption.token_expire_min
-        self.refresh_token_expire_min = config.encryption.refresh_token_min
+        self.refresh_token_expire_min = config.encryption.refresh_token_expire_min
         self.grant_type = config.encryption.grant_type
         return self
 
     def from_env_file(self):
+        print("Injecting enviroment variables")
         self.db_url = str(getenv("DB_URL"))
-        self.token_expire_min = int(getenv("API_JWT_TOKEN_EXPIRE_MINUTES_COUNT"))
-        self.origins = json.loads(getenv("API_CORS_ORIGINS"))
-        self.client_url = str(getenv("CLIENT_URL"))
-        self.refresh_token_expire_min = int(
-            getenv("API_JWT_REFRESH_TOKEN_EXPIRE_MINUTES")
+        self.token_expire_min = int(
+            getenv("API_JWT_TOKEN_EXPIRE_MINUTES", self.token_expire_min)
         )
+        self.origins = json.loads(getenv("API_CORS_ORIGINS", '["*"]'))
+        self.client_url = str(getenv("CLIENT_URL", self.client_url))
+        self.refresh_token_expire_min = int(
+            getenv(
+                "API_JWT_REFRESH_TOKEN_EXPIRE_MINUTES", self.refresh_token_expire_min
+            )
+        )
+        return self
+
+    def pretty_print(self):
+        pprint(vars(self))

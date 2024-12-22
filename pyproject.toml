@@ -7,7 +7,7 @@ authors = ["Ogaga Uti <checkuti@gmail.com>"]
 readme = "README.md"
 homepage = "https://github.com/elyte5star"
 repository = "https://github.com/elyte5star/FastAPI.git"
-documentation = "*"
+
 
 
 classifiers = [
@@ -28,13 +28,13 @@ debug = true
 auth_type = ["MANUAL", "MSOFT","GOOGLE"]
 host_url = "http://localhost:8000/"
 log_type = "INFO"
-
+log_file_path="./modules/static/log_file.log"
 
 [api.doc]
 description = """
    #   Interactive Documentation for e-Market
    """
-name = "Elyte FastAPI Application."
+name = "FastAPI Application."
 terms_of_service = "https://github.com/elyte5star/FastAPI.git"
 version = "1.0"
 
@@ -94,7 +94,7 @@ float_to_top = true
 force_single_line = false
 include_trailing_comma = true
 known_third_party = ["fastapi", "pydantic", "starlette"]
-line_length = 120
+line_length = 79
 lines_after_imports = 2
 lines_between_sections = 1
 lines_between_types = 0
@@ -104,6 +104,8 @@ use_parentheses = true
 
 [tool.mypy]
 plugins = ['pydantic.mypy']
+warn_redundant_casts = true
+
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
@@ -129,6 +131,8 @@ python-multipart = "^0.0.20"
 fastapi-microsoft-identity = "^0.1.6"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 pydocstyle = "^6.3.0"
+python-dotenv = "^1.0.1"
+apscheduler = "^3.11.0"
 
 
 [build-system]
