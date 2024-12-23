@@ -9,7 +9,6 @@ from sqlmodel import inspect
 
 @as_declarative()
 class Base:
-
     __name__: str
     # Generate __tablename__ automatically
 

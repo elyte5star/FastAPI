@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 import time
 
 
+# https://testdriven.io/blog/fastapi-jwt-auth/
 class JWTBearer(HTTPBearer):
     def __init__(self, config, auto_error: bool = True):
         super(JWTBearer, self).__init__(auto_error=auto_error)
