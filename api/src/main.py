@@ -1,7 +1,6 @@
 import handler
 import logging
-from modules.settings.configuration import ApiConfig
-from fastapi.logger import logger
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 from modules.middleware.log import get_file_handler, get_console_handler
 from fastapi.encoders import jsonable_encoder
@@ -9,10 +8,13 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi import Request, status
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from modules.middleware.request import CustomHeaderMiddleware
 
-cfg = ApiConfig().from_toml_file().from_env_file()
-cfg.logger = logger
+cfg = handler.cfg
 
+logger = handler.logger
 
 # Set up logging
 logging.basicConfig(
@@ -22,7 +24,49 @@ logging.basicConfig(
 )
 
 
-app = handler.get_application(cfg)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Do something now.")
+    yield
+    logger.info("Do something later.")
+
+
+app = FastAPI(
+    lifespan=lifespan,
+    debug=cfg.debug,
+    title=cfg.name,
+    description=cfg.description,
+    version=cfg.version,
+    terms_of_service=cfg.terms,
+    contact=cfg.contacts,
+    license_info=cfg.license,
+    swagger_ui_parameters={
+        "syntaxHighlight.theme": "tomorrow-night",
+        "tryItOutEnabled": True,
+        "displayRequestDuration": True,
+    },
+)
+
+
+ALLOWED_HOSTS = ["*"]
+if cfg.origins:
+    ALLOWED_HOSTS = [str(origin) for origin in cfg.origins]
+
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_HOSTS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# HEADER middleware
+app.add_middleware(CustomHeaderMiddleware)
+
+# Static files
+app.mount("/static", StaticFiles(directory="./modules/static"), name="static")
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -36,6 +80,7 @@ async def custom_http_exception_handler(
     )
 
 
+# Override request validation exceptions
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError

@@ -4,7 +4,7 @@ FROM python:3.12
 WORKDIR /code/app
 
 # Usage: COPY [from, from, from, to]
-COPY ["./src", "./"]
+COPY ["./src/pyproject.toml", "./"]
 
 # Set the python path:
 ENV PYTHONPATH="$PYTHONPATH:${PWD}"

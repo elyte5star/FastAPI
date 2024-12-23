@@ -10,8 +10,9 @@ import logging
 load_dotenv()
 
 
-project_root = Path(__file__).parent.parent.parent.parent.parent
+project_root = Path(__file__).parent.parent.parent
 toml_path = path.join(project_root, "pyproject.toml")
+print(toml_path)
 config = Configuration.from_file(toml_path)
 
 
