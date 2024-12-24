@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import (
 )
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlmodel import inspect
+from sqlalchemy import inspect
 
 
 @as_declarative()

@@ -119,7 +119,6 @@ warn_untyped_fields = true
 python = "^3.12"
 pydantic = {extras = ["email"], version = "^2.10.4"}
 pyconfs = "^0.5.5"
-sqlmodel = "^0.0.22"
 fastapi = {extras = ["standard"], version = "^0.115.6"}
 aio-pika = "^9.5.4"
 asyncpg = "^0.30.0"
@@ -133,6 +132,7 @@ python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 pydocstyle = "^6.3.0"
 python-dotenv = "^1.0.1"
 apscheduler = "^3.11.0"
+sqlalchemy = "^2.0.36"
 
 
 [build-system]

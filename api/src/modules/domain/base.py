@@ -1,10 +1,10 @@
-from pydantic import BaseModel, ConfigDict
 import time
 from modules.utils.misc import get_indent
+from pydantic import BaseModel, ConfigDict
 
 
-class BaseParams(BaseModel):
-    model_config: ConfigDict = ConfigDict(
+class BaseResponse(BaseModel):
+    model_config = ConfigDict(
         from_attributes=True, validate_assignment=True, use_enum_values=True
     )
     req_id: str = ""
@@ -15,7 +15,7 @@ class BaseParams(BaseModel):
     message: str = ""
 
 
-class BaseReq(BaseParams):
+class BaseReq(BaseResponse):
 
     def model_post_init(self, ctx):
         self.req_id = get_indent()
