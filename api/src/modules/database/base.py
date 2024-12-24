@@ -1,20 +1,9 @@
-from sqlalchemy.ext.declarative import (
-    as_declarative,
-    declared_attr,
-)
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy import inspect
-
-
-@as_declarative()
-class Base:
-    __name__: str
-    # Generate __tablename__ automatically
-
-    @declared_attr
-    def __tablename__(cls) -> str:
-        return cls.__name__.lower()
+from modules.domain.schema.base import Base
+from modules.domain.schema.users import Users
+from fastapi.logger import logger
 
 
 class AsyncDatabaseSession:
@@ -27,7 +16,7 @@ class AsyncDatabaseSession:
     def __getattr__(self, name):
         return getattr(self._session, name)
 
-    def async_session_generator(self) -> AsyncSession:
+    def init_db(self) -> AsyncSession:
         try:
             self._engine = create_async_engine(
                 self.cf.db_url,
@@ -38,6 +27,7 @@ class AsyncDatabaseSession:
             self._session = sessionmaker(
                 self._engine, expire_on_commit=False, class_=AsyncSession
             )()
+
         except Exception as ex:
             self.logger.warning("Couldn't connect to DB : \n", ex)
 

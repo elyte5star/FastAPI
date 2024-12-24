@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi import Request, status
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from modules.middleware.request import CustomHeaderMiddleware
+from modules.middleware.base import CustomHeaderMiddleware
 
 cfg = handler.cfg
 
@@ -26,9 +26,9 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Do something now.")
+    await handler.on_api_start()
     yield
-    logger.info("Do something later.")
+    await handler.on_api_shuttdown()
 
 
 app = FastAPI(
