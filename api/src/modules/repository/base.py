@@ -21,14 +21,14 @@ class BaseReq(BaseResponse):
         self.req_id = get_indent()
         self.start_time = time.perf_counter()
 
-    def req_success(self, message=""):
+    def success(self, message=""):
         self.success = True
         if message:
             self.message = message
         self.req_process_time()
         return self
 
-    def req_failure(self, message=""):
+    def failure(self, message=""):
         self.success = False
         if message:
             self.message = message

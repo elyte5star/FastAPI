@@ -27,14 +27,14 @@ classifiers = [
 debug = true
 auth_type = ["MANUAL", "MSOFT","GOOGLE"]
 host_url = "http://localhost:8000/"
-log_type = "INFO"
-log_file_path="./modules/static/log_file.log"
+log_type = "DEBUG"
+log_file_path="../api.log"
 
 [api.doc]
 description = """
    #   Interactive Documentation for e-Market
    """
-name = "FastAPI Application."
+name = "FastAPI Application"
 terms_of_service = "https://github.com/elyte5star/FastAPI.git"
 version = "1.0"
 
@@ -132,7 +132,8 @@ python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 pydocstyle = "^6.3.0"
 python-dotenv = "^1.0.1"
 apscheduler = "^3.11.0"
-sqlalchemy = "^2.0.36"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
+pytz = "^2024.2"
 
 
 [build-system]

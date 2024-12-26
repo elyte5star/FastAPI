@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
-from modules.domain.response.auth import TokenResponse
+from modules.repository.response_models.auth import TokenResponse
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-@router.post(
+@auth_router.post(
     "/token",
     summary="Get token",
     response_model=TokenResponse,
