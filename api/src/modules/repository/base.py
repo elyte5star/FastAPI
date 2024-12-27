@@ -1,6 +1,7 @@
 import time
 from modules.utils.misc import get_indent
 from pydantic import BaseModel, ConfigDict
+from typing import Self
 
 
 class BaseResponse(BaseModel):
@@ -11,7 +12,7 @@ class BaseResponse(BaseModel):
     start_time: float = 0.0
     stop_time: float = 0.0
     process_time: str = ""
-    success: bool = False
+    req_success: bool = False
     message: str = ""
 
 
@@ -21,15 +22,15 @@ class BaseReq(BaseResponse):
         self.req_id = get_indent()
         self.start_time = time.perf_counter()
 
-    def success(self, message=""):
-        self.success = True
+    def success(self, message="") -> Self:
+        self.req_success = True
         if message:
             self.message = message
         self.req_process_time()
         return self
 
-    def failure(self, message=""):
-        self.success = False
+    def failure(self, message="") -> Self:
+        self.req_success = False
         if message:
             self.message = message
         self.req_process_time()

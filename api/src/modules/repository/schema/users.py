@@ -5,15 +5,15 @@ from modules.repository.schema.base import Audit
 class User(Audit):
     id = Column(String(60), ForeignKey("audit.id"), primary_key=True, index=True)
     email = Column(String(20), unique=True, index=True)
-    username = Column("username", String(10), unique=True, index=True)
+    username = Column(String(20), unique=True, index=True)
     password = Column(String(100), nullable=False)
     active = Column(Boolean, default=False)
     enabled = Column(Boolean, default=False)
     admin = Column(Boolean, default=False)
     telephone = Column(String(20), index=True)
-    failed_attempts = Column("failedAttempts", Integer)
+    failed_attempts = Column(Integer, default=0)
     discount = Column(Float)
-    lock_time = Column("lockTime", DateTime)
+    lock_time = Column(DateTime)
     is_using_mfa = Column(Boolean, default=False)
     is_locked = Column(Boolean, default=False)
 

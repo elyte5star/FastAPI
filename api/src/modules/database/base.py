@@ -1,7 +1,11 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import inspect, event, select
 from sqlalchemy.engine import Engine
-from sqlalchemy.ext.asyncio import async_sessionmaker, async_session
+from sqlalchemy.ext.asyncio import (
+    async_sessionmaker,
+    AsyncEngine,
+    AsyncSession,
+)
 from modules.repository.schema.base import Base
 from modules.utils.misc import get_indent
 from modules.repository.schema.users import (
@@ -17,14 +21,14 @@ class AsyncDatabaseSession:
     def __init__(self, config):
         self.cf = config
         self.logger = config.logger
-        self._engine = None
-        self.async_session: async_session = None
+        self._engine: AsyncEngine | None = None
+        self.async_session: AsyncSession | None = None
         self.select = select
 
     def __getattr__(self, name):
         return getattr(self.async_session, name)
 
-    def init_db(self) -> async_session:
+    def init_db(self):
         try:
             self._engine = create_async_engine(
                 self.cf.db_url,
@@ -66,13 +70,13 @@ class AsyncDatabaseSession:
     async def db_queries(self):
         pass
 
-    async def create_admin_account(self, async_session: async_session) -> None:
+    async def create_admin_account(self, async_session: AsyncSession) -> None:
         admin_username: str = self.cf.contacts["username"]
         admin_email: str = self.cf.contacts["email"]
         tel: str = self.cf.contacts["telephone"]
         password: bytes = self.cf.contacts["password"]
         if await self.get_user_by_username(admin_username) is None:
-            admin_user = User(
+            admin_user: User = User(
                 id=get_indent(),
                 email=admin_email,
                 username=admin_username,
