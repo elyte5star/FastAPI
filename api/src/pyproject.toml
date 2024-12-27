@@ -39,9 +39,20 @@ terms_of_service = "https://github.com/elyte5star/FastAPI.git"
 version = "1.0"
 
 [api.doc.contact]
-email = "checkuti@gmail.com"
+email = "elyte5star@gmail.com"
 name = "Utimore Services AS"
 url = "https://github.com/elyte5star"
+username="elyte"
+telephone="889851919"
+password="$2b$10$rQcvrrW2JcvjV2XM5TG3zeJd6oHPthld3VfRLsvyV2UJFO0.BxACO"
+mail_from_name = 'E-COMMERCE APPLICATION'
+mail_port = 587
+mail_server = 'smtp.gmail.com'
+mail_ssl_tls = false
+mail_starttls = true
+mail_username = 'elyte5star'
+use_credentials = true
+validate_certs = true
 
 [api.doc.contact.license]
 name = "Proprietary"

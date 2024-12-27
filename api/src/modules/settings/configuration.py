@@ -5,7 +5,7 @@ import json
 from pprint import pprint
 from dotenv import load_dotenv
 import logging
-
+from typing import Any, Dict, Self
 
 load_dotenv()
 
@@ -30,6 +30,7 @@ class ApiConfig:
         self.encoding: str = ""
         self.sql_url: str = ""
         self.logger: logging.Logger = None
+        self.queries: Dict[Any, Any] = None
 
         # PROJECT DETAILS
         self.name: str = ""
@@ -55,7 +56,7 @@ class ApiConfig:
         # CLIENT
         self.client_url: str = ""
 
-    def from_toml_file(self):
+    def from_toml_file(self) -> Self:
         self.sql_username = config.database.user
         self.sql_password = config.database.pwd
         self.sql_host = config.database.host
@@ -86,7 +87,7 @@ class ApiConfig:
         self.grant_type = config.encryption.grant_type
         return self
 
-    def from_env_file(self):
+    def from_env_file(self) -> Self:
         print("Injecting enviroment variables")
         self.db_url = str(getenv("DB_URL"))
         self.token_expire_min = int(

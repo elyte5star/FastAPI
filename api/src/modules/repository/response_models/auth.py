@@ -9,5 +9,6 @@ class TokenResponse(BaseResponse):
     enabled: bool = False
     admin: bool = False
     access_token: str = Field(default="", alias="accessToken")
-    token_type: str = Field(default="", alias="tokenType")
+    refresh_token: str = Field(default="", alias="refreshToken")
+    token_type: str = Field(default="bearer", alias="tokenType")
     is_locked: bool = Field(alias="accountNonLocked")

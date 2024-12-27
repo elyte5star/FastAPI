@@ -61,27 +61,33 @@ class AsyncDatabaseSession:
         async with self._engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
-        await self.create_admin_account("elyte", self.async_session)
+        await self.create_admin_account(self.async_session)
 
-    async def create_admin_account(
-        self, admin_username: str, async_session: async_session
-    ) -> None:
-        if self.get_user_by_username(admin_username) is None:
+    async def db_queries(self):
+        pass
+
+    async def create_admin_account(self, async_session: async_session) -> None:
+        admin_username: str = self.cf.contacts["username"]
+        admin_email: str = self.cf.contacts["email"]
+        tel: str = self.cf.contacts["telephone"]
+        password: bytes = self.cf.contacts["password"]
+        if await self.get_user_by_username(admin_username) is None:
             admin_user = User(
                 id=get_indent(),
-                email="elyte5star@gmail.com",
+                email=admin_email,
                 username=admin_username,
-                password="$2b$10$rQcvrrW2JcvjV2XM5TG3zeJd6oHPthld3VfRLsvyV2UJFO0.BxACO",
+                password=password,
                 active=True,
-                telephone="889851919",
+                telephone=tel,
                 admin=True,
                 failed_attempts=0,
-                created_by=admin_username,
+                created_by=self.cf.contacts["username"],
             )
             try:
                 async_session.add(admin_user)
                 await async_session.commit()
                 self.logger.info(f"account with id {admin_user.id} created")
+                return
             except Exception:
                 await async_session.rollback()
                 raise
@@ -90,17 +96,14 @@ class AsyncDatabaseSession:
     async def get_user_by_id(self, userid: str) -> User | None:
         stmt = self.select(User).where(User.userid == userid)
         users = await self.async_session.execute(stmt)
-        (user,) = users.first()
-        return user
+        return users.scalars().first()
 
     async def get_user_by_username(self, username: str) -> User | None:
         stmt = self.select(User).where(User.username == username)
         users = await self.async_session.execute(stmt)
-        (user,) = users.first()
-        return user
+        return users.scalars().first()
 
     async def get_user_by_email(self, email: str) -> User | None:
         stmt = self.select(User).where(User.username == email)
         users = await self.async_session.execute(stmt)
-        (user,) = users.first()
-        return user
+        return users.scalars().first()

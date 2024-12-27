@@ -1,4 +1,3 @@
-from modules.repository.response_models.user import UserDetails
 from modules.repository.response_models.auth import TokenResponse
 from modules.repository.request_models.auth import LoginRequest
 import bcrypt
@@ -6,7 +5,7 @@ from modules.repository.queries.auth import AuthQueries
 from modules.repository.validators.validator import is_valid_email
 from sqlalchemy.sql.expression import false
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import timedelta
 from jose import jwt
 from modules.utils.misc import time_delta, time_now
 
@@ -40,17 +39,26 @@ class Authentication(AuthQueries):
                     "telephone": user.telephone,
                 }
                 access_token_expiry = time_delta(self.cf.token_expire_min)
-                refresh_tioken_expiry = time_delta(self.cf.refresh_token_expire_min)
+                refresh_token_expiry = time_delta(self.cf.refresh_token_expire_min)
                 access_token = self.create_token(
                     data=data,
                     expires_delta=access_token_expiry,
                 )
                 refresh_token = self.create_token(
                     data=data,
-                    expires_delta=refresh_tioken_expiry,
+                    expires_delta=refresh_token_expiry,
                 )
-
-                pass
+                req.result = TokenResponse(
+                    userid=user.id,
+                    username=user.username,
+                    email=user.email,
+                    enabled=user.enabled,
+                    admin=user.admin,
+                    accessToken=access_token,
+                    refreshToken=refresh_token,
+                    accountNonLocked=(user.is_locked != false()),
+                )
+                return req.success(f"User with username {req.username} is authorized")
 
         # check login attempt service
         # set Access control
