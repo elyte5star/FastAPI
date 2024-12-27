@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from pytz import timezone
 import uuid
+from fastapi.encoders import jsonable_encoder
 
 
 def time_now() -> datetime:
@@ -23,3 +24,13 @@ def get_indent() -> str:
 
 def time_delta(min: int) -> timedelta:
     return timedelta(minutes=min)
+
+
+def obj_as_json(obj):
+    return jsonable_encoder(obj)
+
+
+def serialize_datetime(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError("Type not serializable")

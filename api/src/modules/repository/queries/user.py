@@ -1,5 +1,6 @@
 from modules.repository.schema.users import User
-from modules.database.base import AsyncDatabaseSession, or_
+from modules.database.base import AsyncDatabaseSession
+from sqlalchemy import or_
 
 
 class UserQueries(AsyncDatabaseSession):
@@ -17,25 +18,13 @@ class UserQueries(AsyncDatabaseSession):
         finally:
             return result
 
-    async def update_user():
-        pass
-
-    async def get_user_by_id(self, userid: str) -> User | None:
-        stmt = self.select(User).where(User.userid == userid)
-        users = await self.async_session.execute(stmt)
-        (user,) = users.first()
-        return user
-
-    async def get_user_by_email(self, email: str):
+    async def update_user(self):
         pass
 
     async def get_users(self):
         pass
 
     async def delete_user(self):
-        pass
-
-    async def get_user_by_username(self, username: str):
         pass
 
     async def get_user_address_by_user(self):

@@ -15,6 +15,7 @@ class User(Audit):
     discount = Column(Float)
     lock_time = Column("lockTime", DateTime)
     is_using_mfa = Column(Boolean, default=False)
+    is_locked = Column(Boolean, default=False)
 
 
 class UserLocations(Audit):

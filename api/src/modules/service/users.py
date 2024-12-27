@@ -19,7 +19,7 @@ class UserHandler(UserQueries):
                 id=self.get_new_id(),
                 email=req.email,
                 username=req.username,
-                password=self.hash_password(req.password),
+                password=self.hash_password(req.password.get_secret_value()),
                 telephone=req.telephone,
                 discount=0.0,
                 created_by=req.username,

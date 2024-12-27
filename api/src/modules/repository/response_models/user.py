@@ -23,6 +23,7 @@ class UserDetails(BaseModel):
     failed_attempts: int = Field(default=0, alias="failedAttempt")
     discount: float = 0.0
     lock_time: datetime = Field(default=time_then(), alias="lockTime")
+    is_locked: bool = Field(default=False, alias="IsUsing2FA")
     is_using_mfa: bool = Field(default=False, alias="IsUsing2FA")
 
 

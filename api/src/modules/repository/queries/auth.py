@@ -1,9 +1,7 @@
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from modules.database.base import AsyncDatabaseSession
 
 
-class AuthQueries:
-    def __init__(self, async_session: async_sessionmaker[AsyncSession]):
-        self.db = async_session
+class AuthQueries(AsyncDatabaseSession):
 
     async def find_otp_by_email(self, email: str):
         pass

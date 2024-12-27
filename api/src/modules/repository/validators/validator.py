@@ -2,7 +2,9 @@ from typing import Any
 from typing import Dict
 from pydantic import SecretStr
 from pydantic.utils import update_not_none
-import re, uuid
+import re
+import uuid
+from email_validator import validate_email, EmailNotValidError
 
 
 class Password(SecretStr):
@@ -116,6 +118,22 @@ def validate_mobile(value: str) -> str:
 def check_uuid(value: str) -> str:
     try:
         val = uuid.UUID(value, version=4)
-        return val
+        return str(val)
     except ValueError:
         raise ValueError(f"{value} is an invalid uuid")
+
+
+def is_valid_email(email: str) -> tuple[bool, str]:
+    try:
+
+        # Check that the email address is valid. Turn on check_deliverability
+        # for first-time validations like on account creation pages (but not
+        # login pages).
+        emailinfo = validate_email(email, check_deliverability=False)
+
+        # After this point, use only the normalized form of the email address,
+        # especially before going to a database query.
+        email = emailinfo.normalized
+        return (True, email)
+    except EmailNotValidError:
+        return (False, email)
