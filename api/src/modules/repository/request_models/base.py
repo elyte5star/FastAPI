@@ -1,19 +1,7 @@
 import time
 from modules.utils.misc import get_indent
-from pydantic import BaseModel, ConfigDict
 from typing import Self
-
-
-class BaseResponse(BaseModel):
-    model_config = ConfigDict(
-        from_attributes=True, validate_assignment=True, use_enum_values=True
-    )
-    req_id: str = ""
-    start_time: float = 0.0
-    stop_time: float = 0.0
-    process_time: str = ""
-    req_success: bool = False
-    message: str = ""
+from modules.repository.response_models.base import BaseResponse
 
 
 class BaseReq(BaseResponse):
@@ -38,4 +26,4 @@ class BaseReq(BaseResponse):
 
     def req_process_time(self):
         self.stop_time = time.perf_counter()
-        self.process_time = str((self.start_time - self.stop_time))
+        self.process_time = str((self.stop_time - self.start_time))

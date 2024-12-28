@@ -1,4 +1,4 @@
-from modules.repository.base import BaseResponse
+from modules.repository.request_models.base import BaseResponse
 from pydantic import BaseModel, Field
 from modules.utils.misc import time_then
 from datetime import datetime

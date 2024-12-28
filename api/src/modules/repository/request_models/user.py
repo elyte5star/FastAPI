@@ -3,33 +3,34 @@ from pydantic import (
     ValidationInfo,
     field_validator,
     AfterValidator,
+    SecretStr,
 )
 from modules.repository.response_models.user import CreateUserResponse, GetUserResponse
 from modules.repository.validators.validator import (
-    Password,
     username_validation,
     validate_mobile,
+    check_uuid,
 )
 from typing_extensions import Annotated
-from modules.repository.base import BaseReq
+from modules.repository.request_models.base import BaseReq
 
 
 class CreateUserRequest(BaseReq):
     username: Annotated[str, AfterValidator(username_validation)]
     email: EmailStr
-    password: Password
-    confirm_password: Password
+    password: SecretStr
+    confirm_password: SecretStr
     telephone: Annotated[str, AfterValidator(validate_mobile)]
     result: CreateUserResponse = CreateUserResponse()
 
     @field_validator("confirm_password", mode="after")
     @classmethod
-    def check_passwords_match(cls, value: Password, info: ValidationInfo) -> Password:
+    def check_passwords_match(cls, value: SecretStr, info: ValidationInfo) -> SecretStr:
         if value != info.data["password"]:
             raise ValueError("Passwords do not match")
         return value
 
 
 class GetUserRequest(BaseReq):
-    userid: str = ""
+    userid: Annotated[str, AfterValidator(check_uuid)]
     result: GetUserResponse = GetUserResponse()

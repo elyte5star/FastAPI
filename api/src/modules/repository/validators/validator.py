@@ -1,7 +1,7 @@
 from typing import Any
 from typing import Dict
-from pydantic import SecretStr
-from pydantic.utils import update_not_none
+from pydantic import SecretStr, GetCoreSchemaHandler
+from pydantic.v1.utils import update_not_none
 import re
 import uuid
 from email_validator import validate_email, EmailNotValidError
@@ -38,7 +38,9 @@ class Password(SecretStr):
     includes_uppercase = False
 
     @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+    def __get_pydantic_json_schema__(
+        cls, field_schema: Dict[str, Any], handler: GetCoreSchemaHandler
+    ) -> None:
         update_not_none(
             field_schema,
             minLength=cls.min_length,

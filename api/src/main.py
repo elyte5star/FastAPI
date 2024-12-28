@@ -32,7 +32,6 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    root_path="/api",
     lifespan=lifespan,
     debug=cfg.debug,
     title=cfg.name,
@@ -47,6 +46,10 @@ app = FastAPI(
         "displayRequestDuration": True,
     },
 )
+
+
+for route in handler.routes:
+    app.include_router(route)
 
 
 ALLOWED_HOSTS = ["*"]
@@ -95,3 +98,8 @@ async def validation_exception_handler(
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return StaticFiles(directory="./modules/static")
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello Bigger Applications!"}

@@ -1,5 +1,5 @@
 from pydantic import Field
-from modules.repository.base import BaseResponse
+from modules.repository.request_models.base import BaseResponse
 
 
 class TokenResponse(BaseResponse):
@@ -11,4 +11,4 @@ class TokenResponse(BaseResponse):
     access_token: str = Field(default="", alias="accessToken")
     refresh_token: str = Field(default="", alias="refreshToken")
     token_type: str = Field(default="bearer", alias="tokenType")
-    is_locked: bool = Field(alias="accountNonLocked")
+    is_locked: bool = Field(default=True, alias="accountNonLocked")

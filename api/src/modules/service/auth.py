@@ -10,9 +10,8 @@ from jose import jwt
 from modules.utils.misc import time_delta, time_now
 
 
-class Authentication(AuthQueries):
+class AuthenticationHandler(AuthQueries):
     async def authenticate_user(self, req: LoginRequest) -> TokenResponse:
-        req.failure(f"User {req.username} is not authorized.")
         # check if user cred exist
         is_email, email = is_valid_email(req.username)
         if is_email:
@@ -21,15 +20,14 @@ class Authentication(AuthQueries):
             user = await self.get_user_by_username(req.username)
         if user is not None:
             if user.enabled == false() or user.is_locked != false():
-                req.failure(" Account Not Verified/Locked ")
-                return req.result
+                return req.failure(" Account Not Verified/Locked ")
             if self.verify_password(req.password.get_secret_value(), user.password):
                 active = True
                 role = "USER"
                 if user.admin != false():
                     role = "ADMIN"
                 data = {
-                    "userid": user.userid,
+                    "userid": user.id,
                     "sub": user.username,
                     "email": user.email,
                     "admin": user.admin,
@@ -38,6 +36,7 @@ class Authentication(AuthQueries):
                     "discount": user.discount,
                     "telephone": user.telephone,
                 }
+
                 access_token_expiry = time_delta(self.cf.token_expire_min)
                 refresh_token_expiry = time_delta(self.cf.refresh_token_expire_min)
                 access_token = self.create_token(
@@ -48,6 +47,7 @@ class Authentication(AuthQueries):
                     data=data,
                     expires_delta=refresh_token_expiry,
                 )
+                self.logger.info(user)
                 req.result = TokenResponse(
                     userid=user.id,
                     username=user.username,
@@ -56,14 +56,13 @@ class Authentication(AuthQueries):
                     admin=user.admin,
                     accessToken=access_token,
                     refreshToken=refresh_token,
-                    accountNonLocked=(user.is_locked != false()),
+                    accountNonLocked=user.is_locked,
                 )
                 return req.success(f"User with username {req.username} is authorized")
 
         # check login attempt service
-        # set Access control
-        # create Principal
-        return req.result
+
+        return req.failure(f"User {req.username} is not authorized.")
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         if bcrypt.checkpw(

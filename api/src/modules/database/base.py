@@ -84,7 +84,7 @@ class AsyncDatabaseSession:
                 active=True,
                 telephone=tel,
                 admin=True,
-                failed_attempts=0,
+                enabled=True,
                 created_by=self.cf.contacts["username"],
             )
             try:

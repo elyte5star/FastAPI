@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from pytz import timezone
 import uuid
 from fastapi.encoders import jsonable_encoder
+import string, secrets
 
 
 def time_now() -> datetime:
@@ -30,7 +31,18 @@ def obj_as_json(obj):
     return jsonable_encoder(obj)
 
 
+def random_indent(size: int = 12) -> str:
+    chars = string.digits + string.ascii_letters + string.punctuation
+    return "".join(secrets.choice(chars) for _ in range(size))
+
+
 def serialize_datetime(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
     raise TypeError("Type not serializable")
+
+
+# def random_date(self, start_date, range_in_days):
+#     days_to_add = np.arange(0, range_in_days)
+#     rd = np.datetime64(start_date) + np.random.choice(days_to_add)
+#     return str(rd)
