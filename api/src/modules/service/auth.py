@@ -48,7 +48,7 @@ class AuthenticationHandler(AuthQueries):
                     expires_delta=refresh_token_expiry,
                 )
                 self.logger.info(user)
-                req.result = TokenResponse(
+                req.result.data = TokenResponse(
                     userid=user.id,
                     username=user.username,
                     email=user.email,
