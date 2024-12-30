@@ -272,6 +272,6 @@ e-commerce/*
 persistence/*
 !persistence/*.file
 
-/api.env
+/api/api.log
 .env
 *.local
