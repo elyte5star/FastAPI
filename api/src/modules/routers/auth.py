@@ -11,7 +11,7 @@ class AuthRouter(AuthenticationHandler):
         super().__init__(config)
         self.router: APIRouter = APIRouter(prefix="/auth", tags=["Authentication"])
         self.router.add_api_route(
-            path="/token",
+            path="/form-login",
             endpoint=self.form_login,
             response_model=TokenResponse,
             methods=["POST"],

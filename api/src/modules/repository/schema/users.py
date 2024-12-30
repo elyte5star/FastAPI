@@ -12,7 +12,7 @@ class User(Audit):
     admin = Column(Boolean, default=False)
     telephone = Column(String(20), index=True)
     failed_attempts = Column(Integer, default=0)
-    discount = Column(Float)
+    discount = Column(Float, default=0.0)
     lock_time = Column(DateTime)
     is_using_mfa = Column(Boolean, default=False)
     is_locked = Column(Boolean, default=False)

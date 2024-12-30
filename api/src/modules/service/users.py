@@ -12,7 +12,7 @@ import bcrypt
 
 
 class UserHandler(UserQueries):
-    async def create_user(self, req: CreateUserRequest) -> CreateUserResponse:
+    async def _create_user(self, req: CreateUserRequest) -> CreateUserResponse:
         user_exist = await self.check_if_user_exist(req.email, req.username)
         if user_exist is None:
             new_user = User(
@@ -56,6 +56,7 @@ class UserHandler(UserQueries):
                 lockTime=user.lock_time,
                 IsUsing2FA=user.is_using_mfa,
             )
-            req.result = user_info
-            return req.success(f"User with userid {req.userid} found")
-        return req.failure(f"User with userid {req.userid} not found")
+
+            req.result.user = user_info
+            return req.req_success(f"User with userid {req.userid} found")
+        return req.req_failure(f"User with userid {req.userid} not found")

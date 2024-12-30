@@ -24,11 +24,12 @@ class AsyncDatabaseSession:
         self._engine: AsyncEngine | None = None
         self.async_session: AsyncSession | None = None
         self.select = select
+        self.init_db()
 
     def __getattr__(self, name):
         return getattr(self.async_session, name)
 
-    def init_db(self):
+    def init_db(self) -> None:
         try:
             self._engine = create_async_engine(
                 self.cf.db_url,
@@ -63,9 +64,13 @@ class AsyncDatabaseSession:
 
     async def create_tables(self):
         async with self._engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
+            # await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
         await self.create_admin_account(self.async_session)
+
+    async def drop_tables(self) -> None:
+        async with self._engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
 
     async def db_queries(self):
         pass
@@ -98,7 +103,7 @@ class AsyncDatabaseSession:
         self.logger.info(f"Admin account with name {admin_username} exist already")
 
     async def get_user_by_id(self, userid: str) -> User | None:
-        stmt = self.select(User).where(User.userid == userid)
+        stmt = self.select(User).where(User.id == userid)
         users = await self.async_session.execute(stmt)
         return users.scalars().first()
 

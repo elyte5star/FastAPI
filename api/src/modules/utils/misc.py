@@ -3,12 +3,20 @@ from pytz import timezone
 import uuid
 from fastapi.encoders import jsonable_encoder
 import string, secrets
+import bcrypt
 
 
 def time_now() -> datetime:
     now_utc = datetime.now()
     now_est = now_utc.astimezone(timezone("Europe/Stockholm"))
     return now_est
+
+
+def hash_password(plain_password: str, salt: int, encoding: str) -> bytes:
+    hashed_password = bcrypt.hashpw(
+        plain_password.encode(encoding), bcrypt.gensalt(salt)
+    ).decode(encoding)
+    return hashed_password
 
 
 def time_now_utc() -> datetime:
@@ -31,9 +39,15 @@ def obj_as_json(obj):
     return jsonable_encoder(obj)
 
 
-def random_indent(size: int = 12) -> str:
-    chars = string.digits + string.ascii_letters + string.punctuation
-    return "".join(secrets.choice(chars) for _ in range(size))
+def creat_indent(size: int, salt: int, encoding: str) -> tuple[str, bytes]:
+    chars = (
+        string.digits
+        + string.ascii_letters
+        + string.punctuation.replace("'", "").replace('"', "")
+    )
+    plain_password = "".join(secrets.choice(chars) for _ in range(size))
+    hashed_password = hash_password(plain_password, salt, encoding)
+    return (plain_password, hashed_password)
 
 
 def serialize_datetime(obj):

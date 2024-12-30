@@ -9,5 +9,5 @@ class BaseResponse(BaseModel):
     start_time: float = 0.0
     stop_time: float = 0.0
     process_time: str = ""
-    req_success: bool = False
+    success: bool = False
     message: str = ""

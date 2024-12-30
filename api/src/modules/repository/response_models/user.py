@@ -2,6 +2,7 @@ from modules.repository.request_models.base import BaseResponse
 from pydantic import BaseModel, Field
 from modules.utils.misc import time_then
 from datetime import datetime
+from typing import Optional
 
 
 class CreateUserResponse(BaseResponse):
@@ -10,9 +11,9 @@ class CreateUserResponse(BaseResponse):
 
 class UserDetails(BaseModel):
     id: str = Field(default="", alias="userid")
-    created_at: datetime = Field(default=time_then(), alias="createdAt")
-    modified_at: datetime = Field(default=time_then(), alias="lastModifiedAt")
-    modified_by: str = Field(default="", alias="lastModifiedBy")
+    created_at: datetime = Field(default=None, alias="createdAt")
+    modified_at: Optional[datetime] = Field(default=None, alias="lastModifiedAt")
+    modified_by: Optional[str] = Field(default="", alias="lastModifiedBy")
     created_by: str = Field(default="", alias="createdBy")
     email: str = ""
     username: str = ""
@@ -22,7 +23,7 @@ class UserDetails(BaseModel):
     telephone: str = ""
     failed_attempts: int = Field(default=0, alias="failedAttempt")
     discount: float = 0.0
-    lock_time: datetime = Field(default=time_then(), alias="lockTime")
+    lock_time: Optional[datetime] = Field(default=None, alias="lockTime")
     is_locked: bool = Field(default=False, alias="IsUsing2FA")
     is_using_mfa: bool = Field(default=False, alias="IsUsing2FA")
 

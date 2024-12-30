@@ -58,11 +58,11 @@ class AuthenticationHandler(AuthQueries):
                     refreshToken=refresh_token,
                     accountNonLocked=user.is_locked,
                 )
-                return req.success(f"User with username {req.username} is authorized")
+                return req.req_success(f"User with username {req.username} is authorized")
 
         # check login attempt service
 
-        return req.failure(f"User {req.username} is not authorized.")
+        return req.req_failure(f"User {req.username} is not authorized.")
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         if bcrypt.checkpw(
