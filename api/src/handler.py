@@ -8,7 +8,7 @@ from modules.database.base import AsyncDatabaseSession
 cfg = ApiConfig().from_toml_file().from_env_file()
 cfg.logger = logger
 
-async_session = AsyncDatabaseSession(cfg)
+db = AsyncDatabaseSession(cfg)
 
 auth_router = AuthRouter(cfg)
 
@@ -18,10 +18,10 @@ routes: tuple[APIRouter, ...] = (auth_router.router, user_router.router)
 
 
 async def on_api_start():
-    await async_session.create_tables()
+    await db.create_tables()
     logger.info(f"{cfg.name}: v{cfg.version} is starting.")
 
 
 async def on_api_shuttdown():
-    # await db._engine.dispose()
+    await db._engine.dispose()
     logger.info(f"{cfg.name}: v{cfg.version} is shutting down.")

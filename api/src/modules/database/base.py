@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import inspect, event, select
+from sqlalchemy import inspect, event, select, __version__
 from sqlalchemy.engine import Engine
+from modules.repository.response_models.base import GetInfoResponse
 from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     AsyncEngine,
@@ -15,6 +16,7 @@ from modules.repository.schema.users import (
     Otps,  # noqa: F401
     DeviceMetaData,  # noqa: F401
 )
+from multiprocessing import cpu_count
 
 
 class AsyncDatabaseSession:
@@ -42,8 +44,7 @@ class AsyncDatabaseSession:
                 expire_on_commit=False,
             )()
         except Exception as error:
-            self.logger.error(error)
-            raise
+            raise SystemExit("Couldn't connect to database %s" % error)
 
     def get_new_id(self) -> str:
         return get_indent()
@@ -74,6 +75,16 @@ class AsyncDatabaseSession:
 
     async def db_queries(self):
         pass
+
+    async def system_info(self):
+        info = {}
+        async with self.get_session() as _:
+            _, kwargs = self._engine.dialect.create_connect_args(self._engine.url)
+        info["database_parameters"] = kwargs
+        info["sqlalchemy_version"] = __version__
+        info["tables_in_database"] = await self.async_inspect_schema()
+        info["cpu_count"] = cpu_count()
+        return GetInfoResponse(info=info, message="System information")
 
     async def create_admin_account(self, async_session: AsyncSession) -> None:
         admin_username: str = self.cf.contacts["username"]
@@ -113,6 +124,6 @@ class AsyncDatabaseSession:
         return users.scalars().first()
 
     async def get_user_by_email(self, email: str) -> User | None:
-        stmt = self.select(User).where(User.username == email)
+        stmt = self.select(User).where(User.email == email)
         users = await self.async_session.execute(stmt)
         return users.scalars().first()

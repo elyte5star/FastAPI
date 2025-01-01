@@ -12,13 +12,6 @@ def time_now() -> datetime:
     return now_est
 
 
-def hash_password(plain_password: str, salt: int, encoding: str) -> bytes:
-    hashed_password = bcrypt.hashpw(
-        plain_password.encode(encoding), bcrypt.gensalt(salt)
-    ).decode(encoding)
-    return hashed_password
-
-
 def time_now_utc() -> datetime:
     return datetime.now()
 
@@ -39,7 +32,14 @@ def obj_as_json(obj):
     return jsonable_encoder(obj)
 
 
-def creat_indent(size: int, salt: int, encoding: str) -> tuple[str, bytes]:
+def hash_password(plain_password: str, salt: int, encoding: str) -> bytes:
+    hashed_password = bcrypt.hashpw(
+        plain_password.encode(encoding), bcrypt.gensalt(salt)
+    ).decode(encoding)
+    return hashed_password
+
+
+def create_password(size: int, salt: int, encoding: str) -> tuple[str, bytes]:
     chars = (
         string.digits
         + string.ascii_letters

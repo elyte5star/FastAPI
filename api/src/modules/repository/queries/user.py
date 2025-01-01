@@ -33,11 +33,19 @@ class UserQueries(AsyncDatabaseSession):
     async def get_user_location_by_user_and_country(self):
         pass
 
-    async def check_if_user_exist(self, email: str, username: str) -> User | None:
+    async def check_if_user_exist(
+        self, email: str, username: str, telephone: str
+    ) -> User | None:
         stmt = (
             self.select(User.email, User.username)
-            .where(or_(User.email == email, User.username == username))
+            .where(
+                or_(
+                    User.email == email,
+                    User.username == username,
+                    User.telephone == telephone,
+                )
+            )
             .limit(1)
         )
-        result = await self.async_session.execute(stmt).scalars().first()
-        return result
+        result = await self.async_session.execute(stmt)
+        return result.scalars().first()

@@ -1,4 +1,4 @@
-from modules.repository.response_models.auth import TokenResponse
+from modules.repository.response_models.auth import TokenResponse, TokenData
 from modules.repository.request_models.auth import LoginRequest
 import bcrypt
 from modules.repository.queries.auth import AuthQueries
@@ -47,8 +47,7 @@ class AuthenticationHandler(AuthQueries):
                     data=data,
                     expires_delta=refresh_token_expiry,
                 )
-                self.logger.info(user)
-                req.result.data = TokenResponse(
+                token_data = TokenData(
                     userid=user.id,
                     username=user.username,
                     email=user.email,
@@ -56,12 +55,13 @@ class AuthenticationHandler(AuthQueries):
                     admin=user.admin,
                     accessToken=access_token,
                     refreshToken=refresh_token,
-                    accountNonLocked=user.is_locked,
+                    accountNonLocked=not user.is_locked,
                 )
-                return req.req_success(f"User with username {req.username} is authorized")
-
+                req.result.data = token_data
+                return req.req_success(
+                    f"User with username/email : {req.username} is authorized"
+                )
         # check login attempt service
-
         return req.req_failure(f"User {req.username} is not authorized.")
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
