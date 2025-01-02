@@ -7,7 +7,7 @@ from sqlalchemy.sql.expression import false
 from typing import Optional
 from datetime import timedelta
 from jose import jwt
-from modules.utils.misc import time_delta, time_now
+from modules.utils.misc import time_delta, time_now, get_indent
 
 
 class AuthenticationHandler(AuthQueries):
@@ -34,6 +34,7 @@ class AuthenticationHandler(AuthQueries):
                     "enabled": user.enabled,
                     "active": active,
                     "role": role,
+                    "jti": get_indent(),
                     "discount": user.discount,
                     "accountNonLocked": not user.is_locked,
                 }

@@ -16,6 +16,7 @@ class JwtPrincipal(BaseModel):
     expires: float
     discount: float
     is_locked: bool = Field(alias="accountNonLocked")
+    token_id: str = Field(alias="tokenId")
 
 
 # https://testdriven.io/blog/fastapi-jwt-auth/
@@ -43,11 +44,13 @@ class JWTBearer(HTTPBearer):
                 email=self.payload["email"],
                 username=self.payload["sub"],
                 active=self.payload["active"],
-                exp=self.payload["exp"],
+                enabled=self.payload["enabled"],
+                expires=self.payload["exp"],
                 admin=self.payload["admin"],
                 role=self.payload["role"],
                 discount=self.payload["discount"],
-                is_locked=self.payload["accountNonLocked"],
+                tokenId=self.payload["jti"],
+                accountNonLocked=self.payload["accountNonLocked"],
             )
 
             return logged_in_user
@@ -55,12 +58,12 @@ class JWTBearer(HTTPBearer):
             raise HTTPException(status_code=403, detail="Invalid authorization code.")
 
     def verify_jwt(self, token: str):
-        if token is None:
-            return None
-        try:
-            self.payload = jwt.decode(
-                token, self.cf.secret_key, algorithms=[self.cf.algorithm]
-            )
-            return self.payload if self.payload["exp"] >= time.time() else None
-        except JWTError:
-            return None
+        if token is not None:
+            try:
+                self.payload = jwt.decode(
+                    token, self.cf.secret_key, algorithms=[self.cf.algorithm]
+                )
+                return self.payload if self.payload["exp"] >= time.time() else None
+            except JWTError:
+                return None
+        return None

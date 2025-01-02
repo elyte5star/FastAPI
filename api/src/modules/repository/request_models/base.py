@@ -3,6 +3,7 @@ from modules.utils.misc import get_indent
 
 from modules.repository.response_models.base import BaseResponse
 from pydantic import BaseModel, ConfigDict
+from modules.security.base import JwtPrincipal
 
 
 class BaseReq(BaseModel):
@@ -12,6 +13,7 @@ class BaseReq(BaseModel):
         self.result: BaseResponse = BaseResponse()
         self.result.req_id = get_indent()
         self.result.start_time = time.perf_counter()
+        self.active_user: JwtPrincipal
 
     def req_success(self, message="") -> BaseResponse:
         self.result.success = True
