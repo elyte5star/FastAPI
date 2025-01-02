@@ -53,6 +53,7 @@ class UserHandler(UserQueries):
                 lastModifiedBy=user.modified_by,
                 createdBy=user.created_by,
                 email=user.email,
+                password="********",
                 username=user.username,
                 active=user.active,
                 admin=user.admin,

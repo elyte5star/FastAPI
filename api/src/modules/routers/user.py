@@ -25,7 +25,6 @@ class UserRouter(UserHandler):
     async def create_user(
         self, req: Annotated[CreateUserRequest, Depends()]
     ) -> CreateUserResponse:
-        req.result = CreateUserResponse()
         return await self._create_user(req)
 
     async def get_user(self, userid: str) -> GetUserResponse:

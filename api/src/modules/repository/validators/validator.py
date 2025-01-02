@@ -1,91 +1,85 @@
 from typing import Any
 from typing import Dict
-from pydantic import SecretStr, GetCoreSchemaHandler
-from pydantic.v1.utils import update_not_none
+from pydantic import SecretStr, AfterValidator
+
 import re
 import uuid
 from email_validator import validate_email, EmailNotValidError
+from typing_extensions import Annotated
+
+# Password policy
+SPECIAL_CHARS: set[str] = {
+    "$",
+    "@",
+    "#",
+    "%",
+    "!",
+    "^",
+    "&",
+    "*",
+    "(",
+    ")",
+    "-",
+    "_",
+    "+",
+    "=",
+    "{",
+    "}",
+    "[",
+    "]",
+}
 
 
-class Password(SecretStr):
-    """Pydantic type for password"""
+MIN_LENGTH: int = 5
+MAX_LENGTH: int = 20
+INCLUDES_SPECIAL_CHARS: bool = True
+INCLUDES_NUMBERS: bool = True
+INCLUDES_LOWERCASE: bool = True
+INCLUDES_UPPERCASE: bool = True
 
-    special_chars = {
-        "$",
-        "@",
-        "#",
-        "%",
-        "!",
-        "^",
-        "&",
-        "*",
-        "(",
-        ")",
-        "-",
-        "_",
-        "+",
-        "=",
-        "{",
-        "}",
-        "[",
-        "]",
-    }
 
-    min_length = 5
-    includes_special_chars = False
-    includes_numbers = False
-    includes_lowercase = False
-    includes_uppercase = False
+def validate_password(v: SecretStr) -> SecretStr:
+    min_length = MIN_LENGTH
+    max_length = MAX_LENGTH
+    includes_special_chars = INCLUDES_SPECIAL_CHARS
+    includes_numbers = INCLUDES_NUMBERS
+    includes_lowercase = INCLUDES_LOWERCASE
+    includes_uppercase = INCLUDES_UPPERCASE
+    special_chars = SPECIAL_CHARS
 
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, field_schema: Dict[str, Any], handler: GetCoreSchemaHandler
-    ) -> None:
-        update_not_none(
-            field_schema,
-            minLength=cls.min_length,
-            includesNumbers=cls.includes_numbers,
-            includesLowercase=cls.includes_lowercase,
-            includesUppercase=cls.includes_uppercase,
-            includesSpecialChars=cls.includes_special_chars,
-            specialChars=cls.special_chars,
+    if not isinstance(v.get_secret_value(), str):
+        raise TypeError("string required")
+    if len(v.get_secret_value()) < min_length or len(v.get_secret_value()) > max_length:
+        raise ValueError(f"length should be at least {min_length} but not more than 20")
+
+    if includes_numbers and not any(char.isdigit() for char in v.get_secret_value()):
+        raise ValueError("Password should have at least one numeral")
+
+    if includes_uppercase and not any(char.isupper() for char in v.get_secret_value()):
+        raise ValueError("Password should have at least one uppercase letter")
+
+    if includes_lowercase and not any(char.islower() for char in v.get_secret_value()):
+        raise ValueError("Password should have at least one lowercase letter")
+
+    if includes_special_chars and not any(
+        char in special_chars for char in v.get_secret_value()
+    ):
+        raise ValueError(
+            f"Password should have at least one of the symbols {special_chars}"
         )
 
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    return v
 
-    @classmethod
-    def validate(cls, v):
-        if not isinstance(v, str):
-            raise TypeError("string required")
 
-        if len(v) < cls.min_length or len(v) > 20:
-            raise ValueError(
-                f"length should be at least {cls.min_length} but not more than 20"
-            )
+ValidatePassword = Annotated[SecretStr, AfterValidator(validate_password)]
 
-        if cls.includes_numbers and not any(char.isdigit() for char in v):
-            raise ValueError("Password should have at least one numeral")
 
-        if cls.includes_uppercase and not any(char.isupper() for char in v):
-            raise ValueError("Password should have at least one uppercase letter")
+def validate_confirm_password(v: SecretStr) -> SecretStr:
 
-        if cls.includes_lowercase and not any(char.islower() for char in v):
-            raise ValueError("Password should have at least one lowercase letter")
-
-        if cls.includes_special_chars and not any(
-            char in cls.special_chars for char in v
-        ):
-            raise ValueError(
-                f"Password should have at least one of the symbols {cls.special_chars}"
-            )
-
-        return cls(v)
+    pass
 
 
 def username_validation(strParam: str) -> str:
-
     # username is between 4 and 25 characters
     if len(strParam) < 5 or len(strParam) > 20:
         raise ValueError("length should be at least 5 but not more than 20")
@@ -107,6 +101,9 @@ def username_validation(strParam: str) -> str:
     return strParam
 
 
+ValidateUsername = Annotated[str, AfterValidator(username_validation)]
+
+
 def validate_mobile(value: str) -> str:
     rule = re.compile(
         r"^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$"
@@ -117,12 +114,18 @@ def validate_mobile(value: str) -> str:
     return value
 
 
+ValidateTelephone = Annotated[str, AfterValidator(validate_mobile)]
+
+
 def check_uuid(value: str) -> str:
     try:
         val = uuid.UUID(value, version=4)
         return str(val)
-    except ValueError:
+    except TypeError:
         raise ValueError(f"{value} is an invalid uuid")
+
+
+ValidateUUID = Annotated[str, AfterValidator(check_uuid)]
 
 
 def is_valid_email(email: str) -> tuple[bool, str]:

@@ -23,8 +23,8 @@ class AsyncDatabaseSession:
     def __init__(self, config):
         self.cf = config
         self.logger = config.logger
-        self._engine: AsyncEngine | None = None
-        self.async_session: AsyncSession | None = None
+        self._engine: AsyncEngine = None
+        self.async_session: AsyncSession = None
         self.select = select
         self.init_db()
 

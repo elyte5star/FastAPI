@@ -1,6 +1,5 @@
 from modules.repository.request_models.base import BaseResponse
-from pydantic import BaseModel, Field
-from modules.utils.misc import time_then
+from pydantic import BaseModel, Field, SecretStr
 from datetime import datetime
 from typing import Optional
 
@@ -15,6 +14,7 @@ class UserDetails(BaseModel):
     modified_at: Optional[datetime] = Field(default=None, alias="lastModifiedAt")
     modified_by: Optional[str] = Field(default="", alias="lastModifiedBy")
     created_by: str = Field(default="", alias="createdBy")
+    password: Optional[SecretStr] = None
     email: str = ""
     username: str = ""
     active: bool = False

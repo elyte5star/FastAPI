@@ -17,7 +17,7 @@ def time_now_utc() -> datetime:
 
 
 def time_then() -> datetime:
-    return datetime(1980, 1, 1)
+    return datetime(1971, 1, 1)
 
 
 def get_indent() -> str:

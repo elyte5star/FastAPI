@@ -2,6 +2,20 @@ from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 import time
+from pydantic import BaseModel, Field
+
+
+class JwtPrincipal(BaseModel):
+    userid: str
+    username: str
+    email: str
+    active: bool
+    enabled: bool
+    role: str
+    admin: bool
+    expires: float
+    discount: float
+    is_locked: bool = Field(alias="accountNonLocked")
 
 
 # https://testdriven.io/blog/fastapi-jwt-auth/
@@ -24,8 +38,19 @@ class JWTBearer(HTTPBearer):
                 raise HTTPException(
                     status_code=403, detail="Invalid token or expired token."
                 )
+            logged_in_user = JwtPrincipal(
+                userid=self.payload["userid"],
+                email=self.payload["email"],
+                username=self.payload["sub"],
+                active=self.payload["active"],
+                exp=self.payload["exp"],
+                admin=self.payload["admin"],
+                role=self.payload["role"],
+                discount=self.payload["discount"],
+                is_locked=self.payload["accountNonLocked"],
+            )
 
-            return credentials.credentials
+            return logged_in_user
         else:
             raise HTTPException(status_code=403, detail="Invalid authorization code.")
 

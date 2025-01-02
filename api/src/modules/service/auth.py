@@ -31,10 +31,11 @@ class AuthenticationHandler(AuthQueries):
                     "sub": user.username,
                     "email": user.email,
                     "admin": user.admin,
+                    "enabled": user.enabled,
                     "active": active,
                     "role": role,
                     "discount": user.discount,
-                    "telephone": user.telephone,
+                    "accountNonLocked": not user.is_locked,
                 }
 
                 access_token_expiry = time_delta(self.cf.token_expire_min)
