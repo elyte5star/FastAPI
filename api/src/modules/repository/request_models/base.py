@@ -13,7 +13,7 @@ class BaseReq(BaseModel):
         self.result: BaseResponse = BaseResponse()
         self.result.req_id = get_indent()
         self.result.start_time = time.perf_counter()
-        self.active_user: JwtPrincipal
+        self.cred: JwtPrincipal
 
     def req_success(self, message="") -> BaseResponse:
         self.result.success = True
@@ -23,7 +23,7 @@ class BaseReq(BaseModel):
         return self.result
 
     def is_cred_expired(self) -> bool:
-        if time.time() > self.active_user.expires:
+        if time.time() > self.cred.expires:
             return True
         return False
 

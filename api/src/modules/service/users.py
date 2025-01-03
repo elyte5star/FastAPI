@@ -1,11 +1,13 @@
 from modules.repository.request_models.user import (
     CreateUserRequest,
     GetUserRequest,
+    GetUsersRequest,
 )
 from modules.repository.response_models.user import (
     CreateUserResponse,
     GetUserResponse,
     UserDetails,
+    GetUsersResponse,
 )
 from modules.repository.queries.user import UserQueries, User
 import bcrypt
@@ -68,3 +70,6 @@ class UserHandler(UserQueries):
             req.result.user = user_info
             return req.req_success(f"User with userid {req.userid} found")
         return req.req_failure(f"User with userid {req.userid} not found")
+
+    async def _get_users(self, req: GetUsersRequest):
+        pass

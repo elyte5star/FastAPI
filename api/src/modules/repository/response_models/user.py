@@ -30,3 +30,7 @@ class UserDetails(BaseModel):
 
 class GetUserResponse(BaseResponse):
     user: UserDetails = UserDetails()
+
+
+class GetUsersResponse(BaseResponse):
+    users: list[UserDetails] = []

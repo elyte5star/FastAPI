@@ -1,4 +1,4 @@
-from pydantic import SecretStr, EmailStr, BaseModel
+from pydantic import SecretStr, EmailStr, BaseModel, Field
 from modules.repository.response_models.auth import TokenResponse
 from modules.repository.request_models.base import BaseReq
 
@@ -11,7 +11,7 @@ class LoginRequest(BaseReq):
 
 class GrantType(BaseModel):
     type: str
-    token_id: str
+    token_id: str = Field(alias="tokenId")
 
 
 class RefreshTokenRequest(BaseReq):

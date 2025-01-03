@@ -91,6 +91,7 @@ class AuthenticationHandler(AuthQueries):
         return jwt_encode
 
     async def validate_create_token(self, req: RefreshTokenRequest) -> TokenResponse:
+        print(req.active_user)
         if (
             req.data.type == self.cf.grant_type
             and req.active_user.token_id == req.data.token_id

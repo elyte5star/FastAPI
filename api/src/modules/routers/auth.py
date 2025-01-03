@@ -18,7 +18,7 @@ class AuthRouter(AuthenticationHandler):
         self.router: APIRouter = APIRouter(prefix="/auth", tags=["Authentication"])
         self.router.add_api_route(
             path="/form-login",
-            endpoint=self.form_login,
+            endpoint=self.login,
             response_model=TokenResponse,
             methods=["POST"],
         )
@@ -30,7 +30,7 @@ class AuthRouter(AuthenticationHandler):
             dependencies=[Depends(self.security)],
         )
 
-    async def form_login(
+    async def login(
         self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
     ) -> TokenResponse:
         return await self.authenticate_user(
@@ -39,5 +39,5 @@ class AuthRouter(AuthenticationHandler):
 
     async def refresh_access_token(self, data: GrantType):
         return await self.validate_create_token(
-            RefreshTokenRequest(active_user=self.security, data=data)
+            RefreshTokenRequest(data=data)
         )

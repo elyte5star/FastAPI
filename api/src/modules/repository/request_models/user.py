@@ -1,7 +1,11 @@
 from pydantic import (
     EmailStr,
 )
-from modules.repository.response_models.user import CreateUserResponse, GetUserResponse
+from modules.repository.response_models.user import (
+    CreateUserResponse,
+    GetUserResponse,
+    GetUsersResponse,
+)
 from modules.repository.validators.validator import (
     ValidateTelephone,
     ValidateUsername,
@@ -22,3 +26,7 @@ class CreateUserRequest(BaseReq):
 class GetUserRequest(BaseReq):
     userid: str
     result: GetUserResponse = GetUserResponse()
+
+
+class GetUsersRequest(BaseReq):
+    result: GetUsersResponse = GetUsersResponse()
