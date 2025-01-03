@@ -33,7 +33,7 @@ class UserHandler(UserQueries):
             if result is not None:
                 req.result.userid = result
                 return req.req_success("New user created!")
-            return req.req_failure("Couldn't create User")
+            return req.req_failure("Couldn't create account ,try later.")
         return req.req_failure("User exist")
 
     def hash_password(self, plain_password: str) -> bytes:

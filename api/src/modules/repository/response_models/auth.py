@@ -12,6 +12,7 @@ class TokenData(BaseModel):
     refresh_token: str = Field(default="", alias="refreshToken")
     token_type: str = Field(default="bearer", alias="tokenType")
     is_locked: bool = Field(default=True, alias="accountNonLocked")
+    token_id: str = Field(default="", alias="tokenId")
 
 
 class TokenResponse(BaseResponse):

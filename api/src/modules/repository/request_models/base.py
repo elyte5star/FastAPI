@@ -22,6 +22,11 @@ class BaseReq(BaseModel):
         self.req_process_time()
         return self.result
 
+    def is_cred_expired(self) -> bool:
+        if time.time() > self.active_user.expires:
+            return True
+        return False
+
     def req_failure(self, message="") -> BaseResponse:
         self.result.success = False
         if message:
