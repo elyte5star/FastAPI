@@ -1,20 +1,21 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from typing import Annotated
 from modules.repository.response_models.auth import TokenResponse
 from modules.service.auth import AuthenticationHandler
 from modules.repository.request_models.auth import (
     LoginRequest,
     RefreshTokenRequest,
-    GrantType,
+    Grant,
 )
 from modules.security.base import JWTBearer, JwtPrincipal
+from typing import Annotated
 
 
 class AuthRouter(AuthenticationHandler):
     def __init__(self, config):
         super().__init__(config)
-        self.security: JwtPrincipal = JWTBearer(config)
+        self.security = JWTBearer(config)
+        SecDep = Annotated[JwtPrincipal, Depends(self.security)]
         self.router: APIRouter = APIRouter(prefix="/auth", tags=["Authentication"])
         self.router.add_api_route(
             path="/form-login",
@@ -27,7 +28,7 @@ class AuthRouter(AuthenticationHandler):
             endpoint=self.refresh_access_token,
             response_model=TokenResponse,
             methods=["POST"],
-            dependencies=[Depends(self.security)],
+            dependencies=[SecDep],
         )
 
     async def login(
@@ -37,7 +38,7 @@ class AuthRouter(AuthenticationHandler):
             LoginRequest(username=form_data.username, password=form_data.password)
         )
 
-    async def refresh_access_token(self, data: GrantType):
+    async def refresh_access_token(self, data: Grant):
         return await self.validate_create_token(
-            RefreshTokenRequest(data=data)
+            RefreshTokenRequest(credentials=self.security, data=data)
         )

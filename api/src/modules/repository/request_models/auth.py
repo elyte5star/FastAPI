@@ -9,11 +9,11 @@ class LoginRequest(BaseReq):
     result: TokenResponse = TokenResponse()
 
 
-class GrantType(BaseModel):
-    type: str
+class Grant(BaseModel):
+    grant_type: str = Field(alias="grantType")
     token_id: str = Field(alias="tokenId")
 
 
 class RefreshTokenRequest(BaseReq):
-    data: GrantType
+    data: Grant
     result: TokenResponse = TokenResponse()

@@ -4,16 +4,17 @@ from modules.utils.misc import get_indent
 from modules.repository.response_models.base import BaseResponse
 from pydantic import BaseModel, ConfigDict
 from modules.security.base import JwtPrincipal
+from typing import Any
 
 
 class BaseReq(BaseModel):
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
+    credentials: Any = None
 
     def model_post_init(self, ctx):
         self.result: BaseResponse = BaseResponse()
         self.result.req_id = get_indent()
         self.result.start_time = time.perf_counter()
-        self.cred: JwtPrincipal
 
     def req_success(self, message="") -> BaseResponse:
         self.result.success = True
@@ -23,7 +24,7 @@ class BaseReq(BaseModel):
         return self.result
 
     def is_cred_expired(self) -> bool:
-        if time.time() > self.cred.expires:
+        if time.time() > self.credentials.expires:
             return True
         return False
 

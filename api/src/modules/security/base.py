@@ -54,7 +54,6 @@ class JWTBearer(HTTPBearer):
                 tokenId=self.payload["jti"],
                 accountNonLocked=self.payload["accountNonLocked"],
             )
-
             return cred
         else:
             raise HTTPException(status_code=403, detail="Invalid authorization code.")
