@@ -3,12 +3,12 @@ from modules.repository.request_models.auth import LoginRequest, RefreshTokenReq
 import bcrypt
 from modules.repository.queries.auth import AuthQueries
 from modules.repository.validators.validator import is_valid_email
-from sqlalchemy.sql.expression import false
 from typing import Optional
 from datetime import timedelta
 from jose import jwt
 from modules.utils.misc import time_delta, time_now, get_indent
 from modules.repository.schema.users import User
+from fastapi import Request
 
 
 class AuthenticationHandler(AuthQueries):
@@ -20,11 +20,11 @@ class AuthenticationHandler(AuthQueries):
         else:
             user = await self.get_user_by_username(req.username)
         if user is not None:
-            if user.enabled == false() or user.is_locked != false():
+            if not user.enabled or user.is_locked:
                 return req.failure(" Account Not Verified/Locked ")
             if self.verify_password(req.password.get_secret_value(), user.password):
                 active = True
-                role = "USER" if user.admin == false() else "ADMIN"
+                role = "USER" if not user.admin else "ADMIN"
                 data = {
                     "userid": user.id,
                     "sub": user.username,
@@ -91,17 +91,16 @@ class AuthenticationHandler(AuthQueries):
         return jwt_encode
 
     async def validate_create_token(self, req: RefreshTokenRequest) -> TokenResponse:
-        print(req.credentials.payload)
         if (
             req.data.grant_type == self.cf.grant_type
             and req.credentials.token_id == req.data.token_id
         ):
-            user = await self.get_user_by_id(req.active_user.userid)
+            user = await self.get_user_by_id(req.credentials.userid)
             if user is not None:
-                if user.enabled == false() or user.is_locked != false():
+                if not user.enabled or user.is_locked:
                     return req.failure(" Account Not Verified/Locked ")
                 active = True
-                role = "USER" if user.admin == false() else "ADMIN"
+                role = "USER" if not user.admin else "ADMIN"
                 data = {
                     "userid": user.id,
                     "sub": user.username,
@@ -117,7 +116,14 @@ class AuthenticationHandler(AuthQueries):
                 token_data = self.create_token_response(user, data)
                 req.result.data = token_data
                 return req.req_success(
-                    f"User with username/email : {req.username} is authorized"
+                    f"User with username/email : {user.username} is authorized"
                 )
 
         return req.req_failure("Could not validate credentials")
+
+    async def check_cookie(self, request: Request):
+        cookie = request.cookies
+        if not cookie:
+            return None
+        if cookie.get("refresh-Token"):
+            return cookie.get("refresh-Token")

@@ -7,15 +7,18 @@ from modules.repository.request_models.auth import (
     RefreshTokenRequest,
     Grant,
 )
-from modules.security.base import JWTBearer, JwtPrincipal
+from modules.security.base import JWTBearer, JWTPrincipal
 from typing import Annotated
 
 
+# print(security)
+
+
 class AuthRouter(AuthenticationHandler):
+
     def __init__(self, config):
         super().__init__(config)
-        self.security = JWTBearer(config)
-        SecDep = Annotated[JwtPrincipal, Depends(self.security)]
+        self.security: JWTBearer = JWTBearer(config)
         self.router: APIRouter = APIRouter(prefix="/auth", tags=["Authentication"])
         self.router.add_api_route(
             path="/form-login",
@@ -28,7 +31,7 @@ class AuthRouter(AuthenticationHandler):
             endpoint=self.refresh_access_token,
             response_model=TokenResponse,
             methods=["POST"],
-            dependencies=[SecDep],
+            dependencies=[Depends(self.security)],
         )
 
     async def login(
@@ -38,7 +41,7 @@ class AuthRouter(AuthenticationHandler):
             LoginRequest(username=form_data.username, password=form_data.password)
         )
 
-    async def refresh_access_token(self, data: Grant):
+    async def refresh_access_token(self, data: Grant) -> TokenResponse:
         return await self.validate_create_token(
-            RefreshTokenRequest(credentials=self.security, data=data)
+            RefreshTokenRequest(credentials=self.security.cred, data=data)
         )

@@ -46,6 +46,7 @@ class UserHandler(UserQueries):
         return hashed_password
 
     async def _get_user(self, req: GetUserRequest) -> GetUserResponse:
+        # include RBAC
         user = await self.get_user_by_id(req.userid)
         if user is not None:
             user_info = UserDetails(
@@ -71,5 +72,29 @@ class UserHandler(UserQueries):
             return req.req_success(f"User with userid {req.userid} found")
         return req.req_failure(f"User with userid {req.userid} not found")
 
-    async def _get_users(self, req: GetUsersRequest):
-        pass
+    async def _get_users(self, req: GetUsersRequest) -> GetUsersResponse:
+        # include RBAC
+        users = await self.get_users_query()
+        result: list[UserDetails] = [
+            UserDetails(
+                userid=user.id,
+                createdAt=user.created_at,
+                lastModifiedAt=user.modified_at,
+                lastModifiedBy=user.modified_by,
+                createdBy=user.created_by,
+                email=user.email,
+                password="********",
+                username=user.username,
+                active=user.active,
+                admin=user.admin,
+                enabled=user.enabled,
+                telephone=user.telephone,
+                failedAttempt=user.failed_attempts,
+                discount=user.discount,
+                lockTime=user.lock_time,
+                IsUsing2FA=user.is_using_mfa,
+            )
+            for user in users
+        ]
+        req.result.users = result
+        return req.req_success(f"Total number of users: {len(users)}")

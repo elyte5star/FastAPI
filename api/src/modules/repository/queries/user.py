@@ -1,10 +1,9 @@
 from modules.repository.schema.users import User
 from modules.database.base import AsyncDatabaseSession
-from sqlalchemy import or_
+from sqlalchemy import or_, delete, update
 
 
 class UserQueries(AsyncDatabaseSession):
-
     async def create_user_query(self, user: User) -> str | None:
         self.async_session.add(user)
         result = None
@@ -18,20 +17,40 @@ class UserQueries(AsyncDatabaseSession):
         finally:
             return result
 
-    async def update_user(self):
-        pass
+    async def update_user_query(self, userid: str, **kwargs):
+        stmt = (
+            update(User)
+            .where(User.id == userid)
+            .values(**kwargs)
+            .execution_options(synchronize_session="fetch")
+        )
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except Exception as e:
+            await self.async_session.rollback()
+            self.logger.error(e)
+            raise
 
-    async def get_users(self):
-        pass
+    async def get_users_query(self) -> list[User]:
+        stmt = self.select(User).order_by(User.created_at)
+        result = await self.async_session.execute(stmt)
+        users = result.scalars().all()
+        return users
 
-    async def delete_user(self):
-        pass
-
-    async def get_user_address_by_user(self):
-        pass
-
-    async def get_user_location_by_user_and_country(self):
-        pass
+    async def delete_user_query(self, userid: str) -> bool:
+        stmt = delete(User).where(User.id == userid)
+        result = False
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+            result = True
+        except Exception as e:
+            await self.async_session.rollback()
+            self.logger.error(e)
+            raise
+        finally:
+            return result
 
     async def check_if_user_exist(
         self, email: str, username: str, telephone: str

@@ -12,6 +12,8 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from modules.middleware.base import CustomHeaderMiddleware
 
+# from starlette.middleware.sessions import SessionMiddleware
+
 cfg = handler.cfg
 
 logger = handler.logger
@@ -47,10 +49,12 @@ app = FastAPI(
     },
 )
 
-
+# Include routes
 for route in handler.routes:
     app.include_router(route)
 
+# Include Session
+# app.add_middleware(SessionMiddleware, secret_key=cfg.secret_key, max_age=1500)
 
 ALLOWED_HOSTS = ["*"]
 if cfg.origins:

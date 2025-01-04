@@ -5,7 +5,7 @@ import time
 from pydantic import BaseModel, Field
 
 
-class JwtPrincipal(BaseModel):
+class JWTPrincipal(BaseModel):
     userid: str
     username: str
     email: str
@@ -41,7 +41,7 @@ class JWTBearer(HTTPBearer):
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token or expired token.",
                 )
-            cred = JwtPrincipal(
+            self.cred = JWTPrincipal(
                 userid=self.payload["userid"],
                 email=self.payload["email"],
                 username=self.payload["sub"],
@@ -54,9 +54,12 @@ class JWTBearer(HTTPBearer):
                 tokenId=self.payload["jti"],
                 accountNonLocked=self.payload["accountNonLocked"],
             )
-            return cred
+            return self.cred
         else:
-            raise HTTPException(status_code=403, detail="Invalid authorization code.")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid authorization code.",
+            )
 
     def verify_jwt(self, token: str):
         if token is None:
