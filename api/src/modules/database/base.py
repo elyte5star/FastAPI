@@ -17,10 +17,11 @@ from modules.repository.schema.users import (
     DeviceMetaData,  # noqa: F401
 )
 from multiprocessing import cpu_count
+from modules.settings.configuration import ApiConfig
 
 
 class AsyncDatabaseSession:
-    def __init__(self, config):
+    def __init__(self, config: ApiConfig):
         self.cf = config
         self.logger = config.logger
         self._engine: AsyncEngine = None

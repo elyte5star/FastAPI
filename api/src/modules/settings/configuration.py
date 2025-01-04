@@ -25,6 +25,7 @@ class ApiConfig:
         self.debug: bool = False
         self.auth_type: str = ""
         self.origins: list[str] = ["*"]
+        self.roles: list[str] = [""]
         self.pwd_len: int = 0
         self.round: int = 0
         self.encoding: str = ""
@@ -72,6 +73,7 @@ class ApiConfig:
         self.pwd_len = config.encryption.length
         self.rounds = config.encryption.rounds
         self.encoding = config.encryption.encoding
+        self.roles = config.encryption.roles
 
         self.name = config.api.doc["name"]
         self.terms = config.api.doc.terms_of_service
@@ -97,8 +99,7 @@ class ApiConfig:
         self.client_url = str(getenv("CLIENT_URL", self.client_url))
         self.refresh_token_expire_min = int(
             getenv(
-                "API_JWT_REFRESH_TOKEN_EXPIRE_MINUTES",
-                self.refresh_token_expire_min
+                "API_JWT_REFRESH_TOKEN_EXPIRE_MINUTES", self.refresh_token_expire_min
             )
         )
         return self

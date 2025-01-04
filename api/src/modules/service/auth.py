@@ -21,7 +21,7 @@ class AuthenticationHandler(AuthQueries):
             user = await self.get_user_by_username(req.username)
         if user is not None:
             if not user.enabled or user.is_locked:
-                return req.failure(" Account Not Verified/Locked ")
+                return req.req_failure(" Account Not Verified/Locked ")
             if self.verify_password(req.password.get_secret_value(), user.password):
                 active = True
                 role = "USER" if not user.admin else "ADMIN"

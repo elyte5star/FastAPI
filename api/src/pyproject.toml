@@ -71,6 +71,7 @@ refresh_token_expire_min = 43200 #30 days
 secret_key = "0c2214c33cc65769166ec5248bb0ec6a15e892ba649e36fefc5732d9c1ba100" 
 token_expire_min = 50 
 token_url = "/token" 
+roles=["ADMIN","USER"]
 
 
 [database]

@@ -17,7 +17,7 @@ from modules.security.base import JWTBearer
 class UserRouter(UserHandler):
     def __init__(self, config):
         super().__init__(config)
-        self.security: JWTBearer = JWTBearer(config)
+        self.security: JWTBearer = JWTBearer(config, config.roles)
         self.router: APIRouter = APIRouter(prefix="/users", tags=["Users"])
         self.router.add_api_route(
             path="/signup",
@@ -34,13 +34,12 @@ class UserRouter(UserHandler):
                 Depends(self.security),
             ],
         )
-
         self.router.add_api_route(
             path="",
             endpoint=self.get_users,
-            response_model=GetUserResponse,
+            response_model=GetUsersResponse,
             methods=["GET"],
-            dependencies=[Depends(self.security)],
+            dependencies=[Depends(JWTBearer(config, ["ADMIN"]))],
         )
 
     async def create_user(

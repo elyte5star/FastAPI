@@ -7,18 +7,15 @@ from modules.repository.request_models.auth import (
     RefreshTokenRequest,
     Grant,
 )
-from modules.security.base import JWTBearer, JWTPrincipal
+from modules.security.base import JWTBearer
 from typing import Annotated
-
-
-# print(security)
 
 
 class AuthRouter(AuthenticationHandler):
 
     def __init__(self, config):
         super().__init__(config)
-        self.security: JWTBearer = JWTBearer(config)
+        self.security: JWTBearer = JWTBearer(config, config.roles)
         self.router: APIRouter = APIRouter(prefix="/auth", tags=["Authentication"])
         self.router.add_api_route(
             path="/form-login",

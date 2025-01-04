@@ -21,9 +21,10 @@ class JWTPrincipal(BaseModel):
 
 # https://testdriven.io/blog/fastapi-jwt-auth/
 class JWTBearer(HTTPBearer):
-    def __init__(self, config, auto_error: bool = True):
+    def __init__(self, config, allowed_roles: list[str], auto_error: bool = True):
         super(JWTBearer, self).__init__(auto_error=auto_error)
         self.cf = config
+        self.allowed_roles = allowed_roles
 
     async def __call__(self, request: Request):
         credentials: HTTPAuthorizationCredentials = await super(
@@ -40,6 +41,11 @@ class JWTBearer(HTTPBearer):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token or expired token.",
+                )
+            if self.payload["role"] not in self.allowed_roles:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You don't have enough permissions",
                 )
             self.cred = JWTPrincipal(
                 userid=self.payload["userid"],
