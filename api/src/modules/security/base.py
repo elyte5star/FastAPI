@@ -1,8 +1,12 @@
-from fastapi import Request, HTTPException, status
+from fastapi import Request, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 import time
 from pydantic import BaseModel, Field
+from modules.settings.configuration import ApiConfig
+from typing import Annotated
+
+cfg = ApiConfig().from_toml_file().from_env_file()
 
 
 class JWTPrincipal(BaseModel):
@@ -21,10 +25,13 @@ class JWTPrincipal(BaseModel):
 
 # https://testdriven.io/blog/fastapi-jwt-auth/
 class JWTBearer(HTTPBearer):
-    def __init__(self, config, allowed_roles: list[str], auto_error: bool = True):
+    def __init__(
+        self,
+        config: ApiConfig,
+        auto_error: bool = True,
+    ):
         super(JWTBearer, self).__init__(auto_error=auto_error)
         self.cf = config
-        self.allowed_roles = allowed_roles
 
     async def __call__(self, request: Request):
         credentials: HTTPAuthorizationCredentials = await super(
@@ -42,12 +49,8 @@ class JWTBearer(HTTPBearer):
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token or expired token.",
                 )
-            if self.payload["role"] not in self.allowed_roles:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You don't have enough permissions",
-                )
-            self.cred = JWTPrincipal(
+
+            current_user = JWTPrincipal(
                 userid=self.payload["userid"],
                 email=self.payload["email"],
                 username=self.payload["sub"],
@@ -60,7 +63,7 @@ class JWTBearer(HTTPBearer):
                 tokenId=self.payload["jti"],
                 accountNonLocked=self.payload["accountNonLocked"],
             )
-            return self.cred
+            return current_user
         else:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -77,3 +80,19 @@ class JWTBearer(HTTPBearer):
             return self.payload if self.payload["exp"] >= time.time() else None
         except JWTError:
             return None
+
+
+security = JWTBearer(cfg)
+
+
+class RoleChecker:
+    def __init__(self, allowed_roles):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, user: Annotated[JWTPrincipal, Depends(security)]):
+        if user.role in self.allowed_roles:
+            return True
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have enough permissions",
+        )

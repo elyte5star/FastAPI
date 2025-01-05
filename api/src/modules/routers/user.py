@@ -11,13 +11,12 @@ from modules.repository.request_models.user import (
     GetUserRequest,
     GetUsersRequest,
 )
-from modules.security.base import JWTBearer
+from modules.security.base import security
 
 
 class UserRouter(UserHandler):
     def __init__(self, config):
         super().__init__(config)
-        self.security: JWTBearer = JWTBearer(config, config.roles)
         self.router: APIRouter = APIRouter(prefix="/users", tags=["Users"])
         self.router.add_api_route(
             path="/signup",
@@ -30,16 +29,14 @@ class UserRouter(UserHandler):
             endpoint=self.get_user,
             response_model=GetUserResponse,
             methods=["GET"],
-            dependencies=[
-                Depends(self.security),
-            ],
+            dependencies=[Depends(security)],
         )
         self.router.add_api_route(
             path="",
             endpoint=self.get_users,
             response_model=GetUsersResponse,
             methods=["GET"],
-            dependencies=[Depends(JWTBearer(config, ["ADMIN"]))],
+            dependencies=[Depends(security)],
         )
 
     async def create_user(
@@ -48,9 +45,8 @@ class UserRouter(UserHandler):
         return await self._create_user(req)
 
     async def get_users(self) -> GetUsersResponse:
-        return await self._get_users(GetUsersRequest(credentials=self.security.cred))
+        return await self._get_users(GetUsersRequest())
 
     async def get_user(self, userid: str) -> GetUserResponse:
-        return await self._get_user(
-            GetUserRequest(credentials=self.security.cred, userid=userid)
-        )
+        print(self.security)
+        return await self._get_user(GetUserRequest(userid=userid))

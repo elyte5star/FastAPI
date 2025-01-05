@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from modules.database.base import AsyncDatabaseSession
 
 cfg = ApiConfig().from_toml_file().from_env_file()
+
 cfg.logger = logger
 
 db = AsyncDatabaseSession(cfg)

@@ -2,7 +2,7 @@ from modules.repository.response_models.auth import TokenResponse, TokenData
 from modules.repository.request_models.auth import LoginRequest, RefreshTokenRequest
 import bcrypt
 from modules.repository.queries.auth import AuthQueries
-from modules.repository.validators.validator import is_valid_email
+from modules.repository.validators.base import is_valid_email
 from typing import Optional
 from datetime import timedelta
 from jose import jwt
@@ -98,7 +98,7 @@ class AuthenticationHandler(AuthQueries):
             user = await self.get_user_by_id(req.credentials.userid)
             if user is not None:
                 if not user.enabled or user.is_locked:
-                    return req.failure(" Account Not Verified/Locked ")
+                    return req.req_failure(" Account Not Verified/Locked ")
                 active = True
                 role = "USER" if not user.admin else "ADMIN"
                 data = {

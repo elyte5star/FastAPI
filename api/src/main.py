@@ -70,6 +70,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # HEADER middleware
 app.add_middleware(CustomHeaderMiddleware)
 
@@ -82,9 +83,12 @@ async def custom_http_exception_handler(
     request: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
     logger.warning(f"{repr(exc.detail)}!!")
+    body = await request.body()
     return JSONResponse(
         status_code=exc.status_code,
-        content=jsonable_encoder({"message": str(exc.detail), "success": False}),
+        content=jsonable_encoder(
+            {"message": str(exc.detail), "body": body.decode(), "success": False}
+        ),
     )
 
 
@@ -95,7 +99,9 @@ async def validation_exception_handler(
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=jsonable_encoder({"message": str(exc.errors()), "body": exc.body}),
+        content=jsonable_encoder(
+            {"message": str(exc.errors()), "body": exc.body, "success": False}
+        ),
     )
 
 

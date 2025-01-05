@@ -1,11 +1,9 @@
-from typing import Any
-from typing import Dict
 from pydantic import SecretStr, AfterValidator
-
 import re
 import uuid
 from email_validator import validate_email, EmailNotValidError
 from typing_extensions import Annotated
+from fastapi.exceptions import RequestValidationError
 
 # Password policy
 SPECIAL_CHARS: set[str] = {
@@ -50,21 +48,27 @@ def validate_password(v: SecretStr) -> SecretStr:
     if not isinstance(v.get_secret_value(), str):
         raise TypeError("string required")
     if len(v.get_secret_value()) < min_length or len(v.get_secret_value()) > max_length:
-        raise ValueError(f"length should be at least {min_length} but not more than 20")
+        raise RequestValidationError(
+            f"length should be at least {min_length} but not more than 20"
+        )
 
     if includes_numbers and not any(char.isdigit() for char in v.get_secret_value()):
-        raise ValueError("Password should have at least one numeral")
+        raise RequestValidationError("Password should have at least one numeral")
 
     if includes_uppercase and not any(char.isupper() for char in v.get_secret_value()):
-        raise ValueError("Password should have at least one uppercase letter")
+        raise RequestValidationError(
+            "Password should have at least one uppercase letter"
+        )
 
     if includes_lowercase and not any(char.islower() for char in v.get_secret_value()):
-        raise ValueError("Password should have at least one lowercase letter")
+        raise RequestValidationError(
+            "Password should have at least one lowercase letter"
+        )
 
     if includes_special_chars and not any(
         char in special_chars for char in v.get_secret_value()
     ):
-        raise ValueError(
+        raise RequestValidationError(
             f"Password should have at least one of the symbols {special_chars}"
         )
 
@@ -74,30 +78,27 @@ def validate_password(v: SecretStr) -> SecretStr:
 ValidatePassword = Annotated[SecretStr, AfterValidator(validate_password)]
 
 
-def validate_confirm_password(v: SecretStr) -> SecretStr:
-
-    pass
-
-
 def username_validation(strParam: str) -> str:
     # username is between 4 and 25 characters
     if len(strParam) < 5 or len(strParam) > 20:
-        raise ValueError("length should be at least 5 but not more than 20")
+        raise RequestValidationError("length should be at least 5 but not more than 20")
 
     # start with a letter
     if not str(strParam[0]).isalpha():
-        raise ValueError("must start with letter")
+        raise RequestValidationError("must start with letter")
 
     # can't end with an underscore
     if str(strParam[-1]) == "_":
-        raise ValueError("can't end with underscore")
+        raise RequestValidationError("can't end with underscore")
 
     # contains only letters, numbers and underscore
     valid_grammar = set("abcdefghijklmnopqrstuvwxyz0123456789_")
 
     for ch in strParam:
         if ch.lower() not in valid_grammar:
-            raise ValueError("can contains only letters,numbers and underscore")
+            raise RequestValidationError(
+                "can contains only letters,numbers and underscore"
+            )
     return strParam
 
 
@@ -108,9 +109,11 @@ def validate_mobile(value: str) -> str:
     rule = re.compile(
         r"^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$"
     )
+    if len(value) > 20:
+        raise RequestValidationError("length should not be more than 20")
 
     if not bool(rule.match(value)):
-        ValueError(f"{value} is an invalid mobile number")
+        RequestValidationError(f"{value} is an invalid mobile number")
     return value
 
 
@@ -121,8 +124,8 @@ def check_uuid(value: str) -> str:
     try:
         val = uuid.UUID(value, version=4)
         return str(val)
-    except TypeError:
-        raise ValueError(f"{value} is an invalid uuid")
+    except Exception:
+        raise RequestValidationError(f"{value} is an invalid userid")
 
 
 ValidateUUID = Annotated[str, AfterValidator(check_uuid)]

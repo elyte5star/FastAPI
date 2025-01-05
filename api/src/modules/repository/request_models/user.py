@@ -1,15 +1,16 @@
-from pydantic import (
-    EmailStr,
-)
+from pydantic import EmailStr, model_validator
+from fastapi.exceptions import RequestValidationError
+from typing_extensions import Self
 from modules.repository.response_models.user import (
     CreateUserResponse,
     GetUserResponse,
     GetUsersResponse,
 )
-from modules.repository.validators.validator import (
+from modules.repository.validators.base import (
     ValidateTelephone,
     ValidateUsername,
     ValidatePassword,
+    ValidateUUID,
 )
 from modules.repository.request_models.base import BaseReq
 
@@ -22,9 +23,15 @@ class CreateUserRequest(BaseReq):
     telephone: ValidateTelephone
     result: CreateUserResponse = CreateUserResponse()
 
+    @model_validator(mode="after")
+    def verify_square(self) -> Self:
+        if self.password != self.confirm_password:
+            raise RequestValidationError("password and confirm password do not match")
+        return self
+
 
 class GetUserRequest(BaseReq):
-    userid: str
+    userid: ValidateUUID
     result: GetUserResponse = GetUserResponse()
 
 
