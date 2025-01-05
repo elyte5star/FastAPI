@@ -42,12 +42,14 @@ class JWTBearer(HTTPBearer):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Invalid authentication scheme.",
+                    headers={"WWW-Authenticate": "Bearer"},
                 )
 
             if self.verify_jwt(credentials.credentials) is None:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token or expired token.",
+                    headers={"WWW-Authenticate": "Bearer"},
                 )
 
             current_user = JWTPrincipal(
