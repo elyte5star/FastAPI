@@ -7,7 +7,7 @@ from modules.repository.request_models.auth import (
     RefreshTokenRequest,
     Grant,
 )
-from modules.security.base import security
+from modules.security.base import security, JWTPrincipal
 from typing import Annotated
 
 
@@ -27,7 +27,7 @@ class AuthRouter(AuthenticationHandler):
             endpoint=self.refresh_access_token,
             response_model=TokenResponse,
             methods=["POST"],
-            dependencies=[Depends(security)],
+            # dependencies=[Depends(security)],
         )
 
     async def login(
@@ -37,7 +37,9 @@ class AuthRouter(AuthenticationHandler):
             LoginRequest(username=form_data.username, password=form_data.password)
         )
 
-    async def refresh_access_token(self, data: Grant) -> TokenResponse:
+    async def refresh_access_token(
+        self, data: Grant, current_user: Annotated[JWTPrincipal, Depends(security)]
+    ) -> TokenResponse:
         return await self.validate_create_token(
-            RefreshTokenRequest(credentials=self.security.cred, data=data)
+            RefreshTokenRequest(credentials=current_user, data=data)
         )

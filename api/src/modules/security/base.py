@@ -86,13 +86,13 @@ security = JWTBearer(cfg)
 
 
 class RoleChecker:
-    def __init__(self, allowed_roles):
+    def __init__(self, allowed_roles: list[str]):
         self.allowed_roles = allowed_roles
 
-    def __call__(self, user: Annotated[JWTPrincipal, Depends(security)]):
-        if user.role in self.allowed_roles:
+    def __call__(self, current_user: Annotated[JWTPrincipal, Depends(security)]):
+        if current_user.role in self.allowed_roles:
             return True
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have enough permissions",
+            detail="InsufficientPermissions. Requires the 'admin' role.",
         )

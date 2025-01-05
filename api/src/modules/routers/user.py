@@ -1,5 +1,5 @@
 from modules.service.users import UserHandler
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from typing import Annotated
 from modules.repository.response_models.user import (
     GetUserResponse,
@@ -11,7 +11,7 @@ from modules.repository.request_models.user import (
     GetUserRequest,
     GetUsersRequest,
 )
-from modules.security.base import security
+from modules.security.base import security, JWTPrincipal, RoleChecker
 
 
 class UserRouter(UserHandler):
@@ -20,6 +20,7 @@ class UserRouter(UserHandler):
         self.router: APIRouter = APIRouter(prefix="/users", tags=["Users"])
         self.router.add_api_route(
             path="/signup",
+            status_code=status.HTTP_201_CREATED,
             endpoint=self.create_user,
             response_model=CreateUserResponse,
             methods=["POST"],
@@ -29,14 +30,14 @@ class UserRouter(UserHandler):
             endpoint=self.get_user,
             response_model=GetUserResponse,
             methods=["GET"],
-            dependencies=[Depends(security)],
+            dependencies=[Depends(RoleChecker(config.roles))],
         )
         self.router.add_api_route(
             path="",
             endpoint=self.get_users,
             response_model=GetUsersResponse,
             methods=["GET"],
-            dependencies=[Depends(security)],
+            dependencies=[Depends(RoleChecker(["ADMIN"]))],
         )
 
     async def create_user(
@@ -44,9 +45,14 @@ class UserRouter(UserHandler):
     ) -> CreateUserResponse:
         return await self._create_user(req)
 
-    async def get_users(self) -> GetUsersResponse:
-        return await self._get_users(GetUsersRequest())
+    async def get_users(
+        self, current_user: Annotated[JWTPrincipal, Depends(security)]
+    ) -> GetUsersResponse:
+        return await self._get_users(GetUsersRequest(credentials=current_user))
 
-    async def get_user(self, userid: str) -> GetUserResponse:
-        print(self.security)
-        return await self._get_user(GetUserRequest(userid=userid))
+    async def get_user(
+        self, userid: str, current_user: Annotated[JWTPrincipal, Depends(security)]
+    ) -> GetUserResponse:
+        return await self._get_user(
+            GetUserRequest(credentials=current_user, userid=userid)
+        )
