@@ -1,3 +1,4 @@
+import uvicorn
 import handler
 import logging
 from fastapi.middleware.cors import CORSMiddleware
@@ -44,6 +45,8 @@ app = FastAPI(
     terms_of_service=cfg.terms,
     contact=cfg.contacts,
     license_info=cfg.license,
+    proxy_headers=True,
+    forwarded_allow_ips="[::1]",
     swagger_ui_parameters={
         "syntaxHighlight.theme": "tomorrow-night",
         "tryItOutEnabled": True,
