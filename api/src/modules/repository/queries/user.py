@@ -1,6 +1,7 @@
 from modules.repository.schema.users import User
 from modules.database.base import AsyncDatabaseSession
 from sqlalchemy import or_, delete, update
+from asyncpg.exceptions import PostgresError
 
 
 class UserQueries(AsyncDatabaseSession):
@@ -10,9 +11,9 @@ class UserQueries(AsyncDatabaseSession):
         try:
             await self.async_session.commit()
             result = user.id
-        except Exception as error:
+        except PostgresError as e:
             await self.async_session.rollback()
-            self.logger.error(error)
+            self.logger.error("Failed to create user:", e)
             raise
         finally:
             return result
@@ -27,9 +28,9 @@ class UserQueries(AsyncDatabaseSession):
         try:
             await self.async_session.execute(stmt)
             await self.async_session.commit()
-        except Exception as e:
+        except PostgresError as e:
             await self.async_session.rollback()
-            self.logger.error(e)
+            self.logger.error("Failed to update user:", e)
             raise
 
     async def get_users_query(self) -> list[User]:
@@ -45,9 +46,9 @@ class UserQueries(AsyncDatabaseSession):
             await self.async_session.execute(stmt)
             await self.async_session.commit()
             result = True
-        except Exception as e:
+        except PostgresError as e:
             await self.async_session.rollback()
-            self.logger.error(e)
+            self.logger.error("Failed to delete user:", e)
             raise
         finally:
             return result

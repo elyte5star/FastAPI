@@ -267,6 +267,8 @@ e-commerce/*
 
 
 # API:
+logs/*
+!logs/*.file
 
 # DB data
 persistence/*

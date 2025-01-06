@@ -925,6 +925,22 @@ uvicorn = {version = ">=0.15.0", extras = ["standard"]}
 standard = ["uvicorn[standard] (>=0.15.0)"]
 
 [[package]]
+name = "fastapi-events"
+version = "0.12.2"
+description = "Event dispatching library for FastAPI"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "fastapi_events-0.12.2-py3-none-any.whl", hash = "sha256:9499927efac5ee74d647c7bd7fb1ee46a6288705a0aae7128b21a3662da20981"},
+    {file = "fastapi_events-0.12.2.tar.gz", hash = "sha256:b5ac5cfa4f12b74195b4280acc12298d50cecc32708116755baeb2f943032d26"},
+]
+
+[package.extras]
+aws = ["boto3 (>=1.14)"]
+google = ["google-cloud-pubsub (>=2.13.6)"]
+otel = ["opentelemetry-api (>=1.12.0,<2.0)"]
+
+[[package]]
 name = "fastapi-microsoft-identity"
 version = "0.1.6"
 description = "Azure AD authentication for Fast API"
@@ -3498,4 +3514,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "c15659c9dd57aa7151605226fabb7f63da6f7135544bce50be3504fe14617f03"
+content-hash = "b80b52e17aed6b17646f462f87ee9a2e1869a7c16e6829e3a5380b0c2662c3bb"

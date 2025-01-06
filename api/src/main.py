@@ -11,6 +11,8 @@ from fastapi import Request, status
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from modules.middleware.base import CustomHeaderMiddleware
+from fastapi_events.handlers.local import local_handler
+from fastapi_events.middleware import EventHandlerASGIMiddleware
 
 # from starlette.middleware.sessions import SessionMiddleware
 
@@ -52,6 +54,10 @@ app = FastAPI(
 # Include routes
 for route in handler.routes:
     app.include_router(route)
+
+# Add events middleware
+app.add_middleware(EventHandlerASGIMiddleware, handlers=[local_handler])
+
 
 # Include Session
 # app.add_middleware(SessionMiddleware, secret_key=cfg.secret_key, max_age=1500)

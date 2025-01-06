@@ -90,11 +90,12 @@ class ApiConfig:
         return self
 
     def from_env_file(self) -> Self:
-        print("Injecting enviroment variables")
         self.db_url = str(getenv("DB_URL"))
         self.token_expire_min = int(
             getenv("API_JWT_TOKEN_EXPIRE_MINUTES", self.token_expire_min)
         )
+        if self.log_file_path == "":
+            self.log_file_path = str(getenv("LOG_PATH"))
         self.origins = json.loads(getenv("API_CORS_ORIGINS", '["*"]'))
         self.client_url = str(getenv("CLIENT_URL", self.client_url))
         self.refresh_token_expire_min = int(

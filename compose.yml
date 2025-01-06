@@ -7,11 +7,6 @@ services:
     image: postgres:16-alpine
     container_name: PostgresCont
     restart: on-failure
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
-      interval: 1s
-      timeout: 5s
-      retries: 10
     environment:
       - POSTGRES_PASSWORD=54321
       - POSTGRES_USER=userExample
@@ -20,7 +15,7 @@ services:
       - "5432:5432"
     volumes:
       # folder to hold the actual db data
-      - ./persistence:/var/lib/postgresql/data 
+      - ./persistence/data:/var/lib/postgresql/data 
     networks:
       - elyte_net
 
@@ -40,13 +35,14 @@ services:
     #depends_on:
       #- db
       #- rabbitQ
-    #links:
-      #- db
+    links:
+      - db
       #- rabbitQ
     env_file:
       - .env
     volumes:
       - ./api/src:/code/app
+      - ./logs/api.log:/code/app/api.log
 
   rabbitQ:
     hostname: rabbitQ
