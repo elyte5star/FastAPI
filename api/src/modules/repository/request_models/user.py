@@ -1,6 +1,7 @@
 from pydantic import EmailStr, model_validator
 from fastapi.exceptions import RequestValidationError
 from typing_extensions import Self
+from modules.repository.request_models.base import BaseResponse
 from modules.repository.response_models.user import (
     CreateUserResponse,
     GetUserResponse,
@@ -13,6 +14,8 @@ from modules.repository.validators.base import (
     ValidateUUID,
 )
 from modules.repository.request_models.base import BaseReq
+from typing import Any, Optional
+from fastapi import UploadFile, File
 
 
 class CreateUserRequest(BaseReq):
@@ -37,3 +40,11 @@ class GetUserRequest(BaseReq):
 
 class GetUsersRequest(BaseReq):
     result: GetUsersResponse = GetUsersResponse()
+
+
+class EmailRequestSchema(BaseReq):
+    recipients: list[EmailStr]
+    body: dict[str, Any]
+    file: UploadFile = File(...)
+    template_name: Optional[str] = None
+    result: BaseResponse = BaseResponse()

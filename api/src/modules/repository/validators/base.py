@@ -4,7 +4,7 @@ import uuid
 from email_validator import validate_email, EmailNotValidError
 from typing_extensions import Annotated
 from fastapi.exceptions import RequestValidationError
-
+from fastapi_mail import DefaultChecker
 # Password policy
 SPECIAL_CHARS: set[str] = {
     "$",
@@ -145,3 +145,11 @@ def is_valid_email(email: str) -> tuple[bool, str]:
         return (True, email)
     except EmailNotValidError:
         return (False, email)
+
+
+async def default_checker():
+    checker = (
+        DefaultChecker()
+    )  # you can pass source argument for your own email domains
+    await checker.fetch_temp_email_domains()  # require to fetch temporary email domains
+    return checker

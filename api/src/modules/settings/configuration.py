@@ -6,6 +6,7 @@ from pprint import pprint
 from dotenv import load_dotenv
 import logging
 from typing import Any, Dict, Self
+from fastapi_mail import ConnectionConfig
 
 load_dotenv()
 
@@ -54,6 +55,18 @@ class ApiConfig:
         self.msal_client_id: str = ""
         self.msal_issuer: str = ""
 
+        # EMAIL CONFIG
+        self.mail_username: str = ""
+        self.mail_password: str = ""
+        self.mail_port: int = 0
+        self.mail_server: str = ""
+        self.mail_from_name: str = ""
+        self.mail_starttls: bool = False
+        self.mail_ssl_tls: bool = False
+        self.use_credentials: bool = False
+        self.validate_certs: bool = False
+        self.email_config: ConnectionConfig = None
+
         # CLIENT
         self.client_url: str = ""
 
@@ -74,6 +87,26 @@ class ApiConfig:
         self.rounds = config.encryption.rounds
         self.encoding = config.encryption.encoding
         self.roles = config.encryption.roles
+
+        self.mail_username = config.api.doc["mail_username"]
+        self.mail_port = config.api.doc["mail_port"]
+        self.mail_server = config.api.doc["mail_server"]
+        self.mail_from_name = config.api.doc["mail_from_name"]
+        self.mail_starttls = config.api.doc["mail_starttls"]
+        self.mail_ssl_tls = config.api.doc["mail_ssl_tls"]
+        self.use_credentials = config.api.doc["use_credentials"]
+        self.validate_certs = config.api.doc["validate_certs"]
+
+        self.email_config = ConnectionConfig(
+            MAIL_USERNAME=self.mail_username,
+            MAIL_PASSWORD=self.mail_password,
+            MAIL_FROM=self.email,
+            MAIL_PORT=self.mail_port,
+            MAIL_SERVER=self.mail_server,
+            MAIL_STARTTLS=self.mail_starttls,
+            MAIL_SSL_TLS=self.mail_ssl_tls,
+            TEMPLATE_FOLDER=Path(__file__).parent.parent / "templates",
+        )
 
         self.name = config.api.doc["name"]
         self.terms = config.api.doc.terms_of_service
@@ -103,6 +136,7 @@ class ApiConfig:
                 "API_JWT_REFRESH_TOKEN_EXPIRE_MINUTES", self.refresh_token_expire_min
             )
         )
+        self.mail_password = str(getenv("MAIL_PASSWORD"))
         return self
 
     def pretty_print(self):
