@@ -8,7 +8,7 @@ from datetime import timedelta
 from jose import jwt
 from modules.utils.misc import time_delta, time_now, get_indent
 from modules.repository.schema.users import User
-from fastapi import Request
+from fastapi import Request, Response
 
 
 class AuthenticationHandler(AuthQueries):
@@ -127,3 +127,7 @@ class AuthenticationHandler(AuthQueries):
             return None
         if cookie.get("refresh-Token"):
             return cookie.get("refresh-Token")
+
+    async def create_cookie(self, token: str, response: Response):
+        response.set_cookie(key="refresh-Token", value=f"Bearer {token}", httponly=True)
+        return {"message": "Come to the dark side, we have cookies"}

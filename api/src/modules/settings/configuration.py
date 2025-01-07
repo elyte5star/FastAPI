@@ -45,6 +45,7 @@ class ApiConfig:
         # JWT PARAMS
         self.algorithm: str = ""
         self.secret_key: str = ""
+        self.rounds: int = 0
         self.token_expire_min: int = 0
         self.refresh_token_expire_min: int = 0
         self.token_url: str = ""
@@ -56,6 +57,7 @@ class ApiConfig:
         self.msal_issuer: str = ""
 
         # EMAIL CONFIG
+        self.email: str = ""
         self.mail_username: str = ""
         self.mail_password: str = ""
         self.mail_port: int = 0
@@ -88,15 +90,15 @@ class ApiConfig:
         self.encoding = config.encryption.encoding
         self.roles = config.encryption.roles
 
-        self.mail_username = config.api.doc["mail_username"]
-        self.mail_port = config.api.doc["mail_port"]
-        self.mail_server = config.api.doc["mail_server"]
-        self.mail_from_name = config.api.doc["mail_from_name"]
-        self.mail_starttls = config.api.doc["mail_starttls"]
-        self.mail_ssl_tls = config.api.doc["mail_ssl_tls"]
-        self.use_credentials = config.api.doc["use_credentials"]
-        self.validate_certs = config.api.doc["validate_certs"]
-
+        self.mail_username = config.api.doc.contact["mail_username"]
+        self.mail_port = config.api.doc.contact["mail_port"]
+        self.mail_server = config.api.doc.contact["mail_server"]
+        self.mail_from_name = config.api.doc.contact["mail_from_name"]
+        self.mail_starttls = config.api.doc.contact["mail_starttls"]
+        self.mail_ssl_tls = config.api.doc.contact["mail_ssl_tls"]
+        self.use_credentials = config.api.doc.contact["use_credentials"]
+        self.validate_certs = config.api.doc.contact["validate_certs"]
+        self.email = config.api.doc.contact["email"]
         self.email_config = ConnectionConfig(
             MAIL_USERNAME=self.mail_username,
             MAIL_PASSWORD=self.mail_password,

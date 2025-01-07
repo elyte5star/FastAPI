@@ -33,7 +33,7 @@ class JWTBearer(HTTPBearer):
         super(JWTBearer, self).__init__(auto_error=auto_error)
         self.cf = config
 
-    async def __call__(self, request: Request):
+    async def __call__(self, request: Request) -> JWTPrincipal:
         credentials: HTTPAuthorizationCredentials = await super(
             JWTBearer, self
         ).__call__(request)
@@ -42,14 +42,12 @@ class JWTBearer(HTTPBearer):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Invalid authentication scheme.",
-                    headers={"WWW-Authenticate": "Bearer"},
                 )
 
             if self.verify_jwt(credentials.credentials) is None:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token or expired token.",
-                    headers={"WWW-Authenticate": "Bearer"},
                 )
 
             current_user = JWTPrincipal(
@@ -81,6 +79,7 @@ class JWTBearer(HTTPBearer):
             )
             return self.payload if self.payload["exp"] >= time.time() else None
         except JWTError:
+            self.cf.logger.error("Couldn't verify token")
             return None
 
 

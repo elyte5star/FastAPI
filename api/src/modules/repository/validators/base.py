@@ -4,7 +4,8 @@ import uuid
 from email_validator import validate_email, EmailNotValidError
 from typing_extensions import Annotated
 from fastapi.exceptions import RequestValidationError
-from fastapi_mail import DefaultChecker
+from fastapi_mail.email_utils import DefaultChecker
+
 # Password policy
 SPECIAL_CHARS: set[str] = {
     "$",
