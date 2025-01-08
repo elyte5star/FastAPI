@@ -13,7 +13,7 @@ def time_now() -> datetime:
 
 
 def time_now_utc() -> datetime:
-    return datetime.now()
+    return datetime.utcnow
 
 
 def time_then() -> datetime:
