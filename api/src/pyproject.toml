@@ -29,6 +29,8 @@ auth_type = ["MANUAL", "MSOFT","GOOGLE"]
 host_url = "http://localhost:8000/"
 log_type = "DEBUG"
 log_file_path="../api.log"
+login_attempts=3
+lock_duration = 15
 
 [api.doc]
 description = """

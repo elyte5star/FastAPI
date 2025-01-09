@@ -27,7 +27,6 @@ class AuthRouter(AuthenticationHandler):
             endpoint=self.refresh_access_token,
             response_model=TokenResponse,
             methods=["POST"],
-            # dependencies=[Depends(security)],
         )
 
     async def login(

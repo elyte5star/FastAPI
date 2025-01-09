@@ -2,8 +2,10 @@ from datetime import datetime, timedelta
 from pytz import timezone
 import uuid
 from fastapi.encoders import jsonable_encoder
-import string, secrets
+import string
+import secrets
 import bcrypt
+from functools import lru_cache, wraps
 
 
 def time_now() -> datetime:
@@ -37,6 +39,25 @@ def hash_password(plain_password: str, salt: int, encoding: str) -> bytes:
         plain_password.encode(encoding), bcrypt.gensalt(salt)
     ).decode(encoding)
     return hashed_password
+
+
+def timed_lru_cache(minutes: int, maxsize: int = 128):
+    def wrapper_cache(func):
+        func = lru_cache(maxsize=maxsize)(func)
+        func.lifetime = time_delta(minutes)
+        func.expiration = time_now_utc() + func.lifetime
+
+        @wraps(func)
+        def wrapped_func(*args, **kwargs):
+            if time_now_utc() >= func.expiration:
+                func.cache_clear()
+                func.expiration = time_now_utc() + func.lifetime
+
+            return func(*args, **kwargs)
+
+        return wrapped_func
+
+    return wrapper_cache
 
 
 def create_password(size: int, salt: int, encoding: str) -> tuple[str, bytes]:

@@ -33,6 +33,8 @@ class ApiConfig:
         self.sql_url: str = ""
         self.logger: logging.Logger = None
         self.queries: Dict[Any, Any] = None
+        self.max_login_attempt: int = 0
+        self.lock_duration: int = 0
 
         # PROJECT DETAILS
         self.name: str = ""
@@ -84,6 +86,8 @@ class ApiConfig:
         self.host_url = config.api.host_url
         self.debug = config.api.debug
         self.auth_type = config.api.auth_type
+        self.max_login_attempt = config.api.login_attempts
+        self.lock_duration = config.api.lock_duration
 
         self.pwd_len = config.encryption.length
         self.rounds = config.encryption.rounds

@@ -9,11 +9,12 @@ from modules.repository.response_models.user import (
     UserDetails,
     GetUsersResponse,
 )
-from modules.repository.queries.user import UserQueries, User
+from modules.repository.schema.users import User
 import bcrypt
+from modules.security.login_attempt import LoginAttempthandler
 
 
-class UserHandler(UserQueries):
+class UserHandler(LoginAttempthandler):
     async def _create_user(self, req: CreateUserRequest) -> CreateUserResponse:
         user_exist = await self.check_if_user_exist(
             req.email, req.username, req.telephone
