@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from modules.repository.response_models.auth import TokenResponse
 from modules.service.auth import AuthenticationHandler
@@ -30,10 +30,13 @@ class AuthRouter(AuthenticationHandler):
         )
 
     async def login(
-        self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+        self,
+        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+        request: Request,
     ) -> TokenResponse:
         return await self.authenticate_user(
-            LoginRequest(username=form_data.username, password=form_data.password)
+            LoginRequest(username=form_data.username, password=form_data.password),
+            request,
         )
 
     async def refresh_access_token(

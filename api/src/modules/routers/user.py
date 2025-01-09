@@ -1,4 +1,4 @@
-from modules.service.users import UserHandler
+from modules.service.user import UserHandler
 from fastapi import APIRouter, Depends, status
 from typing import Annotated
 from modules.repository.response_models.user import (

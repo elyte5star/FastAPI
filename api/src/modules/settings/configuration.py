@@ -35,6 +35,7 @@ class ApiConfig:
         self.queries: Dict[Any, Any] = None
         self.max_login_attempt: int = 0
         self.lock_duration: int = 0
+        self.is_geo_ip_enabled: bool = False
 
         # PROJECT DETAILS
         self.name: str = ""
@@ -88,6 +89,7 @@ class ApiConfig:
         self.auth_type = config.api.auth_type
         self.max_login_attempt = config.api.login_attempts
         self.lock_duration = config.api.lock_duration
+        self.is_geo_ip_enabled = config.api.enabled_geoip
 
         self.pwd_len = config.encryption.length
         self.rounds = config.encryption.rounds

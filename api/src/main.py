@@ -1,4 +1,3 @@
-import uvicorn
 import handler
 import logging
 from fastapi.middleware.cors import CORSMiddleware

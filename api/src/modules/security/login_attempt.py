@@ -2,14 +2,15 @@ from modules.repository.schema.users import User
 from fastapi import Request
 from modules.settings.configuration import ApiConfig
 from collections import OrderedDict
-from modules.repository.queries.user import UserQueries
+from modules.repository.queries.auth import AuthQueries
 from modules.utils.misc import time_now_utc, time_delta
 
 
-class LoginAttempthandler(UserQueries):
+class LoginAttempthandler(AuthQueries):
     def __init__(self, config: ApiConfig):
         super().__init__(config)
         self.attempts_cache: OrderedDict = OrderedDict()
+        self.active_user_store: list = []
         self.attempts: int = 0
 
     def is_ip_blocked(self, request: Request) -> bool:
@@ -74,3 +75,6 @@ class LoginAttempthandler(UserQueries):
             self.update_user_query(userid, user)
             return True
         return False
+
+    async def login_notification(self) -> None:
+        pass

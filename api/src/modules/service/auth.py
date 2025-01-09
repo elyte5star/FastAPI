@@ -1,7 +1,7 @@
 from modules.repository.response_models.auth import TokenResponse, TokenData
 from modules.repository.request_models.auth import LoginRequest, RefreshTokenRequest
 import bcrypt
-from modules.repository.queries.auth import AuthQueries
+from modules.security.login_attempt import LoginAttempthandler
 from modules.repository.validators.base import is_valid_email
 from typing import Optional
 from datetime import timedelta
@@ -11,8 +11,10 @@ from modules.repository.schema.users import User
 from fastapi import Request, Response
 
 
-class AuthenticationHandler(AuthQueries):
-    async def authenticate_user(self, req: LoginRequest) -> TokenResponse:
+class AuthenticationHandler(LoginAttempthandler):
+    async def authenticate_user(
+        self, req: LoginRequest, request: Request
+    ) -> TokenResponse:
         # check if user cred exist
         is_email, email = is_valid_email(req.username)
         if is_email:

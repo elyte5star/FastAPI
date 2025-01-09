@@ -31,6 +31,7 @@ log_type = "DEBUG"
 log_file_path="../api.log"
 login_attempts=3
 lock_duration = 15
+enabled_geoip=false
 
 [api.doc]
 description = """
@@ -151,6 +152,7 @@ pytz = "^2024.2"
 fastapi-events = "^0.12.2"
 fastapi-mail = "^1.4.2"
 itsdangerous = "^2.2.0"
+geoip2 = "^4.8.1"
 
 
 [build-system]
