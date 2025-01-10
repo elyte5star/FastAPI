@@ -9,25 +9,51 @@ from modules.utils.misc import time_now_utc, time_delta
 class LoginAttempthandler(AuthQueries):
     def __init__(self, config: ApiConfig):
         super().__init__(config)
-        self.attempts_cache: OrderedDict = OrderedDict()
+        self.attempts_cache: OrderedDict = (
+            OrderedDict()
+        )  # { args : (timestamp, attempt_count)}
         self.active_user_store: list = []
-        self.attempts: int = 0
+        self.attempt_count: int = 0
+        self.attempts_cache_size: int = 128
 
     def is_ip_blocked(self, request: Request) -> bool:
         client_ip: str = self.get_client_ip_address(request)
-        if self.attempts_cache.get(client_ip) is not None:
-            return self.attempts_cache.get(client_ip) >= self.cf.max_login_attempt
+        if client_ip in self.attempts_cache:
+            attempt_count, timestamp = self.attempts_cache.get(client_ip)
+            if attempt_count >= self.cf.max_login_attempt:
+                # update locktime
+                self.attempts_cache[client_ip] = (
+                    self.cf.max_login_attempt,
+                    time_now_utc(),
+                )
+                return True
         return False
 
-    def increase_unknown_user_failed_attempt(self, key: str) -> None:
+    def increase_failed_attempt_ip(self, key: str) -> None:
         if key in self.attempts_cache:
-            self.attempts += 1
-            self.attempts_cache[key] = self.attempts
+            self.attempt_count += 1
+            self.attempts_cache.move_to_end(key)
+            self.attempts_cache[key] = (self.attempt_count, time_now_utc())
+            if len(self.attempts_cache) == self.attempts_cache_size:
+                self.attempts_cache.popitem(last=False)  # LIFO
         else:
-            self.attempts_cache[key] = 1
+            self.attempt_count = 1
+            self.attempts_cache[key] = (self.attempt_count, time_now_utc())
 
-    def reset_failed_attempts_cache(self) -> None:
-        self.attempts_cache.clear()
+    def reset_failed_attempts_cache(self, key: str) -> bool:
+        if key in self.attempts_cache:
+            (
+                attempt_count,
+                timestamp,
+            ) = self.attempts_cache.get(key)
+            current_time = time_now_utc()
+            expire = timestamp + time_delta(self.cf.lock_duration)
+            if expire < current_time:
+                del self.attempts_cache[key]
+                self.attempt_count = 0
+                self.cf.logger.warning(f"IP:{key} UNBLOCKED")
+                return True
+        return False
 
     def get_client_ip_address(self, request: Request) -> str:
         xf_header = request.headers.get("X-Forwarded-For")
