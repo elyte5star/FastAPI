@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import inspect, event, select, __version__
+from sqlalchemy import inspect, event, select, __version__, delete, update, or_
 from sqlalchemy.engine import Engine
 from modules.repository.response_models.base import GetInfoResponse
 from sqlalchemy.ext.asyncio import (
@@ -13,7 +13,7 @@ from modules.repository.schema.users import (
     User,  # noqa: F401
     UserLocations,  # noqa: F401
     UserAddress,  # noqa: F401
-    Otps,  # noqa: F401
+    Otp,  # noqa: F401
     DeviceMetaData,  # noqa: F401
 )
 from multiprocessing import cpu_count
@@ -27,6 +27,9 @@ class AsyncDatabaseSession:
         self._engine: AsyncEngine = None
         self.async_session: AsyncSession = None
         self.select = select
+        self.delete = delete
+        self.upate = update
+        self.or_ = or_
         self.init_db()
 
     def __getattr__(self, name):
@@ -66,7 +69,7 @@ class AsyncDatabaseSession:
 
     async def create_tables(self):
         async with self._engine.begin() as conn:
-            # await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
         await self.create_admin_account(self.async_session)
 

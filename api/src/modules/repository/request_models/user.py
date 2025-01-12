@@ -6,6 +6,7 @@ from modules.repository.response_models.user import (
     CreateUserResponse,
     GetUserResponse,
     GetUsersResponse,
+    GetOtpResponse,
 )
 from modules.repository.validators.base import (
     ValidateTelephone,
@@ -48,3 +49,14 @@ class EmailRequestSchema(BaseReq):
     file: UploadFile = File(...)
     template_name: Optional[str] = None
     result: BaseResponse = BaseResponse()
+
+
+class OtpRequest(BaseReq):
+    email: EmailStr
+    userid: str
+    result: GetOtpResponse = GetOtpResponse()
+
+
+class NewOtpRequest(BaseReq):
+    email: EmailStr
+    result: GetOtpResponse = GetOtpResponse()

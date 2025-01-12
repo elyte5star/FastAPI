@@ -19,7 +19,7 @@ class LoginAttempthandler(AuthQueries):
     def is_ip_blocked(self, request: Request) -> bool:
         client_ip: str = self.get_client_ip_address(request)
         if client_ip in self.attempts_cache:
-            attempt_count, timestamp = self.attempts_cache.get(client_ip)
+            attempt_count, _ = self.attempts_cache.get(client_ip)
             if attempt_count >= self.cf.max_login_attempt:
                 # update locktime
                 self.attempts_cache[client_ip] = (

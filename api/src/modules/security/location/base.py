@@ -1,4 +1,4 @@
-class GeoIPConfig:
+class LocationChecker:
     def __init__(self):
         pass
 

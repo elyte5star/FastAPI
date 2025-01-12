@@ -12,6 +12,7 @@ from modules.repository.response_models.user import (
 from modules.repository.schema.users import User
 import bcrypt
 from modules.repository.queries.user import UserQueries
+from modules.repository.response_models.user import CreatedUserData
 
 
 class UserHandler(UserQueries):
@@ -34,7 +35,7 @@ class UserHandler(UserQueries):
             )
             result = await self.create_user_query(new_user)
             if result is not None:
-                req.result.userid = result
+                req.result.data = result
                 return req.req_success("New user created!")
             return req.req_failure("Couldn't create account ,try later.")
         return req.req_failure("User exist")

@@ -7,7 +7,7 @@ from modules.repository.request_models.auth import (
     RefreshTokenRequest,
     Grant,
 )
-from modules.security.base import security, JWTPrincipal
+from modules.security.dependency import security, JWTPrincipal
 from typing import Annotated
 
 

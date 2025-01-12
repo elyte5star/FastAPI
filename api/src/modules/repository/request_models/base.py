@@ -2,7 +2,7 @@ import time
 from modules.utils.misc import get_indent
 from modules.repository.response_models.base import BaseResponse
 from pydantic import BaseModel, ConfigDict
-from modules.security.base import JWTPrincipal
+from modules.security.dependency import JWTPrincipal
 
 
 class BaseReq(BaseModel):

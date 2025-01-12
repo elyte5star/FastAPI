@@ -1,5 +1,14 @@
-from sqlalchemy import Boolean, Column, String, DateTime, Float, Integer, ForeignKey
-from modules.repository.schema.base import Audit
+from sqlalchemy import (
+    Boolean,
+    Column,
+    String,
+    DateTime,
+    Float,
+    Integer,
+    ForeignKey,
+)
+from modules.repository.schema.base import Audit, Base
+from sqlalchemy.orm import relationship
 
 
 class User(Audit):
@@ -16,40 +25,49 @@ class User(Audit):
     lock_time = Column(DateTime)
     is_using_mfa = Column(Boolean, default=False)
     is_locked = Column(Boolean, default=False)
+    otp = relationship("Otp", uselist=False, back_populates="owner")
 
 
-class UserLocations(Audit):
+class UserLocations(Base):
     id = Column(String(60), ForeignKey("audit.id"), primary_key=True, index=True)
     country = Column(String(30), index=True)
     enabled = Column(Boolean, default=False)
 
 
-class NewLocationToken(Audit):
+class NewLocationToken(Base):
     id = Column(String(60), ForeignKey("audit.id"), primary_key=True, index=True)
-    token = Column(String(60), index=True)
+    token = Column(String(20), index=True)
 
 
-class Otps(Audit):
-    id = Column(String(60), ForeignKey("audit.id"), primary_key=True, index=True)
+class Otp(Base):
+    id = Column(String(60), primary_key=True, index=True)
     email = Column(String(20), unique=True, index=True)
-    token = Column(String(60), index=True)
+    token = Column(String(200), index=True)
     expiry = Column("expiryDate", DateTime)
+    userid = Column(
+        String(60),
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    owner = relationship("User", back_populates="otp", single_parent=True)
 
 
-class PasswordResetToken(Audit):
+class PasswordResetToken(Base):
     id = Column(String(60), ForeignKey("audit.id"), primary_key=True, index=True)
     token = Column(String(60), index=True)
     expiry = Column("expiryDate", DateTime)
+    userid = Column(String(60), ForeignKey("user.id"), nullable=False)
 
 
-class DeviceMetaData(Audit):
+class DeviceMetaData(Base):
     id = Column(String(60), ForeignKey("audit.id"), primary_key=True, index=True)
     device_details = Column(String(60), index=True)
     location = Column(String(30), index=True)
     last_login_date = Column("lastLoginDate", DateTime)
+    userid = Column(String(60), ForeignKey("user.id"), nullable=False)
 
 
-class UserAddress(Audit):
+class UserAddress(Base):
     id = Column(String(60), ForeignKey("audit.id"), primary_key=True, index=True)
     full_name = Column(String(30), index=True)
     street_address = Column("streetAddress", String(30), index=True)

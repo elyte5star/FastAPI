@@ -36,6 +36,7 @@ class ApiConfig:
         self.max_login_attempt: int = 0
         self.lock_duration: int = 0
         self.is_geo_ip_enabled: bool = False
+        self.otp_expiry: int = 0
 
         # PROJECT DETAILS
         self.name: str = ""
@@ -90,6 +91,7 @@ class ApiConfig:
         self.max_login_attempt = config.api.login_attempts
         self.lock_duration = config.api.lock_duration
         self.is_geo_ip_enabled = config.api.enabled_geoip
+        self.otp_expiry = config.api.otp_expiry
 
         self.pwd_len = config.encryption.length
         self.rounds = config.encryption.rounds

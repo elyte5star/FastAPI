@@ -11,7 +11,7 @@ from modules.repository.request_models.user import (
     GetUserRequest,
     GetUsersRequest,
 )
-from modules.security.base import security, JWTPrincipal, RoleChecker
+from modules.security.dependency import security, JWTPrincipal, RoleChecker
 
 
 class UserRouter(UserHandler):

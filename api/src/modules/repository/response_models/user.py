@@ -4,8 +4,13 @@ from datetime import datetime
 from typing import Optional
 
 
-class CreateUserResponse(BaseResponse):
+class CreatedUserData(BaseModel):
     userid: str = ""
+    created_at: datetime = Field(default=None, alias="createdAt")
+
+
+class CreateUserResponse(BaseResponse):
+    data: CreatedUserData = Field(default=CreatedUserData(), alias="result")
 
 
 class UserDetails(BaseModel):
@@ -34,3 +39,7 @@ class GetUserResponse(BaseResponse):
 
 class GetUsersResponse(BaseResponse):
     users: list[UserDetails] = []
+
+
+class GetOtpResponse(BaseResponse):
+    token: str = ""
