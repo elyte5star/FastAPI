@@ -12,13 +12,21 @@ from modules.repository.response_models.user import (
     UserDetails,
     GetUsersResponse,
 )
-from modules.repository.schema.users import User, Otp
+from modules.repository.schema.users import (
+    User,
+    Otp,
+    PasswordResetToken,
+    UserLocation,
+    NewLocationToken,
+)
 import bcrypt
+import geoip2.database
 
 # from modules.repository.queries.user import UserQueries
 from fastapi_events.dispatcher import dispatch
 from modules.utils.misc import get_indent, time_delta, time_now_utc
 from modules.service.email import EmailHandler
+from starlette.staticfiles import StaticFiles
 
 TOKEN_INVALID = "invalidToken"
 TOKEN_EXPIRED = "expired"
@@ -57,6 +65,17 @@ class UserHandler(EmailHandler):
             bcrypt.gensalt(rounds=self.cf.rounds),
         ).decode(self.cf.encoding)
         return hashed_password
+
+    def check_if_valid_old_password(self, user: User, password: str) -> bool:
+        return bcrypt.checkpw(
+            password.encode(self.cf.encoding),
+            user.password.encode(self.cf.encoding),
+        )
+
+    def change_user_password(self, user: User, password: str) -> None:
+        hashed_password = self.hash_password(password)
+        user.password = hashed_password
+        self.update_user_query(user.id, user)
 
     async def _get_user(self, req: GetUserRequest) -> GetUserResponse:
         # include RBAC
@@ -112,17 +131,16 @@ class UserHandler(EmailHandler):
         req.result.users = result
         return req.req_success(f"Total number of users: {len(users)}")
 
-    async def is_new_login_location(self, username: str, ip: str):
-        pass
-
-    async def is_valid_login_location(self, username: str, ip: str):
-        pass
-
-    async def create_new_location_token(self, user: User, country: str):
-        pass
-
-    async def add_user_location(self, user: User, ip: str):
-        pass
+    async def _delete_user(self, user: User) -> None:
+        otp: Otp = await self.get_otp_by_user_query(user)
+        if otp is not None:
+            await self.delete_otp_by_id_query(otp.id)
+        password_rest_token: PasswordResetToken = (
+            self.find_passw_reset_token_by_user_query(user)
+        )
+        if password_rest_token is not None:
+            await self.delete_passw_reset_token_by_id_query(password_rest_token.id)
+        await self.delete_user_query(user.id)
 
     async def generate_otp(self, req: OtpRequest) -> GetOtpResponse:
         token: str = self.generate_confirmation_token(email=req.email)
@@ -172,3 +190,47 @@ class UserHandler(EmailHandler):
 
     def is_geo_ip_enabled(self) -> bool:
         return self.cf.is_geo_ip_enabled
+
+    async def is_new_login_location(
+        self, username: str, ip: str
+    ) -> NewLocationToken | None:
+        if not self.is_geo_ip_enabled():
+            return None
+        try:
+            country, city = await self.get_location_from_ip(ip)
+            self.cf.logger.info(country + "====****")
+            user: User = await self.get_otp_by_user_query(username)
+            user_loc: UserLocation = await self.find_user_location_by_country_and_user(
+                country, user
+            )
+            if user_loc is None or not user_loc.enabled:
+                return self.create_new_location_token(user, country)
+        except Exception as e:
+            self.cf.logger.error(e)
+            return None
+
+    async def is_valid_login_location(self, username: str, ip: str):
+        pass
+
+    async def create_new_location_token(
+        self, user: User, country: str
+    ) -> NewLocationToken | None:
+        user_loc: UserLocation = UserLocation(
+            id=get_indent(), country=country, owner=user
+        )
+        user_loc = await self.create_user_location_query(user_loc)
+        new_loc_token: NewLocationToken = NewLocationToken(
+            id=get_indent(), token=get_indent(), location=user_loc
+        )
+        new_loc_token = await self.create_new_location_token_query(new_loc_token)
+        return new_loc_token
+
+    async def add_user_location(self, user: User, ip: str):
+        pass
+
+    async def get_location_from_ip(self, ip: str) -> tuple[str, str]:
+        async with geoip2.database.Reader(
+            StaticFiles(directory="./modules/static/maxmind/GeoLite2-City.mmdb")
+        ) as reader:
+            response = reader.city(ip)
+            return (response.country.name, response.city.name)

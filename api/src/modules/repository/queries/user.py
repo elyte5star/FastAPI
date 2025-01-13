@@ -94,7 +94,7 @@ class UserQueries(AsyncDatabaseSession):
         finally:
             return result
 
-    async def delete_otp_query(self, otp_id: str) -> bool:
+    async def delete_otp_by_id_query(self, otp_id: str) -> bool:
         stmt = self.delete(Otp).where(Otp.id == otp_id)
         result = False
         try:
@@ -110,15 +110,15 @@ class UserQueries(AsyncDatabaseSession):
 
     async def get_otp_by_user_query(self, user: User) -> Otp | None:
         stmt = self.select(Otp).where(Otp.owner == user)
-        users = await self.async_session.execute(stmt)
-        await self.async_session.refresh(users, ["owner"])
-        return users.scalars().first()
+        result = await self.async_session.execute(stmt)
+        await self.async_session.refresh(result, ["owner"])
+        return result.scalars().first()
 
     async def get_otp_by_token_query(self, token: str) -> Otp | None:
         stmt = self.select(Otp).where(Otp.token == token)
-        users = await self.async_session.execute(stmt)
-        await self.async_session.refresh(users, ["owner"])
-        return users.scalars().first()
+        result = await self.async_session.execute(stmt)
+        await self.async_session.refresh(result, ["owner"])
+        return result.scalars().first()
 
     async def del_otp_by_expiry_date_less_than(self, now: datetime) -> None:
         stmt = self.delete(Otp).where(Otp.expiry <= now)
@@ -186,6 +186,21 @@ class UserQueries(AsyncDatabaseSession):
         new_locs = await self.async_session.execute(stmt)
         return new_locs.scalars().first()
 
+    async def create_new_location_token_query(
+        self, new_loc_token: NewLocationToken
+    ) -> NewLocationToken | None:
+        self.async_session.add(new_loc_token)
+        result = None
+        try:
+            await self.async_session.commit()
+            result = new_loc_token
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to create new location token: ", e)
+            raise
+        finally:
+            return result
+
     # USER LOCATION
     async def find_user_location_by_country_and_user(
         self, country: str, user: User
@@ -200,10 +215,25 @@ class UserQueries(AsyncDatabaseSession):
         result = await self.async_session.execute(stmt)
         return result.scalars().first()
 
+    async def create_user_location_query(
+        self, user_loc: UserLocation
+    ) -> UserLocation | None:
+        self.async_session.add(user_loc)
+        result = None
+        try:
+            await self.async_session.commit()
+            result = user_loc
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to create user location: ", e)
+            raise
+        finally:
+            return result
+
     # PASSWORD RESET
     async def find_passw_reset_token_by_token_query(
         self, token: str
-    ) -> PasswordResetToken:
+    ) -> PasswordResetToken | None:
         stmt = self.select(PasswordResetToken).where(PasswordResetToken.token == token)
         result = await self.async_session.execute(stmt)
         return result.scalars().first()
@@ -231,3 +261,17 @@ class UserQueries(AsyncDatabaseSession):
             await self.async_session.rollback()
             self.logger.error("Failed to delete password reset token:", e)
             raise
+
+    async def delete_passw_reset_token_by_id_query(self, id: str) -> bool:
+        stmt = self.delete(PasswordResetToken).where(PasswordResetToken.id == id)
+        result = False
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+            result = True
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to delete password-reset_token:", e)
+            raise
+        finally:
+            return result

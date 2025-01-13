@@ -155,6 +155,7 @@ fastapi-events = "^0.12.2"
 fastapi-mail = "^1.4.2"
 itsdangerous = "^2.2.0"
 geoip2 = "^4.8.1"
+aiofiles = "^24.1.0"
 
 
 [build-system]

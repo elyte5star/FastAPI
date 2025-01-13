@@ -42,8 +42,8 @@ class UserLocation(Base):
 
 class NewLocationToken(Base):
     id = Column(String(60), primary_key=True, index=True)
-    token = Column(String(20), index=True)
-    loc_id = Column(
+    token = Column(String(60), index=True)
+    user_loc_id = Column(
         String(60),
         ForeignKey("userlocation.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,

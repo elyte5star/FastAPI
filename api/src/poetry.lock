@@ -17,6 +17,17 @@ exceptiongroup = ">=1,<2"
 yarl = "*"
 
 [[package]]
+name = "aiofiles"
+version = "24.1.0"
+description = "File support for asyncio."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "aiofiles-24.1.0-py3-none-any.whl", hash = "sha256:b4ec55f4195e3eb5d7abd1bf7e061763e864dd4954231fb8539a0ef8bb8260e5"},
+    {file = "aiofiles-24.1.0.tar.gz", hash = "sha256:22a075c9e5a3810f0c2e48f3008c94d68c65d763b9b03857924c99e57355166c"},
+]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.4.4"
 description = "Happy Eyeballs for asyncio"
@@ -3903,4 +3914,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "2d78524988379809f8a84315fa491fc108fccf59176d529fae540227d63b6295"
+content-hash = "53d2f753054a9c75febbb3951c7081c3b076645fcdf90c26b9f09e720b087af7"
