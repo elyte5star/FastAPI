@@ -13,6 +13,7 @@ from modules.repository.validators.base import (
     ValidateUsername,
     ValidatePassword,
     ValidateUUID,
+    VerifyEmail,
 )
 from modules.repository.request_models.base import BaseReq
 from typing import Any, Optional
@@ -21,7 +22,7 @@ from fastapi import UploadFile, File
 
 class CreateUserRequest(BaseReq):
     username: ValidateUsername
-    email: EmailStr
+    email: VerifyEmail
     password: ValidatePassword
     confirm_password: ValidatePassword
     telephone: ValidateTelephone

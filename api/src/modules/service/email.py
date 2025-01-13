@@ -38,7 +38,7 @@ class EmailHandler(UserQueries):
             subject=req.body["subject"],
             recipients=req.recipients,
             body=req.body["message"],
-            subtype=MessageType.plain,
+            subtype=MessageType.html,
         )
         try:
             await self.fm.send_message(message, template_name=req.template_name)

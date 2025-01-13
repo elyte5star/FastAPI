@@ -9,6 +9,8 @@ from jose import jwt
 from modules.utils.misc import time_delta, time_now, get_indent
 from modules.repository.schema.users import User
 from fastapi import Request, Response
+from fastapi_events.dispatcher import dispatch
+from modules.security.events.base import UserEvents
 
 
 class AuthenticationHandler(LoginAttempthandler):

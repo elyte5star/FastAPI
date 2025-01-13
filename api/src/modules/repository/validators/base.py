@@ -148,6 +148,18 @@ def is_valid_email(email: str) -> tuple[bool, str]:
         return (False, email)
 
 
+def email_validator(email: str) -> str:
+    try:
+        emailinfo = validate_email(email, check_deliverability=True)
+        email = emailinfo.normalized
+        return email
+    except EmailNotValidError:
+        raise RequestValidationError(f"{email} is an invalid/disposable")
+
+
+VerifyEmail = Annotated[str, AfterValidator(email_validator)]
+
+
 async def default_checker():
     checker = (
         DefaultChecker()

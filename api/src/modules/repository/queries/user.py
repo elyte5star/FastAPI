@@ -1,4 +1,11 @@
-from modules.repository.schema.users import User, Otp
+from modules.repository.schema.users import (
+    User,
+    Otp,
+    DeviceMetaData,
+    NewLocationToken,
+    UserLocation,
+    PasswordResetToken,
+)
 from modules.database.base import AsyncDatabaseSession
 from asyncpg.exceptions import PostgresError
 from modules.repository.response_models.user import CreatedUserData
@@ -6,6 +13,8 @@ from datetime import datetime
 
 
 class UserQueries(AsyncDatabaseSession):
+
+    # USER
     async def create_user_query(self, user: User) -> CreatedUserData | None:
         self.async_session.add(user)
         result = None
@@ -71,6 +80,7 @@ class UserQueries(AsyncDatabaseSession):
         result = await self.async_session.execute(stmt)
         return result.scalars().first()
 
+    # OTP
     async def create_otp_query(self, otp: Otp) -> Otp | None:
         self.async_session.add(otp)
         result = None
@@ -98,24 +108,36 @@ class UserQueries(AsyncDatabaseSession):
         finally:
             return result
 
-    async def get_otp_by_email_query(self, email: str) -> Otp | None:
-        stmt = self.select(Otp).where(Otp.email == email)
+    async def get_otp_by_user_query(self, user: User) -> Otp | None:
+        stmt = self.select(Otp).where(Otp.owner == user)
         users = await self.async_session.execute(stmt)
+        await self.async_session.refresh(users, ["owner"])
         return users.scalars().first()
 
     async def get_otp_by_token_query(self, token: str) -> Otp | None:
         stmt = self.select(Otp).where(Otp.token == token)
         users = await self.async_session.execute(stmt)
+        await self.async_session.refresh(users, ["owner"])
         return users.scalars().first()
 
-    async def del_expired_otps_since(self, now: datetime) -> None:
+    async def del_otp_by_expiry_date_less_than(self, now: datetime) -> None:
         stmt = self.delete(Otp).where(Otp.expiry <= now)
         try:
             await self.async_session.execute(stmt)
             await self.async_session.commit()
         except PostgresError as e:
             await self.async_session.rollback()
-            self.logger.error("Failed to delete user:", e)
+            self.logger.error("Failed to delete otp:", e)
+            raise
+
+    async def del_all_expired_otps_since(self, now: datetime) -> None:
+        stmt = self.delete(Otp).where(Otp.expiry <= now)
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to delete otp:", e)
             raise
 
     async def find_all_otps_expiry_less(self, now: datetime) -> list[Otp]:
@@ -124,7 +146,7 @@ class UserQueries(AsyncDatabaseSession):
         otps = result.scalars().all()
         return otps
 
-    async def update_otp_query(self, id: str, **kwargs):
+    async def update_otp_query(self, id: str, **kwargs) -> None:
         stmt = (
             self.update(Otp)
             .where(Otp.id == id)
@@ -137,4 +159,75 @@ class UserQueries(AsyncDatabaseSession):
         except PostgresError as e:
             await self.async_session.rollback()
             self.logger.error("Failed to update otp:", e)
+            raise
+
+    # DEVICE METADATA
+    async def find_device_mmeta_data_by_userid_query(
+        self, userid: str
+    ) -> list[DeviceMetaData]:
+        stmt = self.select(DeviceMetaData).where(DeviceMetaData.userid == userid)
+        result = await self.async_session.execute(stmt)
+        return result.scalars().all()
+
+    # NEW LOCATION
+    async def find_new_location_by_token_query(
+        self, token: str
+    ) -> NewLocationToken | None:
+        stmt = self.select(NewLocationToken).where(NewLocationToken.token == token)
+        new_locs = await self.async_session.execute(stmt)
+        return new_locs.scalars().first()
+
+    async def find_new_location_by_user_location_query(
+        self, user_loc: UserLocation
+    ) -> NewLocationToken | None:
+        stmt = self.select(NewLocationToken).where(
+            NewLocationToken.location == user_loc
+        )
+        new_locs = await self.async_session.execute(stmt)
+        return new_locs.scalars().first()
+
+    # USER LOCATION
+    async def find_user_location_by_country_and_user(
+        self, country: str, user: User
+    ) -> UserLocation | None:
+        stmt = (
+            self.select(UserLocation)
+            .where(
+                self.and_(UserLocation.country == country, UserLocation.owner == user)
+            )
+            .limit(1)
+        )
+        result = await self.async_session.execute(stmt)
+        return result.scalars().first()
+
+    # PASSWORD RESET
+    async def find_passw_reset_token_by_token_query(
+        self, token: str
+    ) -> PasswordResetToken:
+        stmt = self.select(PasswordResetToken).where(PasswordResetToken.token == token)
+        result = await self.async_session.execute(stmt)
+        return result.scalars().first()
+
+    async def find_passw_reset_token_by_user_query(
+        self, user: User
+    ) -> PasswordResetToken:
+        stmt = self.select(PasswordResetToken).where(PasswordResetToken.owner == user)
+        result = await self.async_session.execute(stmt)
+        return result.scalars().first()
+
+    async def find_all_passw_reset_token_expiry_less(
+        self, now: datetime
+    ) -> list[PasswordResetToken]:
+        stmt = self.select(PasswordResetToken).where(PasswordResetToken.expiry <= now)
+        result = await self.async_session.execute(stmt)
+        return result.scalars().all()
+
+    async def del_all_expired_passw_reset_token_since(self, now: datetime) -> None:
+        stmt = self.delete(PasswordResetToken).where(PasswordResetToken.expiry <= now)
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to delete password reset token:", e)
             raise

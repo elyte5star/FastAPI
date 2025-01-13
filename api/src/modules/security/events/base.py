@@ -1,6 +1,8 @@
 from enum import Enum
 from fastapi_events.typing import Event
 from fastapi_events.handlers.base import BaseEventHandler
+from typing import Iterable
+from fastapi_events.registry.payload_schema import registry as payload_schema
 
 
 class UserEvents(Enum):
@@ -11,12 +13,14 @@ class UserEvents(Enum):
     STRANGE_LOCATION = "USER_LOCATION"
     BLOCKED = "USER_BLOCKED"
     BOOKING = "USER_BOOKING"
-    AUTHENTICATION = "USER_AUTH"
+    USER_AUTH_SUCCESS = "USER_AUTH_SUCCESS"
+    USER_AUTH_FAILURE = "USER_AUTH_FAILURE"
+    UNKNOWN_USER_AUTH_FAILURE = "BRUTE_FORCE"
+    UPDATED_USER_INFO = "UPDATED_USER"
 
 
 class APIEventHandler(BaseEventHandler):
-    async def handle(self, event: Event) -> None:
-        """
-        Handle events one by one
-        """
+    async def handle_many(self, events: Iterable[Event]) -> None:
+        for event in events:
+            print(event.count)
         pass

@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import inspect, event, select, __version__, delete, update, or_
+from sqlalchemy import inspect, event, select, __version__, delete, update, or_, and_
 from sqlalchemy.engine import Engine
 from modules.repository.response_models.base import GetInfoResponse
 from sqlalchemy.ext.asyncio import (
@@ -11,7 +11,7 @@ from modules.repository.schema.base import Base
 from modules.utils.misc import get_indent
 from modules.repository.schema.users import (
     User,  # noqa: F401
-    UserLocations,  # noqa: F401
+    UserLocation,  # noqa: F401
     UserAddress,  # noqa: F401
     Otp,  # noqa: F401
     DeviceMetaData,  # noqa: F401
@@ -30,6 +30,7 @@ class AsyncDatabaseSession:
         self.delete = delete
         self.upate = update
         self.or_ = or_
+        self.and_ = and_
         self.init_db()
 
     def __getattr__(self, name):
