@@ -31,7 +31,7 @@ log_type = "DEBUG"
 log_file_path="../api.log"
 login_attempts=3
 lock_duration = 15
-enabled_geoip=false
+enabled_geoip=true
 otp_expiry=30
 
 [api.doc]

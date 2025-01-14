@@ -23,8 +23,7 @@ from modules.repository.schema.users import (
 )
 import bcrypt
 import geoip2.database
-
-# from modules.repository.queries.user import UserQueries
+from fastapi import Request
 from fastapi_events.dispatcher import dispatch
 from modules.utils.misc import get_indent, time_delta, time_now_utc
 from starlette.staticfiles import StaticFiles
@@ -39,7 +38,10 @@ USER_ENABLED = "enabled"
 
 
 class UserHandler(UserQueries):
-    async def _create_user(self, req: CreateUserRequest) -> CreateUserResponse:
+    async def _create_user(
+        self, req: CreateUserRequest, request: Request
+    ) -> CreateUserResponse:
+        self.get_app_url(request)
         user_exist = await self.check_if_user_exist(
             req.email, req.username, req.telephone
         )
@@ -59,7 +61,10 @@ class UserHandler(UserQueries):
             result = await self.create_user_query(new_user)
             if result is not None:
                 req.result.data = result
-                dispatch(UserEvents.SIGNED_UP, result.model_dump(by_alias=True))
+                model_dict = result.model_dump(by_alias=True) | {
+                    "app_url": self.get_app_url(request)
+                }
+                dispatch(UserEvents.SIGNED_UP, model_dict)
                 return req.req_success("New user created!")
             return req.req_failure("Couldn't create account ,try later.")
         return req.req_failure("User exist")
@@ -164,7 +169,7 @@ class UserHandler(UserQueries):
         )
         new_otp = await self.create_otp_query(otp)
         req.result.token = new_otp.token
-        return req.req_success("Otp created for user with id: {req.userid}")
+        return req.req_success("Otp created for user with id ::{req.userid}")
 
     async def verify_otp(self, token: str) -> str:
         otp: Otp = await self.get_otp_by_token_query(token=token)
@@ -195,7 +200,7 @@ class UserHandler(UserQueries):
             otp.token = self.generate_confirmation_token(req.email)
             otp.expiry = time_now_utc() + time_delta(self.config.otp_expiry)
             await self.update_otp_query(otp.id, otp)
-            return req.req_success("New Otp created for user with email: {req.email}")
+            return req.req_success("New Otp created for user with email:: {req.email}")
         return req.req_failure("new Otp cant be created")
 
     def generate_confirmation_token(self, email: str):
@@ -237,18 +242,14 @@ class UserHandler(UserQueries):
     ) -> NewLocationToken | None:
         if not self.is_geo_ip_enabled():
             return None
-        try:
-            country, city = await self.get_location_from_ip(ip)
-            self.cf.logger.info(f"country :: {country} ====****")
-            user: User = await self.get_otp_by_user_query(username)
-            user_loc: UserLocation = await self.find_user_location_by_country_and_user(
-                country, user
-            )
-            if user_loc is None or not user_loc.enabled:
-                return self.create_new_location_token(user, country)
-        except Exception as e:
-            self.cf.logger.error(e)
-            return None
+        country, city = await self.get_location_from_ip(ip)
+        self.cf.logger.info(f"country :: {country} ====****")
+        user: User = await self.get_otp_by_user_query(username)
+        user_loc: UserLocation = await self.find_user_location_by_country_and_user(
+            country, user
+        )
+        if user_loc is None or not user_loc.enabled:
+            return self.create_new_location_token(user, country)
 
     async def is_valid_new_location_token(self, token: str) -> str | None:
         loc_token: NewLocationToken = await self.find_new_location_by_token_query(token)
@@ -265,9 +266,17 @@ class UserHandler(UserQueries):
             return None
         pass
 
-    async def get_location_from_ip(self, ip: str) -> tuple[str, str]:
-        async with geoip2.database.Reader(
-            StaticFiles(directory="./modules/static/maxmind/GeoLite2-City.mmdb")
-        ) as reader:
-            response = reader.city(ip)
-            return (response.country.name, response.city.name)
+    def get_app_url(self, request: Request) -> str:
+        origin_url = dict(request.scope["headers"]).get(b"referer", b"").decode()
+        return origin_url
+
+    async def get_location_from_ip(self, ip: str) -> tuple[str, str] | None:
+        try:
+            async with geoip2.database.Reader(
+                StaticFiles(directory="./modules/static/maxmind/GeoLite2-City.mmdb")
+            ) as reader:
+                response = reader.city(ip)
+                return (response.country.name, response.city.name)
+        except IOError as e:
+            self.cf.logger.error(e)
+            return None

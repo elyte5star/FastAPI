@@ -1,5 +1,5 @@
 from modules.service.user import UserHandler
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request
 from typing import Annotated
 from modules.repository.response_models.user import (
     GetUserResponse,
@@ -55,9 +55,9 @@ class UserRouter(UserHandler):
         )
 
     async def create_user(
-        self, req: Annotated[CreateUserRequest, Depends()]
+        self, req: Annotated[CreateUserRequest, Depends()], request: Request
     ) -> CreateUserResponse:
-        return await self._create_user(req)
+        return await self._create_user(req, request)
 
     async def get_users(
         self, current_user: Annotated[JWTPrincipal, Depends(security)]

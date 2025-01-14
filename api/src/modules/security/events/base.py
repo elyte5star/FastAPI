@@ -24,6 +24,7 @@ class UserEvents(Enum):
 class SignUpPayload(BaseModel):
     userid: str
     created_at: datetime = Field(alias="createdAt", serialization_alias="createdAt")
+    app_url: str
 
 
 class APIEventHandler(BaseEventHandler):
