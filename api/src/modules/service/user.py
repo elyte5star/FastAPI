@@ -41,7 +41,6 @@ class UserHandler(UserQueries):
     async def _create_user(
         self, req: CreateUserRequest, request: Request
     ) -> CreateUserResponse:
-        self.get_app_url(request)
         user_exist = await self.check_if_user_exist(
             req.email, req.username, req.telephone
         )
