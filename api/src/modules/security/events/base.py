@@ -1,8 +1,9 @@
 from enum import Enum
 from fastapi_events.typing import Event
 from fastapi_events.handlers.base import BaseEventHandler
-from typing import Iterable
 from fastapi_events.registry.payload_schema import registry as payload_schema
+from pydantic import BaseModel, Field
+from datetime import datetime
 
 
 class UserEvents(Enum):
@@ -19,8 +20,18 @@ class UserEvents(Enum):
     UPDATED_USER_INFO = "UPDATED_USER"
 
 
+@payload_schema.register(event_name=UserEvents.SIGNED_UP)
+class SignUpPayload(BaseModel):
+    userid: str
+    created_at: datetime = Field(alias="createdAt", serialization_alias="createdAt")
+
+
 class APIEventHandler(BaseEventHandler):
-    async def handle_many(self, events: Iterable[Event]) -> None:
-        for event in events:
-            print(event.count)
-        pass
+
+    async def handle(self, event: Event) -> None:
+        event_name, payload = event
+        print(event_name, payload)
+        """
+        Handle events one by one
+        """
+        # return None

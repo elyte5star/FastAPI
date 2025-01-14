@@ -40,6 +40,11 @@ class GetUserRequest(BaseReq):
     result: GetUserResponse = GetUserResponse()
 
 
+class DeleteUserRequest(BaseReq):
+    userid: ValidateUUID
+    result: BaseResponse = BaseResponse()
+
+
 class GetUsersRequest(BaseReq):
     result: GetUsersResponse = GetUsersResponse()
 

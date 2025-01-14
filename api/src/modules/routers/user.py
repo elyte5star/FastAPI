@@ -5,11 +5,13 @@ from modules.repository.response_models.user import (
     GetUserResponse,
     CreateUserResponse,
     GetUsersResponse,
+    BaseResponse,
 )
 from modules.repository.request_models.user import (
     CreateUserRequest,
     GetUserRequest,
     GetUsersRequest,
+    DeleteUserRequest,
 )
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
 
@@ -24,6 +26,7 @@ class UserRouter(UserHandler):
             endpoint=self.create_user,
             response_model=CreateUserResponse,
             methods=["POST"],
+            description="Create user account",
         )
         self.router.add_api_route(
             path="/{userid}",
@@ -31,6 +34,16 @@ class UserRouter(UserHandler):
             response_model=GetUserResponse,
             methods=["GET"],
             dependencies=[Depends(RoleChecker(config.roles))],
+            description="Get User",
+        )
+
+        self.router.add_api_route(
+            path="/{userid}",
+            endpoint=self.delete_user,
+            response_model=BaseResponse,
+            methods=["DELETE"],
+            dependencies=[Depends(RoleChecker(config.roles))],
+            description="Delete User",
         )
         self.router.add_api_route(
             path="",
@@ -38,6 +51,7 @@ class UserRouter(UserHandler):
             response_model=GetUsersResponse,
             methods=["GET"],
             dependencies=[Depends(RoleChecker(["ADMIN"]))],
+            description="Get Users, Admin right required",
         )
 
     async def create_user(
@@ -55,4 +69,11 @@ class UserRouter(UserHandler):
     ) -> GetUserResponse:
         return await self._get_user(
             GetUserRequest(credentials=current_user, userid=userid)
+        )
+
+    async def delete_user(
+        self, userid: str, current_user: Annotated[JWTPrincipal, Depends(security)]
+    ) -> BaseResponse:
+        return await self._delete_user(
+            DeleteUserRequest(credentials=current_user, userid=userid)
         )

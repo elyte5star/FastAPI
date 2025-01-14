@@ -111,7 +111,6 @@ class UserQueries(AsyncDatabaseSession):
     async def get_otp_by_user_query(self, user: User) -> Otp | None:
         stmt = self.select(Otp).where(Otp.owner == user)
         result = await self.async_session.execute(stmt)
-        await self.async_session.refresh(result, ["owner"])
         return result.scalars().first()
 
     async def get_otp_by_token_query(self, token: str) -> Otp | None:
@@ -186,6 +185,21 @@ class UserQueries(AsyncDatabaseSession):
         new_locs = await self.async_session.execute(stmt)
         return new_locs.scalars().first()
 
+    async def update_new_loc_query(self, id: str, **kwargs) -> None:
+        stmt = (
+            self.update(NewLocationToken)
+            .where(NewLocationToken.id == id)
+            .values(**kwargs)
+            .execution_options(synchronize_session="fetch")
+        )
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to update otp:", e)
+            raise
+
     async def create_new_location_token_query(
         self, new_loc_token: NewLocationToken
     ) -> NewLocationToken | None:
@@ -200,6 +214,16 @@ class UserQueries(AsyncDatabaseSession):
             raise
         finally:
             return result
+
+    async def del_new_location_query(self, id: str) -> None:
+        stmt = self.delete(NewLocationToken).where(NewLocationToken.id == id)
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to delete new location:", e)
+            raise
 
     # USER LOCATION
     async def find_user_location_by_country_and_user(
@@ -229,6 +253,21 @@ class UserQueries(AsyncDatabaseSession):
             raise
         finally:
             return result
+
+    async def update_user_loc_query(self, id: str, **kwargs) -> None:
+        stmt = (
+            self.update(UserLocation)
+            .where(UserLocation.id == id)
+            .values(**kwargs)
+            .execution_options(synchronize_session="fetch")
+        )
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to update otp:", e)
+            raise
 
     # PASSWORD RESET
     async def find_passw_reset_token_by_token_query(
