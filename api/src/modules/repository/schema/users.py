@@ -80,7 +80,7 @@ class PasswordResetToken(Base):
 
 class DeviceMetaData(Base):
     id = Column(String(60), primary_key=True, index=True)
-    device_details = Column(String(60), index=True)
+    device_details = Column(String(150), index=True)
     location = Column(String(30), index=True)
     last_login_date = Column("lastLoginDate", DateTime)
     userid = Column(String(60), ForeignKey("user.id"), nullable=False)

@@ -18,6 +18,7 @@ from modules.repository.schema.users import (
 )
 from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
+from asyncpg.exceptions import PostgresError
 
 
 class AsyncDatabaseSession:
@@ -93,10 +94,10 @@ class AsyncDatabaseSession:
 
     async def create_admin_account(self, async_session: AsyncSession) -> None:
         admin_username: str = self.cf.contacts["username"]
-        admin_email: str = self.cf.contacts["email"]
-        tel: str = self.cf.contacts["telephone"]
-        password: bytes = self.cf.contacts["password"]
         if await self.get_user_by_username(admin_username) is None:
+            admin_email: str = self.cf.contacts["email"]
+            tel: str = self.cf.contacts["telephone"]
+            password: bytes = self.cf.contacts["password"]
             admin_user: User = User(
                 id=get_indent(),
                 email=admin_email,
@@ -112,8 +113,8 @@ class AsyncDatabaseSession:
                 async_session.add(admin_user)
                 await async_session.commit()
                 self.logger.info(f"account with id {admin_user.id} created")
-                return
-            except Exception:
+                return None
+            except PostgresError:
                 await async_session.rollback()
                 raise
         self.logger.info(f"Admin account with name {admin_username} exist already")

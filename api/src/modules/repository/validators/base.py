@@ -98,7 +98,7 @@ def username_validation(strParam: str) -> str:
     for ch in strParam:
         if ch.lower() not in valid_grammar:
             raise RequestValidationError(
-                "can contains only letters,numbers and underscore"
+                "Username can contain only letters,numbers and underscore"
             )
     return strParam
 

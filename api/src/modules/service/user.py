@@ -13,6 +13,7 @@ from modules.repository.response_models.user import (
     UserDetails,
     GetUsersResponse,
     BaseResponse,
+    CreatedUserData,
 )
 from modules.repository.schema.users import (
     User,
@@ -26,7 +27,6 @@ import geoip2.database
 from fastapi import Request
 from fastapi_events.dispatcher import dispatch
 from modules.utils.misc import get_indent, time_delta, time_now_utc
-from starlette.staticfiles import StaticFiles
 from modules.security.events.base import UserEvents
 from modules.repository.queries.user import UserQueries
 from itsdangerous import URLSafeTimedSerializer, BadTimeSignature, SignatureExpired
@@ -59,11 +59,14 @@ class UserHandler(UserQueries):
                 created_by=req.username,
                 failed_attempts=0,
             )
-            result = await self.create_user_query(new_user)
-            if result is not None:
-                req.result.data = result
-                self.add_user_location(new_user, self.get_client_ip_address(request))
-                model_dict = result.model_dump(by_alias=True) | {
+            user: User = await self.create_user_query(new_user)
+            if user is not None:
+                response_data = CreatedUserData(
+                    userid=user.id, createdAt=user.created_at
+                )
+                req.result.data = response_data
+                await self.add_user_location(user, self.get_client_ip_address(request))
+                model_dict = response_data.model_dump(by_alias=True) | {
                     "app_url": self.get_app_url(request)
                 }
                 dispatch(UserEvents.SIGNED_UP, model_dict)
@@ -244,20 +247,19 @@ class UserHandler(UserQueries):
     ) -> NewLocationToken | None:
         if not self.is_geo_ip_enabled():
             return None
-        country, city = await self.get_location_from_ip(ip)
+        country = await self.get_country_from_ip(ip)
         self.cf.logger.info(f"country :: {country} ====****")
         user: User = await self.get_otp_by_user_query(username)
-        user_loc: UserLocation = await self.find_user_location_by_country_and_user(
-            country, user
-        )
+        user_loc = await self.find_user_location_by_country_and_user(country, user)
         if user_loc is None or not user_loc.enabled:
             return self.create_new_location_token(user, country)
+        return None
 
     async def is_valid_new_location_token(self, token: str) -> str | None:
-        loc_token: NewLocationToken = await self.find_new_location_by_token_query(token)
+        loc_token = await self.find_new_location_by_token_query(token)
         if loc_token is None:
             return None
-        user_loc: UserLocation = await self.find_new_location_by_token_query(loc_token)
+        user_loc = await self.find_new_location_by_token_query(loc_token)
         user_loc.enabled = True
         await self.update_user_loc_query(user_loc.id, user_loc)
         await self.del_new_location_query(loc_token.id)
@@ -267,30 +269,35 @@ class UserHandler(UserQueries):
         if not self.is_geo_ip_enabled():
             self.cf.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
-        country = ""
-        if self.check_if_ip_is_local(ip):
-            country, _ = await self.get_location_from_ip("203.0.113.0")
-        else:
-            country, _ = await self.get_location_from_ip(ip)
+        country = (
+            "NORWAY"
+            if self.check_if_ip_is_local(ip)
+            else await self.get_country_from_ip(ip)
+        )
         user_loc = UserLocation(
             id=get_indent(), country=country, owner=user, enabled=True
         )
         await self.create_user_location_query(user_loc)
 
     def get_app_url(self, request: Request) -> str:
-        origin_url = dict(request.scope["headers"]).get(b"referer", b"").decode()
-        return origin_url
+        client_url = self.get_client_url()
+        if client_url is None:
+            origin_url = dict(request.scope["headers"]).get(b"referer", b"").decode()
+            return origin_url
+        return client_url
 
-    async def get_location_from_ip(self, ip: str) -> tuple[str, str] | None:
+    async def get_country_from_ip(self, ip: str) -> str:
+        country = "UNKNOWN"
         try:
-            async with geoip2.database.Reader(
-                StaticFiles(directory="./modules/static/maxmind/GeoLite2-City.mmdb")
+            with geoip2.database.Reader(
+                "./modules/static/maxmind/GeoLite2-Country.mmdb"
             ) as reader:
-                response = reader.city(ip)
-                return (response.country.name, response.city.name)
-        except IOError as e:
+                response = reader.country(ip)
+                country = response.country.name
+                return country
+        except Exception as e:
             self.cf.logger.error(e)
-            return None
+            return country
 
     def check_if_ip_is_local(self, ip: str) -> bool:
         if ip in LOCAL_HOST_ADDRESSES:
@@ -301,4 +308,9 @@ class UserHandler(UserQueries):
         xf_header = request.headers.get("X-Forwarded-For")
         if xf_header is not None:
             return xf_header.split(",")[0]
+        # return "41.238.0.198"  # for testing Egypt
         return request.client.host
+
+    def get_client_url(self) -> str:
+        client_urls: list = self.cf.origins
+        return next(iter(client_urls)) if client_urls else None

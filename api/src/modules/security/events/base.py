@@ -5,6 +5,8 @@ from fastapi_events.registry.payload_schema import registry as payload_schema
 from pydantic import BaseModel, Field
 from datetime import datetime
 
+from modules.repository.schema.users import User
+
 
 class UserEvents(Enum):
     SIGNED_UP = "USER_SIGNED_UP"
@@ -17,6 +19,7 @@ class UserEvents(Enum):
     USER_AUTH_SUCCESS = "USER_AUTH_SUCCESS"
     USER_AUTH_FAILURE = "USER_AUTH_FAILURE"
     UNKNOWN_USER_AUTH_FAILURE = "BRUTE_FORCE"
+    UNKNOWN_DEVICE_LOGIN = "NEW_DEVICE_LOGIN"
     UPDATED_USER_INFO = "UPDATED_USER"
 
 
@@ -25,6 +28,13 @@ class SignUpPayload(BaseModel):
     userid: str
     created_at: datetime = Field(alias="createdAt", serialization_alias="createdAt")
     app_url: str
+
+
+@payload_schema.register(event_name=UserEvents.UNKNOWN_DEVICE_LOGIN)
+class NewDeviceLoginPayload(BaseModel):
+    user: User
+    device_data: str
+    ip: str
 
 
 class APIEventHandler(BaseEventHandler):
