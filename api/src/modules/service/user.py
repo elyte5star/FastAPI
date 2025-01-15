@@ -36,6 +36,8 @@ TOKEN_EXPIRED = "expired"
 TOKEN_VALID = "valid"
 USER_ENABLED = "enabled"
 
+LOCAL_HOST_ADDRESSES = ["0:0:0:0:0:0:0:1", "127.0.1.1", "127.0.0.1"]
+
 
 class UserHandler(UserQueries):
     async def _create_user(
@@ -60,6 +62,7 @@ class UserHandler(UserQueries):
             result = await self.create_user_query(new_user)
             if result is not None:
                 req.result.data = result
+                self.add_user_location(new_user, self.get_client_ip_address(request))
                 model_dict = result.model_dump(by_alias=True) | {
                     "app_url": self.get_app_url(request)
                 }
@@ -262,8 +265,17 @@ class UserHandler(UserQueries):
 
     async def add_user_location(self, user: User, ip: str):
         if not self.is_geo_ip_enabled():
+            self.cf.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
-        pass
+        country = ""
+        if self.check_if_ip_is_local(ip):
+            country, _ = await self.get_location_from_ip("203.0.113.0")
+        else:
+            country, _ = await self.get_location_from_ip(ip)
+        user_loc = UserLocation(
+            id=get_indent(), country=country, owner=user, enabled=True
+        )
+        await self.create_user_location_query(user_loc)
 
     def get_app_url(self, request: Request) -> str:
         origin_url = dict(request.scope["headers"]).get(b"referer", b"").decode()
@@ -279,3 +291,14 @@ class UserHandler(UserQueries):
         except IOError as e:
             self.cf.logger.error(e)
             return None
+
+    def check_if_ip_is_local(self, ip: str) -> bool:
+        if ip in LOCAL_HOST_ADDRESSES:
+            return True
+        return False
+
+    def get_client_ip_address(self, request: Request) -> str:
+        xf_header = request.headers.get("X-Forwarded-For")
+        if xf_header is not None:
+            return xf_header.split(",")[0]
+        return request.client.host
