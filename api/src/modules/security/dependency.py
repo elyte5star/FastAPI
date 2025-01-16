@@ -19,7 +19,7 @@ class JWTPrincipal(BaseModel):
     admin: bool
     expires: float
     discount: float
-    is_locked: bool = Field(alias="accountNonLocked")
+    is_locked: bool = Field(serialization_alias='"accountNonLocked"')
     token_id: str = Field(alias="tokenId")
 
 
@@ -49,7 +49,6 @@ class JWTBearer(HTTPBearer):
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token or expired token.",
                 )
-
             current_user = JWTPrincipal(
                 userid=self.payload["userid"],
                 email=self.payload["email"],
@@ -61,7 +60,7 @@ class JWTBearer(HTTPBearer):
                 role=self.payload["role"],
                 discount=self.payload["discount"],
                 tokenId=self.payload["jti"],
-                accountNonLocked=self.payload["accountNonLocked"],
+                is_locked=not self.payload["accountNonLocked"],
             )
             return current_user
         else:

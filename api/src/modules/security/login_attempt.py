@@ -6,7 +6,7 @@ from modules.repository.queries.auth import AuthQueries
 from modules.utils.misc import time_now_utc, time_delta
 
 
-class LoginAttempthandler(AuthQueries):
+class LoginAttemptChecker(AuthQueries):
     def __init__(self, config: ApiConfig):
         super().__init__(config)
         self.attempts_cache: OrderedDict = (
@@ -101,6 +101,3 @@ class LoginAttempthandler(AuthQueries):
             self.update_user_query(userid, user)
             return True
         return False
-
-    async def login_notification(self) -> None:
-        pass

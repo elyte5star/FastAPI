@@ -1,30 +1,36 @@
 from modules.repository.schema.users import DeviceMetaData
-from modules.repository.queries.user import UserQueries, User
+from modules.repository.queries.auth import AuthQueries
 from fastapi import Request
 import geoip2.database
 from modules.utils.misc import get_indent, time_now_utc
 from fastapi_events.dispatcher import dispatch
 from modules.security.events.base import UserEvents
+from modules.security.dependency import JWTPrincipal
 
 
-class DeviceMetaDataHandler(UserQueries):
+class DeviceMetaDataChecker(AuthQueries):
 
-    async def verify_device(self, user: User, request: Request):
+    async def verify_device(self, logged_in_user: JWTPrincipal, request: Request):
         ip = self.get_client_ip_address(request)
-        city = self.get_city_from_ip(ip)
+        city = await self.get_city_from_ip(ip)
         device_details = self.get_device_details(request)
-        existing_device = await self.find_existing_device(user.id, device_details, city)
+        existing_device = await self.find_existing_device(
+            logged_in_user.userid, device_details, city
+        )
         if existing_device is None:
-            dispatch(
-                UserEvents.UNKNOWN_DEVICE_LOGIN,
-                {"userid": user, "device_details": device_details, "ip": ip},
-            )
+            event_payload = {
+                "current_user": logged_in_user,
+                "device_details": device_details,
+                "ip": ip,
+                "location": city,
+            }
+            dispatch(UserEvents.UNKNOWN_DEVICE_LOGIN, event_payload)
             new_device_meta_data = DeviceMetaData(
                 id=get_indent(),
                 device_details=device_details,
                 location=city,
                 last_login_date=time_now_utc(),
-                userid=user.id,
+                userid=logged_in_user.userid,
             )
             await self.create_device_meta_data_query(new_device_meta_data)
         else:
@@ -41,7 +47,7 @@ class DeviceMetaDataHandler(UserQueries):
         # return "41.238.0.198" # for testing Giza, Egypt
         return request.client.host
 
-    async def get_city_from_ip(self, ip: str) -> str | None:
+    async def get_city_from_ip(self, ip: str) -> str:
         city = "UNKNOWN"
         try:
             with geoip2.database.Reader(
@@ -68,3 +74,14 @@ class DeviceMetaDataHandler(UserQueries):
             if device.device_details == device_details and device.location == location:
                 return device
         return None
+
+    async def login_notification(
+        self, logged_in_user: JWTPrincipal, request: Request
+    ) -> None:
+        if not self.is_geo_ip_enabled():
+            self.cf.logger.warning("GEO IP DISABALED BY ADMIN")
+            return None
+        await self.verify_device(logged_in_user, request)
+
+    def is_geo_ip_enabled(self) -> bool:
+        return self.cf.is_geo_ip_enabled

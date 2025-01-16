@@ -19,6 +19,7 @@ from modules.repository.schema.users import (
 from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
 from asyncpg.exceptions import PostgresError
+from fastapi import Request
 
 
 class AsyncDatabaseSession:
@@ -133,3 +134,14 @@ class AsyncDatabaseSession:
         stmt = self.select(User).where(User.email == email)
         users = await self.async_session.execute(stmt)
         return users.scalars().first()
+
+    def get_app_url(self, request: Request) -> str:
+        client_url = self.get_client_url()
+        if client_url is None:
+            origin_url = dict(request.scope["headers"]).get(b"referer", b"").decode()
+            return origin_url
+        return client_url
+
+    def get_client_url(self) -> str:
+        client_urls: list = self.cf.origins
+        return next(iter(client_urls)) if client_urls else None

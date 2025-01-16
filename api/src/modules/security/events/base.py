@@ -4,8 +4,7 @@ from fastapi_events.handlers.base import BaseEventHandler
 from fastapi_events.registry.payload_schema import registry as payload_schema
 from pydantic import BaseModel, Field
 from datetime import datetime
-
-from modules.repository.schema.users import User
+from modules.security.dependency import JWTPrincipal
 
 
 class UserEvents(Enum):
@@ -28,21 +27,43 @@ class SignUpPayload(BaseModel):
     userid: str
     created_at: datetime = Field(alias="createdAt", serialization_alias="createdAt")
     app_url: str
+     # locale:str future?
+
+
+@payload_schema.register(event_name=UserEvents.STRANGE_LOCATION)
+class StrangeLocationPayload(BaseModel):
+    username: str
+    ip: str
+    token: str
+    app_url: str
+    # locale:str future?
 
 
 @payload_schema.register(event_name=UserEvents.UNKNOWN_DEVICE_LOGIN)
 class NewDeviceLoginPayload(BaseModel):
-    user: User
-    device_data: str
+    current_user: JWTPrincipal
+    device_details: str
     ip: str
+    location: str
+     # locale:str future?
 
 
 class APIEventHandler(BaseEventHandler):
 
     async def handle(self, event: Event) -> None:
-        event_name, payload = event
-        print(event_name, payload)
-        """
-        Handle events one by one
-        """
-        # return None
+        match event[0]:
+            case UserEvents.SIGNED_UP:
+                payload = event[1]
+                print(payload)
+            case UserEvents.UNKNOWN_DEVICE_LOGIN:
+                payload = event[1]
+                print(payload)
+            case UserEvents.UNKNOWN_USER_AUTH_FAILURE:
+                payload = event[1]
+                print(payload)
+            case UserEvents.BLOCKED:
+                payload = event[1]
+                print(payload)
+            case UserEvents.STRANGE_LOCATION:
+                payload = event[1]
+                print(payload)

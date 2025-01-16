@@ -20,10 +20,9 @@ from modules.repository.schema.users import (
     Otp,
     PasswordResetToken,
     UserLocation,
-    NewLocationToken,
 )
 import bcrypt
-import geoip2.database
+
 from fastapi import Request
 from fastapi_events.dispatcher import dispatch
 from modules.utils.misc import get_indent, time_delta, time_now_utc
@@ -59,17 +58,16 @@ class UserHandler(UserQueries):
                 created_by=req.username,
                 failed_attempts=0,
             )
-            user: User = await self.create_user_query(new_user)
+            user = await self.create_user_query(new_user)
             if user is not None:
                 response_data = CreatedUserData(
                     userid=user.id, createdAt=user.created_at
                 )
                 req.result.data = response_data
                 await self.add_user_location(user, self.get_client_ip_address(request))
-                model_dict = response_data.model_dump(by_alias=True) | {
-                    "app_url": self.get_app_url(request)
-                }
-                dispatch(UserEvents.SIGNED_UP, model_dict)
+                model_dict = response_data.model_dump(by_alias=True)
+                event_payload = model_dict | {"app_url": self.get_app_url(request)}
+                dispatch(UserEvents.SIGNED_UP, event_payload)
                 return req.req_success("New user created!")
             return req.req_failure("Couldn't create account ,try later.")
         return req.req_failure("User exist")
@@ -147,9 +145,9 @@ class UserHandler(UserQueries):
         return req.req_success(f"Total number of users: {len(users)}")
 
     async def _delete_user(self, req: DeleteUserRequest) -> BaseResponse:
-        user: User = await self.get_user_by_id(req.userid)
+        user = await self.get_user_by_id(req.userid)
         if user is None:
-            req.req_failure(f"No user with id :: {req.userid}")
+            return req.req_failure(f"No user with id :: {req.userid}")
         otp: Otp = await self.get_otp_by_user_query(user)
         if otp is not None:
             await self.delete_otp_by_id_query(otp.id)
@@ -226,35 +224,6 @@ class UserHandler(UserQueries):
 
     # LOCATION
 
-    async def create_new_location_token(
-        self, user: User, country: str
-    ) -> NewLocationToken | None:
-        user_loc: UserLocation = UserLocation(
-            id=get_indent(), country=country, owner=user
-        )
-        user_loc = await self.create_user_location_query(user_loc)
-        new_loc_token: NewLocationToken = NewLocationToken(
-            id=get_indent(), token=get_indent(), location=user_loc
-        )
-        new_loc_token = await self.create_new_location_token_query(new_loc_token)
-        return new_loc_token
-
-    def is_geo_ip_enabled(self) -> bool:
-        return self.cf.is_geo_ip_enabled
-
-    async def is_new_login_location(
-        self, username: str, ip: str
-    ) -> NewLocationToken | None:
-        if not self.is_geo_ip_enabled():
-            return None
-        country = await self.get_country_from_ip(ip)
-        self.cf.logger.info(f"country :: {country} ====****")
-        user: User = await self.get_otp_by_user_query(username)
-        user_loc = await self.find_user_location_by_country_and_user(country, user)
-        if user_loc is None or not user_loc.enabled:
-            return self.create_new_location_token(user, country)
-        return None
-
     async def is_valid_new_location_token(self, token: str) -> str | None:
         loc_token = await self.find_new_location_by_token_query(token)
         if loc_token is None:
@@ -279,26 +248,6 @@ class UserHandler(UserQueries):
         )
         await self.create_user_location_query(user_loc)
 
-    def get_app_url(self, request: Request) -> str:
-        client_url = self.get_client_url()
-        if client_url is None:
-            origin_url = dict(request.scope["headers"]).get(b"referer", b"").decode()
-            return origin_url
-        return client_url
-
-    async def get_country_from_ip(self, ip: str) -> str:
-        country = "UNKNOWN"
-        try:
-            with geoip2.database.Reader(
-                "./modules/static/maxmind/GeoLite2-Country.mmdb"
-            ) as reader:
-                response = reader.country(ip)
-                country = response.country.name
-                return country
-        except Exception as e:
-            self.cf.logger.error(e)
-            return country
-
     def check_if_ip_is_local(self, ip: str) -> bool:
         if ip in LOCAL_HOST_ADDRESSES:
             return True
@@ -310,7 +259,3 @@ class UserHandler(UserQueries):
             return xf_header.split(",")[0]
         # return "41.238.0.198"  # for testing Egypt
         return request.client.host
-
-    def get_client_url(self) -> str:
-        client_urls: list = self.cf.origins
-        return next(iter(client_urls)) if client_urls else None
