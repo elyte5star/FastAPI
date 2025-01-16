@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from pytz import timezone
+from pytz import timezone, utc
 import uuid
 from fastapi.encoders import jsonable_encoder
 import string
@@ -15,7 +15,7 @@ def time_now() -> datetime:
 
 
 def time_now_utc() -> datetime:
-    return datetime.utcnow
+    return datetime.now()
 
 
 def time_then() -> datetime:
