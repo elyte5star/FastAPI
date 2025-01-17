@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from pytz import timezone, utc
+from pytz import timezone
 import uuid
 from fastapi.encoders import jsonable_encoder
 import string

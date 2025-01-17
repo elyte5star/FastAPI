@@ -28,20 +28,25 @@ class AuthQueries(AsyncDatabaseSession):
         finally:
             return result
 
-    async def update_device_meta_data_query(self, id: str, **kwargs) -> None:
+    async def update_device_meta_data_query(self, id: str, data: dict) -> dict | None:
+        result = None
         stmt = (
-            self.update(DeviceMetaData)
+            self.sqlalchemy_update(DeviceMetaData)
             .where(DeviceMetaData.id == id)
-            .values(**kwargs)
+            .values(data)
             .execution_options(synchronize_session="fetch")
         )
         try:
-            await self.async_session.execute(stmt)
+            result = await self.async_session.execute(stmt)
             await self.async_session.commit()
+            result = result.last_updated_params()
+            return result
         except PostgresError as e:
             await self.async_session.rollback()
             self.logger.error("Failed to update device metadata:", e)
             raise
+        finally:
+            return result
 
     async def find_otp_by_email(self, email: str):
         pass

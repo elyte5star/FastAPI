@@ -4,7 +4,7 @@ from fastapi_events.handlers.base import BaseEventHandler
 from fastapi_events.registry.payload_schema import registry as payload_schema
 from pydantic import BaseModel, Field
 from datetime import datetime
-from modules.security.dependency import JWTPrincipal
+
 
 
 class UserEvents(Enum):
@@ -41,7 +41,7 @@ class StrangeLocationPayload(BaseModel):
 
 @payload_schema.register(event_name=UserEvents.UNKNOWN_DEVICE_LOGIN)
 class NewDeviceLoginPayload(BaseModel):
-    current_user: JWTPrincipal
+    username: str
     device_details: str
     ip: str
     location: str

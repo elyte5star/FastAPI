@@ -9,7 +9,6 @@ from jose import jwt
 from modules.utils.misc import time_delta, time_now, get_indent
 from modules.repository.schema.users import User
 from fastapi import Request, Response
-from modules.security.dependency import JWTPrincipal
 
 
 class AuthenticationHandler(DifferentLocationChecker):
@@ -40,7 +39,7 @@ class AuthenticationHandler(DifferentLocationChecker):
                     "accountNonLocked": not user.is_locked,
                 }
                 token_data = await self.create_token_response(user, data)
-                await self.on_success_login(request)
+                await self.on_success_login(user, request)
                 req.result.data = token_data
                 return req.req_success(
                     f"User with username/email : {req.username} is authorized"
@@ -81,8 +80,8 @@ class AuthenticationHandler(DifferentLocationChecker):
             tokenId=data["jti"],
         )
 
-    async def on_success_login(self, request: Request):
-        await self.login_notification(self.current_user, request)
+    async def on_success_login(self, user: User, request: Request):
+        await self.login_notification(user, request)
 
     def create_token(self, data: dict, expires_delta: Optional[timedelta] = None):
         to_encode = data.copy()
@@ -93,19 +92,6 @@ class AuthenticationHandler(DifferentLocationChecker):
         to_encode.update({"exp": _expire})
         jwt_encode = jwt.encode(
             to_encode, self.cf.secret_key, algorithm=self.cf.algorithm
-        )
-        self.current_user = JWTPrincipal(
-            userid=to_encode["userid"],
-            email=to_encode["email"],
-            username=to_encode["sub"],
-            active=to_encode["active"],
-            enabled=to_encode["enabled"],
-            expires=to_encode["exp"],
-            admin=to_encode["admin"],
-            role=to_encode["role"],
-            discount=to_encode["discount"],
-            tokenId=to_encode["jti"],
-            is_locked=not to_encode["accountNonLocked"],
         )
         return jwt_encode
 

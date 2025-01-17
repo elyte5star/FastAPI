@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import inspect, event, select, __version__, delete, update, or_, and_
+from sqlalchemy import inspect, event, select, __version__, delete, or_, and_
+from sqlalchemy import update as sqlalchemy_update
 from sqlalchemy.engine import Engine
 from modules.repository.response_models.base import GetInfoResponse
 from sqlalchemy.ext.asyncio import (
@@ -30,7 +31,7 @@ class AsyncDatabaseSession:
         self.async_session: AsyncSession = None
         self.select = select
         self.delete = delete
-        self.upate = update
+        self.sqlalchemy_update = sqlalchemy_update
         self.or_ = or_
         self.and_ = and_
         self.init_db()

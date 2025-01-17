@@ -2,24 +2,22 @@ from modules.repository.schema.users import DeviceMetaData
 from modules.repository.queries.auth import AuthQueries
 from fastapi import Request
 import geoip2.database
-from modules.utils.misc import get_indent, time_now_utc
+from modules.utils.misc import get_indent, time_now_utc, obj_as_json
 from fastapi_events.dispatcher import dispatch
 from modules.security.events.base import UserEvents
-from modules.security.dependency import JWTPrincipal
+from modules.repository.schema.users import User
 
 
 class DeviceMetaDataChecker(AuthQueries):
 
-    async def verify_device(self, logged_in_user: JWTPrincipal, request: Request):
+    async def verify_device(self, user: User, request: Request):
         ip = self.get_client_ip_address(request)
         city = await self.get_city_from_ip(ip)
         device_details = self.get_device_details(request)
-        existing_device = await self.find_existing_device(
-            logged_in_user.userid, device_details, city
-        )
+        existing_device = await self.find_existing_device(user.id, device_details, city)
         if existing_device is None:
             event_payload = {
-                "current_user": logged_in_user,
+                "username": user.username,
                 "device_details": device_details,
                 "ip": ip,
                 "location": city,
@@ -30,20 +28,18 @@ class DeviceMetaDataChecker(AuthQueries):
                 device_details=device_details,
                 location=city,
                 last_login_date=time_now_utc(),
-                userid=logged_in_user.userid,
+                userid=user.id,
             )
             await self.create_device_meta_data_query(new_device_meta_data)
         else:
-            existing_device.last_login_date = time_now_utc()
-            await self.update_device_meta_data_query(
-                existing_device.id, existing_device
-            )
+            changes = {"last_login_date": time_now_utc()}
+            _ = await self.update_device_meta_data_query(existing_device.id, changes)
 
     def get_client_ip_address(self, request: Request) -> str:
         xf_header = request.headers.get("X-Forwarded-For")
         if xf_header is not None:
             return xf_header.split(",")[0]
-        # return "128.101.101.101" #for testing Richfield,United States
+        # return "128.101.101.101"  # for testing Richfield,United States
         # return "41.238.0.198" # for testing Giza, Egypt
         return request.client.host
 
@@ -75,13 +71,11 @@ class DeviceMetaDataChecker(AuthQueries):
                 return device
         return None
 
-    async def login_notification(
-        self, logged_in_user: JWTPrincipal, request: Request
-    ) -> None:
+    async def login_notification(self, user: User, request: Request) -> None:
         if not self.is_geo_ip_enabled():
             self.cf.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
-        await self.verify_device(logged_in_user, request)
+        await self.verify_device(user, request)
 
     def is_geo_ip_enabled(self) -> bool:
         return self.cf.is_geo_ip_enabled

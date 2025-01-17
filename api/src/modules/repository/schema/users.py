@@ -24,6 +24,17 @@ class User(Audit):
     )
     locations: Mapped[Set["UserLocation"]] = relationship(back_populates="owner")
 
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__}("
+            f"id::{self.id}, "
+            f"failed_attempts::{self.failed_attempts}, "
+            f"lock_time::{self.lock_time},"
+            f"username::{self.username},"
+            f"email::{self.email},"
+            f")>"
+        )
+
 
 class UserLocation(Base):
     id = Column(String(60), primary_key=True, index=True)
@@ -84,6 +95,15 @@ class DeviceMetaData(Base):
     location = Column(String(30), index=True)
     last_login_date = Column(DateTime)
     userid = Column(String(60), ForeignKey("user.id"), nullable=False)
+
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__}("
+            f"id::{self.id}, "
+            f"last_login_date::{self.last_login_date}, "
+            f"userid::{self. userid}"
+            f")>"
+        )
 
 
 class UserAddress(Base):
