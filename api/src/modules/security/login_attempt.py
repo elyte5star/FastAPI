@@ -9,9 +9,7 @@ from modules.security.location import DifferentLocationChecker
 class LoginAttemptChecker(DifferentLocationChecker):
     def __init__(self, config: ApiConfig):
         super().__init__(config)
-        self.attempts_cache: OrderedDict = (
-            OrderedDict()
-        )  # { args : (timestamp, attempt_count)}
+        self.attempts_cache = OrderedDict()  # { args : (timestamp, attempt_count)}
         self.active_user_store: list = []
         self.attempt_count: int = 0
         self.attempts_cache_size: int = 128

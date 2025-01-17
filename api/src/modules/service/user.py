@@ -87,8 +87,7 @@ class UserHandler(UserQueries):
 
     def change_user_password(self, user: User, password: str) -> None:
         hashed_password = self.hash_password(password)
-        user.password = hashed_password
-        self.update_user_query(user.id, user)
+        self.update_user_query(user.id, dict(password=hashed_password))
 
     async def _get_user(self, req: GetUserRequest) -> GetUserResponse:
         # include RBAC

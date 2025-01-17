@@ -136,6 +136,21 @@ class AsyncDatabaseSession:
         users = await self.async_session.execute(stmt)
         return users.scalars().first()
 
+    async def update_user_query(self, userid: str, data: dict):
+        stmt = (
+            self.update(User)
+            .where(User.id == userid)
+            .values(data)
+            .execution_options(synchronize_session="fetch")
+        )
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to update user:", e)
+            raise
+
     def get_app_url(self, request: Request) -> str:
         client_url = self.get_client_url()
         if client_url is None:

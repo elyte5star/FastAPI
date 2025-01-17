@@ -11,8 +11,6 @@ from datetime import datetime
 
 
 class UserQueries(AsyncDatabaseSession):
-
-    # USER
     async def create_user_query(self, user: User) -> User | None:
         self.async_session.add(user)
         result = None
@@ -25,21 +23,6 @@ class UserQueries(AsyncDatabaseSession):
             raise
         finally:
             return result
-
-    async def update_user_query(self, userid: str, **kwargs):
-        stmt = (
-            self.update(User)
-            .where(User.id == userid)
-            .values(**kwargs)
-            .execution_options(synchronize_session="fetch")
-        )
-        try:
-            await self.async_session.execute(stmt)
-            await self.async_session.commit()
-        except PostgresError as e:
-            await self.async_session.rollback()
-            self.logger.error("Failed to update user:", e)
-            raise
 
     async def get_users_query(self) -> list[User]:
         stmt = self.select(User).order_by(User.created_at)
@@ -143,11 +126,11 @@ class UserQueries(AsyncDatabaseSession):
         otps = result.scalars().all()
         return otps
 
-    async def update_otp_query(self, id: str, **kwargs) -> None:
+    async def update_otp_query(self, id: str, data: dict) -> None:
         stmt = (
             self.update(Otp)
             .where(Otp.id == id)
-            .values(**kwargs)
+            .values(data)
             .execution_options(synchronize_session="fetch")
         )
         try:
@@ -175,11 +158,11 @@ class UserQueries(AsyncDatabaseSession):
         new_locs = await self.async_session.execute(stmt)
         return new_locs.scalars().first()
 
-    async def update_new_loc_query(self, id: str, **kwargs) -> None:
+    async def update_new_loc_query(self, id: str, data: dict) -> None:
         stmt = (
             self.update(NewLocationToken)
             .where(NewLocationToken.id == id)
-            .values(**kwargs)
+            .values(data)
             .execution_options(synchronize_session="fetch")
         )
         try:
@@ -244,11 +227,11 @@ class UserQueries(AsyncDatabaseSession):
         finally:
             return result
 
-    async def update_user_loc_query(self, id: str, **kwargs) -> None:
+    async def update_user_loc_query(self, id: str, data: dict) -> None:
         stmt = (
             self.update(UserLocation)
             .where(UserLocation.id == id)
-            .values(**kwargs)
+            .values(data)
             .execution_options(synchronize_session="fetch")
         )
         try:
