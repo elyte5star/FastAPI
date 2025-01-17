@@ -1,7 +1,6 @@
 from modules.repository.response_models.auth import TokenResponse, TokenData
 from modules.repository.request_models.auth import LoginRequest, RefreshTokenRequest
 import bcrypt
-from modules.security.location import DifferentLocationChecker
 from modules.repository.validators.base import is_valid_email
 from typing import Optional
 from datetime import timedelta
@@ -9,13 +8,15 @@ from jose import jwt
 from modules.utils.misc import time_delta, time_now, get_indent
 from modules.repository.schema.users import User
 from fastapi import Request, Response
+from modules.security.login_attempt import LoginAttemptChecker
 
 
-class AuthenticationHandler(DifferentLocationChecker):
+class AuthenticationHandler(LoginAttemptChecker):
     async def authenticate_user(
         self, req: LoginRequest, request: Request
     ) -> TokenResponse:
         is_email, email = is_valid_email(req.username)
+        user = None
         if is_email:
             user = await self.get_user_by_email(email)
         else:
@@ -39,12 +40,12 @@ class AuthenticationHandler(DifferentLocationChecker):
                     "accountNonLocked": not user.is_locked,
                 }
                 token_data = await self.create_token_response(user, data)
-                await self.on_success_login(user, request)
+                await self.on_login_success(user, request)
                 req.result.data = token_data
                 return req.req_success(
                     f"User with username/email : {req.username} is authorized"
                 )
-        # check login attempt service
+        await self.on_login_failure(user, request)
         return req.req_failure(
             f"User {req.username} is not authorized.Incorrect username or password"
         )
@@ -80,8 +81,14 @@ class AuthenticationHandler(DifferentLocationChecker):
             tokenId=data["jti"],
         )
 
-    async def on_success_login(self, user: User, request: Request):
+    async def on_login_success(self, user: User, request: Request):
         await self.login_notification(user, request)
+
+    async def on_login_failure(self, user: User, request: Request):
+        if user is None:
+            print("Yes")
+        else:
+            print("No")
 
     def create_token(self, data: dict, expires_delta: Optional[timedelta] = None):
         to_encode = data.copy()

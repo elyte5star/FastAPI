@@ -163,7 +163,7 @@ class UserHandler(UserQueries):
     async def generate_otp(self, req: OtpRequest) -> GetOtpResponse:
         token: str = self.generate_confirmation_token(email=req.email)
         expiry = time_now_utc() + time_delta(self.config.otp_expiry)
-        otp: Otp = Otp(
+        otp = Otp(
             id=get_indent(),
             email=req.email,
             userid=req.userid,
@@ -175,7 +175,7 @@ class UserHandler(UserQueries):
         return req.req_success("Otp created for user with id ::{req.userid}")
 
     async def verify_otp(self, token: str) -> str:
-        otp: Otp = await self.get_otp_by_token_query(token=token)
+        otp = await self.get_otp_by_token_query(token=token)
         if otp is None:
             return TOKEN_INVALID
         valid = await self.is_otp_valid()
@@ -184,8 +184,7 @@ class UserHandler(UserQueries):
         user: User = await self.get_user_by_id(otp.userid)
         if user.enabled:
             return USER_ENABLED
-        user.enabled = True
-        await self.update_user_query(user.id, user)
+        await self.update_user_query(user.id, dict(enabled=True))
         await self.delete_otp_query(otp.id)
         return TOKEN_VALID
 
@@ -198,7 +197,7 @@ class UserHandler(UserQueries):
         return False
 
     async def generate_new_otp(self, req: NewOtpRequest) -> GetOtpResponse:
-        otp: Otp = await self.get_otp_by_email_query(req.email)
+        otp = await self.get_otp_by_email_query(req.email)
         if otp is not None:
             otp.token = self.generate_confirmation_token(req.email)
             otp.expiry = time_now_utc() + time_delta(self.config.otp_expiry)

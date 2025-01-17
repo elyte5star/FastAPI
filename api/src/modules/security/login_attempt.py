@@ -2,11 +2,11 @@ from modules.repository.schema.users import User
 from fastapi import Request
 from modules.settings.configuration import ApiConfig
 from collections import OrderedDict
-from modules.repository.queries.auth import AuthQueries
 from modules.utils.misc import time_now_utc, time_delta
+from modules.security.location import DifferentLocationChecker
 
 
-class LoginAttemptChecker(AuthQueries):
+class LoginAttemptChecker(DifferentLocationChecker):
     def __init__(self, config: ApiConfig):
         super().__init__(config)
         self.attempts_cache: OrderedDict = (
@@ -54,12 +54,6 @@ class LoginAttemptChecker(AuthQueries):
                 self.cf.logger.warning(f"IP:{key} UNBLOCKED")
                 return True
         return False
-
-    def get_client_ip_address(self, request: Request) -> str:
-        xf_header = request.headers.get("X-Forwarded-For")
-        if xf_header is not None:
-            return xf_header.split(",")[0]
-        return request.client.host
 
     def get_cookies(self, name: str, request: Request) -> str | None:
         cookie = request.cookies.get(name)
