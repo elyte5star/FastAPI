@@ -9,13 +9,13 @@ from functools import lru_cache, wraps
 
 
 def time_now() -> datetime:
-    now_utc = datetime.now()
-    now_est = now_utc.astimezone(timezone("Europe/Stockholm"))
+    now = datetime.now()
+    now_est = now.astimezone(timezone("Europe/Stockholm"))
     return now_est
 
 
 def time_now_utc() -> datetime:
-    return datetime.now()
+    return datetime.now().astimezone(timezone("UTC"))
 
 
 def time_then() -> datetime:

@@ -2,7 +2,7 @@ from modules.repository.schema.users import DeviceMetaData
 from modules.repository.queries.auth import AuthQueries
 from fastapi import Request
 import geoip2.database
-from modules.utils.misc import get_indent, time_now_utc, obj_as_json
+from modules.utils.misc import get_indent, time_now_utc
 from fastapi_events.dispatcher import dispatch
 from modules.security.events.base import UserEvents
 from modules.repository.schema.users import User

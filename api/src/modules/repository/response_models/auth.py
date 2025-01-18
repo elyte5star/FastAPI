@@ -16,4 +16,4 @@ class TokenData(BaseModel):
 
 
 class TokenResponse(BaseResponse):
-    data: TokenData = Field(default=TokenData(), alias="result")
+    data: dict = Field(default={}, alias="result")

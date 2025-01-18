@@ -100,7 +100,7 @@ class AsyncDatabaseSession:
             admin_email: str = self.cf.contacts["email"]
             tel: str = self.cf.contacts["telephone"]
             password: bytes = self.cf.contacts["password"]
-            admin_user: User = User(
+            admin_user = User(
                 id=get_indent(),
                 email=admin_email,
                 username=admin_username,
@@ -138,7 +138,7 @@ class AsyncDatabaseSession:
 
     async def update_user_query(self, userid: str, data: dict):
         stmt = (
-            self.update(User)
+            self.sqlalchemy_update(User)
             .where(User.id == userid)
             .values(data)
             .execution_options(synchronize_session="fetch")

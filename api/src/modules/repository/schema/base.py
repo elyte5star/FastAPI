@@ -16,7 +16,7 @@ class Base(AsyncAttrs):
 
 class Audit(Base):
     id = Column(String(60), primary_key=True, index=True)
-    created_at = Column(DateTime, server_default=func.now())
-    modified_at = Column(DateTime)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    modified_at = Column(DateTime(timezone=True))
     modified_by = Column(String(10))
     created_by = Column(String(10), nullable=False)

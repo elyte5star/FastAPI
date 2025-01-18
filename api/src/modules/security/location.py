@@ -1,31 +1,31 @@
 from modules.security.device import DeviceMetaDataChecker
-from fastapi import Request, HTTPException
+from fastapi import Request, HTTPException, status
 from modules.repository.schema.users import NewLocationToken, UserLocation, User
 import geoip2.database
 from modules.utils.misc import get_indent
 from fastapi_events.dispatcher import dispatch
 from modules.security.events.base import UserEvents
-from modules.security.dependency import JWTPrincipal
 
 
 class DifferentLocationChecker(DeviceMetaDataChecker):
 
-    async def check_strange_location(
-        self, logged_in_user: JWTPrincipal, request: Request
-    ):
+    async def check_strange_location(self, user: User, request: Request):
         ip_address = self.get_client_ip_address(request)
-        loc_token = await self.is_new_login_location(
-            logged_in_user.username, ip_address
-        )
+        loc_token = await self.is_new_login_location(user.username, ip_address)
         if loc_token is not None:
             app_url = self.get_app_url(request)
             event_payload = {
                 "app_url": app_url,
                 "ip": ip_address,
                 "token": loc_token,
-                "username": logged_in_user.username,
+                "username": user.username,
+                "email": user.email,
             }
             dispatch(UserEvents.STRANGE_LOCATION, event_payload)
+            raise HTTPException(
+                status_code=status.HTTP_404_FORBIDDEN,
+                detail="Unusual location",
+            )
 
     def is_geo_ip_enabled(self) -> bool:
         return self.cf.is_geo_ip_enabled

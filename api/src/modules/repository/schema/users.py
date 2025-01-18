@@ -15,7 +15,7 @@ class User(Audit):
     telephone = Column(String(20), index=True)
     failed_attempts = Column(Integer, default=0)
     discount = Column(Float, default=0.0)
-    lock_time = Column(DateTime)
+    lock_time = Column(DateTime(timezone=True))
     is_using_mfa = Column(Boolean, default=False)
     is_locked = Column(Boolean, default=False)
     otp = relationship("Otp", uselist=False, back_populates="owner")
@@ -68,7 +68,7 @@ class Otp(Base):
     id = Column(String(60), primary_key=True, index=True)
     email = Column(String(20), unique=True, index=True)
     token = Column(String(200), index=True)
-    expiry = Column("expiryDate", DateTime)
+    expiry = Column("expiryDate",DateTime(timezone=True))
     userid = Column(
         String(60),
         ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
@@ -80,7 +80,7 @@ class Otp(Base):
 class PasswordResetToken(Base):
     id = Column(String(60), primary_key=True, index=True)
     token = Column(String(60), index=True)
-    expiry = Column("expiryDate", DateTime)
+    expiry = Column("expiryDate", DateTime(timezone=True))
     userid = Column(
         String(60),
         ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
@@ -93,7 +93,7 @@ class DeviceMetaData(Base):
     id = Column(String(60), primary_key=True, index=True)
     device_details = Column(String(150), index=True)
     location = Column(String(30), index=True)
-    last_login_date = Column(DateTime)
+    last_login_date = Column(DateTime(timezone=True))
     userid = Column(String(60), ForeignKey("user.id"), nullable=False)
 
     def __repr__(self):

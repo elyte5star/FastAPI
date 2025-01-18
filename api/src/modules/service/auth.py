@@ -5,7 +5,7 @@ from modules.repository.validators.base import is_valid_email
 from typing import Optional
 from datetime import timedelta
 from jose import jwt
-from modules.utils.misc import time_delta, time_now, get_indent
+from modules.utils.misc import time_delta, time_now, get_indent, time_now_utc
 from modules.repository.schema.users import User
 from fastapi import Request, Response
 from modules.security.login_attempt import LoginAttemptChecker
@@ -23,7 +23,9 @@ class AuthenticationHandler(LoginAttemptChecker):
             user = await self.get_user_by_username(req.username)
         if user is not None:
             if not user.enabled or user.is_locked:
-                return req.req_failure(" Account Not Verified/Locked ")
+                return req.req_failure(
+                    " Account unverified or locked. Please, contact admin "
+                )
             if self.verify_password(req.password.get_secret_value(), user.password):
                 active = True
                 role = "USER" if not user.admin else "ADMIN"
@@ -58,7 +60,7 @@ class AuthenticationHandler(LoginAttemptChecker):
             return True
         return False
 
-    async def create_token_response(self, user: User, data: dict) -> TokenData:
+    async def create_token_response(self, user: User, data: dict) -> dict:
         access_token_expiry = time_delta(self.cf.token_expire_min)
         refresh_token_expiry = time_delta(self.cf.refresh_token_expire_min)
         refresh_token = self.create_token(
@@ -69,7 +71,7 @@ class AuthenticationHandler(LoginAttemptChecker):
             data=data,
             expires_delta=access_token_expiry,
         )
-        return TokenData(
+        return dict(
             userid=user.id,
             username=user.username,
             email=user.email,
@@ -82,13 +84,16 @@ class AuthenticationHandler(LoginAttemptChecker):
         )
 
     async def on_login_success(self, user: User, request: Request):
+        if user.failed_attempts > 0:
+            await self.reset_user_failed_attempts(user)
         await self.login_notification(user, request)
+        await self.check_strange_location(user, request)
 
     async def on_login_failure(self, user: User, request: Request):
         if user is None:
             print("Yes")
         else:
-            print("No")
+            await self.increase_user_failed_attempts(user)
 
     def create_token(self, data: dict, expires_delta: Optional[timedelta] = None):
         to_encode = data.copy()

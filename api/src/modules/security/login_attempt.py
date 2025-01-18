@@ -15,7 +15,7 @@ class LoginAttemptChecker(DifferentLocationChecker):
         self.attempts_cache_size: int = 128
 
     def is_ip_blocked(self, request: Request) -> bool:
-        client_ip: str = self.get_client_ip_address(request)
+        client_ip = self.get_client_ip_address(request)
         if client_ip in self.attempts_cache:
             attempt_count, _ = self.attempts_cache.get(client_ip)
             if attempt_count >= self.cf.max_login_attempt:
@@ -60,26 +60,24 @@ class LoginAttemptChecker(DifferentLocationChecker):
         self.cf.logger.warning(f"Cookie with name :{name} not found!")
         return None
 
-    def reset_user_failed_attempts(self, user: User) -> None:
-        userid = user.id
-        user.failed_attempts = 0
-        self.update_user_query(userid, user)
+    async def reset_user_failed_attempts(self, user: User) -> None:
+        await self.update_user_query(user.id, dict(failed_attempts=0))
 
-    def lock_user_account(self, user: User) -> None:
+    async def lock_user_account(self, user: User) -> None:
         userid = user.id
         user.is_locked = True
-        user.lock_time = time_now_utc()
-        self.update_user_query(userid, user)
+        changes = dict(lock_time=time_now_utc(), is_locked=True)
+        await self.update_user_query(userid, changes)
         self.cf.logger.warning(f"User with id: {userid} is locked")
 
-    def increase_user_failed_attempts(self, user: User) -> None:
+    async def increase_user_failed_attempts(self, user: User) -> None:
         user_failed_attempts = user.failed_attempts
         if user_failed_attempts >= self.cf.max_login_attempt:
-            self.lock_user_account(user)
+            await self.lock_user_account(user)
         else:
             userid = user.id
-            user.failed_attempts = user_failed_attempts + 1
-            self.update_user_query(userid, user)
+            changes = dict(failed_attempts=user_failed_attempts + 1)
+            await self.update_user_query(userid, changes)
 
     def unlock_when_time_expired(self, user: User) -> bool:
         lock_time = user.lock_time
