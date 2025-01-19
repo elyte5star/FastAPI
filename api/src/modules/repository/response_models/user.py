@@ -10,7 +10,7 @@ class CreatedUserData(BaseModel):
 
 
 class CreateUserResponse(BaseResponse):
-    data: CreatedUserData = Field(default=CreatedUserData(), alias="result")
+    data: CreatedUserData = Field(default=None, alias="result")
 
 
 class UserDetails(BaseModel):

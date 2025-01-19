@@ -161,3 +161,6 @@ class AsyncDatabaseSession:
     def get_client_url(self) -> str:
         client_urls: list = self.cf.origins
         return next(iter(client_urls)) if client_urls else None
+
+    def is_geo_ip_enabled(self) -> bool:
+        return self.cf.is_geo_ip_enabled

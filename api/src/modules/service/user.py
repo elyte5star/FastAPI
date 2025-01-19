@@ -65,13 +65,21 @@ class UserHandler(UserQueries):
                     userid=user.id, createdAt=user.created_at
                 )
                 req.result.data = response_data
-                await self.add_user_location(user, self.get_client_ip_address(request))
-                model_dict = response_data.model_dump(by_alias=True)
-                event_payload = model_dict | {"app_url": self.get_app_url(request)}
-                dispatch(UserEvents.SIGNED_UP, event_payload)
+                await self.on_successfull_registration(user, request)
                 return req.req_success("New user created!")
             return req.req_failure("Couldn't create account ,try later.")
         return req.req_failure("User exist")
+
+    async def on_successfull_registration(self, new_user: User, request: Request):
+        ip = self.get_client_ip_address(request)
+        app_url = self.get_app_url(request)
+        await self.add_user_location(new_user, ip)
+        event_payload = {
+            "userid": new_user.id,
+            "createdAt": new_user.created_at,
+            "app_url": app_url,
+        }
+        dispatch(UserEvents.SIGNED_UP, event_payload)
 
     def hash_password(self, plain_password: str) -> bytes:
         hashed_password = bcrypt.hashpw(

@@ -28,9 +28,6 @@ class DifferentLocationChecker(DeviceMetaDataChecker):
             #     detail="Unusual location",
             # )
 
-    def is_geo_ip_enabled(self) -> bool:
-        return self.cf.is_geo_ip_enabled
-
     async def is_new_login_location(
         self, username: str, ip: str
     ) -> NewLocationToken | None:

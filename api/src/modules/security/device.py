@@ -76,6 +76,3 @@ class DeviceMetaDataChecker(AuthQueries):
             self.cf.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
         await self.verify_device(user, request)
-
-    def is_geo_ip_enabled(self) -> bool:
-        return self.cf.is_geo_ip_enabled

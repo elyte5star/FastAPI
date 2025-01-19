@@ -50,7 +50,7 @@ class NewDeviceLoginPayload(BaseModel):
      # locale:str future?
 
 
-class APIEventHandler(BaseEventHandler):
+class APIEvents(BaseEventHandler):
 
     async def handle(self, event: Event) -> None:
         match event[0]:
