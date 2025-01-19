@@ -10,12 +10,10 @@ from modules.repository.validators.base import default_checker
 from fastapi import BackgroundTasks, Depends
 from fastapi_mail.email_utils import DefaultChecker
 from itsdangerous import URLSafeTimedSerializer, BadTimeSignature, SignatureExpired
-from modules.repository.queries.user import UserQueries
 
 
-class EmailHandler(UserQueries):
-    def __init__(self, config):
-        super().__init__(config)
+class EmailService:
+    def __init__(self, config: ApiConfig):
         self.fm = FastMail(config.email_config)
         self.config = config
 

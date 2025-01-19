@@ -207,9 +207,10 @@ class UserHandler(UserQueries):
     async def generate_new_otp(self, req: NewOtpRequest) -> GetOtpResponse:
         otp = await self.get_otp_by_email_query(req.email)
         if otp is not None:
-            otp.token = self.generate_confirmation_token(req.email)
-            otp.expiry = time_now_utc() + time_delta(self.config.otp_expiry)
-            await self.update_otp_query(otp.id, otp)
+            token = self.generate_confirmation_token(req.email)
+            expiry = time_now_utc() + time_delta(self.config.otp_expiry)
+            changes = {"token": token, "expiry": expiry}
+            await self.update_otp_query(otp.id, changes)
             return req.req_success("New Otp created for user with email:: {req.email}")
         return req.req_failure("new Otp cant be created")
 

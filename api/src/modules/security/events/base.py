@@ -69,3 +69,5 @@ class APIEvents(BaseEventHandler):
             case UserEvents.STRANGE_LOCATION:
                 payload = event[1]
                 print(payload)
+            case _:
+                return "UNKNOWN EVENT ALERT ADMIN"
