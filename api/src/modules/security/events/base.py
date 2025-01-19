@@ -37,6 +37,7 @@ class StrangeLocationPayload(BaseModel):
     token: str
     app_url: str
     email: str
+    country: str
     # locale:str future?
 
 

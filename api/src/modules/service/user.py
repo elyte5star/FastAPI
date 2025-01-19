@@ -22,6 +22,7 @@ from modules.repository.schema.users import (
     UserLocation,
 )
 import bcrypt
+import geoip2.database
 
 from fastapi import Request
 from fastapi_events.dispatcher import dispatch
@@ -236,11 +237,7 @@ class UserHandler(UserQueries):
         if not self.is_geo_ip_enabled():
             self.cf.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
-        country = (
-            "NORWAY"
-            if self.check_if_ip_is_local(ip)
-            else await self.get_country_from_ip(ip)
-        )
+        country = await self.get_country_from_ip(ip)
         user_loc = UserLocation(
             id=get_indent(), country=country, owner=user, enabled=True
         )
@@ -257,3 +254,16 @@ class UserHandler(UserQueries):
             return xf_header.split(",")[0]
         # return "41.238.0.198"  # for testing Egypt
         return request.client.host
+
+    async def get_country_from_ip(self, ip: str) -> str:
+        country = "UNKNOWN"
+        try:
+            with geoip2.database.Reader(
+                "./modules/static/maxmind/GeoLite2-Country.mmdb"
+            ) as reader:
+                response = reader.country(ip)
+                country = response.country.name
+                return country
+        except Exception as e:
+            self.cf.logger.error(e)
+            return country

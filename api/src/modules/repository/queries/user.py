@@ -198,20 +198,6 @@ class UserQueries(AsyncDatabaseSession):
             self.logger.error("Failed to delete new location:", e)
             raise
 
-    # USER LOCATION
-    async def find_user_location_by_country_and_user(
-        self, country: str, user: User
-    ) -> UserLocation | None:
-        stmt = (
-            self.select(UserLocation)
-            .where(
-                self.and_(UserLocation.country == country, UserLocation.owner == user)
-            )
-            .limit(1)
-        )
-        result = await self.async_session.execute(stmt)
-        return result.scalars().first()
-
     async def create_user_location_query(
         self, user_loc: UserLocation
     ) -> UserLocation | None:

@@ -1,5 +1,10 @@
 from modules.database.base import AsyncDatabaseSession
-from modules.repository.schema.users import DeviceMetaData
+from modules.repository.schema.users import (
+    DeviceMetaData,
+    UserLocation,
+    User,
+    NewLocationToken,
+)
 from asyncpg.exceptions import PostgresError
 
 
@@ -44,6 +49,50 @@ class AuthQueries(AsyncDatabaseSession):
         except PostgresError as e:
             await self.async_session.rollback()
             self.logger.error("Failed to update device metadata:", e)
+            raise
+        finally:
+            return result
+
+    # USER LOCATION
+    async def find_user_location_by_country_and_user_query(
+        self, country: str, user: User
+    ) -> UserLocation | None:
+        stmt = (
+            self.select(UserLocation)
+            .where(
+                self.and_(UserLocation.country == country, UserLocation.owner == user)
+            )
+            .limit(1)
+        )
+        result = await self.async_session.execute(stmt)
+        return result.scalars().first()
+
+    async def create_new_location_token_query(
+        self, new_loc_token: NewLocationToken
+    ) -> NewLocationToken | None:
+        self.async_session.add(new_loc_token)
+        result = None
+        try:
+            await self.async_session.commit()
+            result = new_loc_token
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to create new location token: ", e)
+            raise
+        finally:
+            return result
+
+    async def create_user_location_query(
+        self, user_loc: UserLocation
+    ) -> UserLocation | None:
+        self.async_session.add(user_loc)
+        result = None
+        try:
+            await self.async_session.commit()
+            result = user_loc
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to create user location: ", e)
             raise
         finally:
             return result
