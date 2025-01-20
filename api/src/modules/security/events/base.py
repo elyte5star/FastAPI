@@ -2,7 +2,7 @@ from enum import Enum
 from fastapi_events.typing import Event
 from fastapi_events.handlers.base import BaseEventHandler
 from fastapi_events.registry.payload_schema import registry as payload_schema
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field,EmailStr
 from datetime import datetime
 
 
@@ -25,7 +25,8 @@ class UserEvents(Enum):
 @payload_schema.register(event_name=UserEvents.SIGNED_UP)
 class SignUpPayload(BaseModel):
     userid: str
-    created_at: datetime = Field(alias="createdAt", serialization_alias="createdAt")
+    email: EmailStr
+    token: str
     app_url: str
      # locale:str future?
 
@@ -36,7 +37,7 @@ class StrangeLocationPayload(BaseModel):
     ip: str
     token: str
     app_url: str
-    email: str
+    email: EmailStr
     country: str
     # locale:str future?
 

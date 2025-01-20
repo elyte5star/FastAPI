@@ -27,7 +27,7 @@ import geoip2.database
 from fastapi import Request
 from fastapi_events.dispatcher import dispatch
 from modules.utils.misc import get_indent, time_delta, time_now_utc
-from modules.security.events.base import UserEvents
+from modules.security.events.base import UserEvents, SignUpPayload
 from modules.repository.queries.user import UserQueries
 from itsdangerous import URLSafeTimedSerializer, BadTimeSignature, SignatureExpired
 
@@ -57,7 +57,6 @@ class UserHandler(UserQueries):
                 telephone=req.telephone,
                 discount=0.0,
                 created_by=req.username,
-                failed_attempts=0,
             )
             user = await self.create_user_query(new_user)
             if user is not None:
@@ -70,15 +69,24 @@ class UserHandler(UserQueries):
             return req.req_failure("Couldn't create account ,try later.")
         return req.req_failure("User exist")
 
-    async def on_successfull_registration(self, new_user: User, request: Request):
+    async def on_successfull_registration(
+        self,
+        new_user: User,
+        request: Request,
+    ):
         ip = self.get_client_ip_address(request)
         app_url = self.get_app_url(request)
         await self.add_user_location(new_user, ip)
-        event_payload = {
-            "userid": new_user.id,
-            "createdAt": new_user.created_at,
-            "app_url": app_url,
-        }
+        otp_token = await self.generate_confirmation_token(
+            new_user.id,
+            new_user.email,
+        )
+        event_payload = SignUpPayload(
+            userid=new_user.id,
+            email=new_user.email,
+            token=otp_token.token,
+            app_url=app_url,
+        )
         dispatch(UserEvents.SIGNED_UP, event_payload)
 
     def hash_password(self, plain_password: str) -> bytes:
@@ -163,24 +171,52 @@ class UserHandler(UserQueries):
             await self.find_passw_reset_token_by_user_query(user)
         )
         if password_rest_token is not None:
-            await self.delete_passw_reset_token_by_id_query(password_rest_token.id)
+            await self.delete_passw_reset_token_by_id_query(
+                password_rest_token.id,
+            )
         await self.delete_user_query(user.id)
         return req.req_success(f"User with id::{req.userid} deleted")
 
-    # OTP
-    async def generate_otp(self, req: OtpRequest) -> GetOtpResponse:
-        token: str = self.generate_confirmation_token(email=req.email)
-        expiry = time_now_utc() + time_delta(self.config.otp_expiry)
+    # OTP ADMIN REQUEST
+    async def create_verification_otp(
+        self, req: OtpRequest, request: Request
+    ) -> GetOtpResponse:
+        app_url = self.get_app_url(request)
+        new_otp = await self.generate_confirmation_token(
+            req.userid,
+            req.email,
+        )
+        if new_otp is None:
+            return req.req_failure(f"Couldn't create otp for ::{req.email}")
+        req.result.token = new_otp.token
+        event_payload = SignUpPayload(
+            userid=req.userid,
+            email=req.email,
+            token=new_otp.token,
+            app_url=app_url,
+        )
+        dispatch(UserEvents.SIGNED_UP, event_payload)
+        return req.req_success("Otp created for user with id ::{req.userid}")
+
+    async def generate_confirmation_token(
+        self,
+        userid: str,
+        email: str,
+    ) -> Otp:
+        serializer = URLSafeTimedSerializer(
+            self.cf.secret_key, salt=str(self.cf.rounds)
+        )
+        token = serializer.dumps(email)
+        expiry = time_now_utc() + time_delta(self.cf.otp_expiry)
         otp = Otp(
             id=get_indent(),
-            email=req.email,
-            userid=req.userid,
+            email=email,
+            userid=userid,
             expiry=expiry,
             token=token,
         )
         new_otp = await self.create_otp_query(otp)
-        req.result.token = new_otp.token
-        return req.req_success("Otp created for user with id ::{req.userid}")
+        return new_otp
 
     async def verify_otp(self, token: str) -> str:
         otp = await self.get_otp_by_token_query(token=token)
@@ -189,11 +225,13 @@ class UserHandler(UserQueries):
         valid = await self.is_otp_valid()
         if not valid:
             return TOKEN_EXPIRED
-        user: User = await self.get_user_by_id(otp.userid)
+        user = await self.get_user_by_id(otp.userid)
         if user.enabled:
             return USER_ENABLED
         await self.update_user_query(user.id, dict(enabled=True))
-        await self.delete_otp_query(otp.id)
+        is_deleted = await self.delete_otp_by_id_query(otp.id)
+        if not is_deleted:
+            self.cf.logger.warning("Old OTP not deleted")
         return TOKEN_VALID
 
     async def is_otp_valid(self, otp: Otp) -> bool:
@@ -213,12 +251,6 @@ class UserHandler(UserQueries):
             await self.update_otp_query(otp.id, changes)
             return req.req_success("New Otp created for user with email:: {req.email}")
         return req.req_failure("new Otp cant be created")
-
-    def generate_confirmation_token(self, email: str):
-        serializer = URLSafeTimedSerializer(
-            self.cf.secret_key, salt=self.cf.security_salt
-        )
-        return serializer.dumps(email)
 
     def verify_email_token(self, token: str, expiration: int = 3600) -> bool:
         serializer = URLSafeTimedSerializer(self.config.secret_key)
