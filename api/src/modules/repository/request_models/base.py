@@ -3,11 +3,12 @@ from modules.utils.misc import get_indent
 from modules.repository.response_models.base import BaseResponse
 from pydantic import BaseModel, ConfigDict
 from modules.security.dependency import JWTPrincipal
+from typing import Optional
 
 
 class BaseReq(BaseModel):
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
-    credentials: JWTPrincipal = None
+    credentials: Optional[JWTPrincipal] = None
 
     def model_post_init(self, ctx):
         self.result: BaseResponse = BaseResponse()

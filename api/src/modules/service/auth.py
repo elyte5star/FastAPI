@@ -52,7 +52,11 @@ class AuthenticationHandler(LoginAttemptChecker):
             f"User {req.username} is not authorized.Incorrect username or password"
         )
 
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+    def verify_password(
+        self,
+        plain_password: str,
+        hashed_password: str,
+    ) -> bool:
         if bcrypt.checkpw(
             plain_password.encode(self.cf.encoding),
             hashed_password.encode(self.cf.encoding),
@@ -95,7 +99,11 @@ class AuthenticationHandler(LoginAttemptChecker):
         else:
             await self.increase_user_failed_attempts(user)
 
-    def create_token(self, data: dict, expires_delta: Optional[timedelta] = None):
+    def create_token(
+        self,
+        data: dict,
+        expires_delta: Optional[timedelta] = None,
+    ):
         to_encode = data.copy()
         if expires_delta:
             _expire = time_now() + expires_delta
@@ -107,7 +115,10 @@ class AuthenticationHandler(LoginAttemptChecker):
         )
         return jwt_encode
 
-    async def validate_create_token(self, req: RefreshTokenRequest) -> TokenResponse:
+    async def validate_create_token(
+        self,
+        req: RefreshTokenRequest,
+    ) -> TokenResponse:
         if (
             req.data.grant_type == self.cf.grant_type
             and req.credentials.token_id == req.data.token_id
@@ -146,5 +157,9 @@ class AuthenticationHandler(LoginAttemptChecker):
             return cookie.get("refresh-Token")
 
     async def create_cookie(self, token: str, response: Response):
-        response.set_cookie(key="refresh-Token", value=f"Bearer {token}", httponly=True)
+        response.set_cookie(
+            key="refresh-Token",
+            value=f"Bearer {token}",
+            httponly=True,
+        )
         return {"message": "Come to the dark side, we have cookies"}

@@ -1,6 +1,7 @@
 import handler
 import logging
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.staticfiles import StaticFiles
 from modules.middleware.log import get_file_handler, get_console_handler
 from fastapi.encoders import jsonable_encoder
@@ -13,7 +14,7 @@ from contextlib import asynccontextmanager
 from modules.middleware.base import CustomHeaderMiddleware
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
-
+import time
 
 # from starlette.middleware.sessions import SessionMiddleware
 
@@ -79,6 +80,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# TrustedHostMiddleware
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 
 # HEADER middleware
 app.add_middleware(CustomHeaderMiddleware)
@@ -91,12 +94,22 @@ app.mount("/static", StaticFiles(directory="./modules/static"), name="static")
 async def custom_http_exception_handler(
     request: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
+    start_time = time.perf_counter()
     logger.warning(f"{repr(exc.detail)}!!")
     body = await request.body()
+    stop_time = time.perf_counter()
+    process_time = stop_time - start_time
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder(
-            {"message": str(exc.detail), "body": body.decode(), "success": False}
+            {
+                "start_time": start_time,
+                "stop_time": stop_time,
+                "process_time": process_time,
+                "message": str(exc.detail),
+                "body": body.decode(),
+                "success": False,
+            }
         ),
     )
 

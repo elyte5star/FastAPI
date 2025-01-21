@@ -26,6 +26,7 @@ class UserEvents(Enum):
 class SignUpPayload(BaseModel):
     userid: str
     email: EmailStr
+    expiry: datetime
     token: str
     app_url: str
      # locale:str future?

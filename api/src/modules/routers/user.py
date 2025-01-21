@@ -12,8 +12,10 @@ from modules.repository.request_models.user import (
     GetUserRequest,
     GetUsersRequest,
     DeleteUserRequest,
+    OtpRequest,
 )
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
+from pydantic import EmailStr
 
 
 class UserRouter(UserHandler):
@@ -27,6 +29,15 @@ class UserRouter(UserHandler):
             response_model=CreateUserResponse,
             methods=["POST"],
             description="Create user account",
+        )
+        self.router.add_api_route(
+            path="/{email}/create-confirmation-token",
+            status_code=status.HTTP_202_ACCEPTED,
+            endpoint=self.create_verification_otp,
+            response_model=BaseResponse,
+            dependencies=[Depends(RoleChecker(["ADMIN"]))],
+            methods=["GET"],
+            description="Send user verification code",
         )
         self.router.add_api_route(
             path="/{userid}",
@@ -72,8 +83,23 @@ class UserRouter(UserHandler):
         )
 
     async def delete_user(
-        self, userid: str, current_user: Annotated[JWTPrincipal, Depends(security)]
+        self,
+        userid: str,
+        current_user: Annotated[
+            JWTPrincipal,
+            Depends(security),
+        ],
     ) -> BaseResponse:
         return await self._delete_user(
             DeleteUserRequest(credentials=current_user, userid=userid)
+        )
+
+    async def create_verification_otp(
+        self,
+        email: EmailStr,
+        request: Request,
+        current_user: Annotated[JWTPrincipal, Depends(security)],
+    ) -> BaseResponse:
+        return await self._create_verification_otp(
+            OtpRequest(credentials=current_user, email=email), request
         )

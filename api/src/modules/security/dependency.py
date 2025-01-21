@@ -78,7 +78,6 @@ class JWTBearer(HTTPBearer):
             )
             return self.payload if self.payload["exp"] >= time.time() else None
         except JWTError:
-            self.cf.logger.error("Couldn't verify token")
             return None
 
 

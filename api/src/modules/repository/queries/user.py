@@ -94,6 +94,11 @@ class UserQueries(AsyncDatabaseSession):
         result = await self.async_session.execute(stmt)
         return result.scalars().first()
 
+    async def get_otp_by_email_query(self, email: str) -> Otp | None:
+        stmt = self.select(Otp).where(Otp.email == email)
+        result = await self.async_session.execute(stmt)
+        return result.scalars().first()
+
     async def get_otp_by_token_query(self, token: str) -> Otp | None:
         stmt = self.select(Otp).where(Otp.token == token)
         result = await self.async_session.execute(stmt)
@@ -128,7 +133,7 @@ class UserQueries(AsyncDatabaseSession):
 
     async def update_otp_query(self, id: str, data: dict) -> None:
         stmt = (
-            self.update(Otp)
+            self.sqlalchemy_update(Otp)
             .where(Otp.id == id)
             .values(data)
             .execution_options(synchronize_session="fetch")
@@ -160,7 +165,7 @@ class UserQueries(AsyncDatabaseSession):
 
     async def update_new_loc_query(self, id: str, data: dict) -> None:
         stmt = (
-            self.update(NewLocationToken)
+            self.sqlalchemy_update(NewLocationToken)
             .where(NewLocationToken.id == id)
             .values(data)
             .execution_options(synchronize_session="fetch")
@@ -215,7 +220,7 @@ class UserQueries(AsyncDatabaseSession):
 
     async def update_user_loc_query(self, id: str, data: dict) -> None:
         stmt = (
-            self.update(UserLocation)
+            self.sqlalchemy_update(UserLocation)
             .where(UserLocation.id == id)
             .values(data)
             .execution_options(synchronize_session="fetch")
