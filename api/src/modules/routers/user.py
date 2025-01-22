@@ -13,6 +13,7 @@ from modules.repository.request_models.user import (
     GetUsersRequest,
     DeleteUserRequest,
     OtpRequest,
+    NewOtpRequest,
 )
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
 from pydantic import EmailStr
@@ -31,13 +32,23 @@ class UserRouter(UserHandler):
             description="Create user account",
         )
         self.router.add_api_route(
-            path="/{email}/create-confirmation-token",
+            path="/create-confirmation-token/{email}",
             status_code=status.HTTP_202_ACCEPTED,
             endpoint=self.create_verification_otp,
             response_model=BaseResponse,
             dependencies=[Depends(RoleChecker(["ADMIN"]))],
             methods=["GET"],
             description="Send user verification code",
+        )
+
+        self.router.add_api_route(
+            path="/resend-registration-token/{token}",
+            status_code=status.HTTP_202_ACCEPTED,
+            endpoint=self.resend_verification_otp,
+            response_model=BaseResponse,
+            dependencies=[Depends(RoleChecker(config.roles))],
+            methods=["GET"],
+            description="Send a new user verification code",
         )
         self.router.add_api_route(
             path="/{userid}",
@@ -102,4 +113,14 @@ class UserRouter(UserHandler):
     ) -> BaseResponse:
         return await self._create_verification_otp(
             OtpRequest(credentials=current_user, email=email), request
+        )
+
+    async def resend_verification_otp(
+        self,
+        token: str,
+        request: Request,
+        current_user: Annotated[JWTPrincipal, Depends(security)],
+    ) -> BaseResponse:
+        return await self._generate_new_otp(
+            NewOtpRequest(credentials=current_user, token=token), request
         )

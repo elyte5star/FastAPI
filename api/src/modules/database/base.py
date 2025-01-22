@@ -15,7 +15,8 @@ from modules.repository.schema.users import (
     UserLocation,  # noqa: F401
     UserAddress,  # noqa: F401
     Otp,  # noqa: F401
-    DeviceMetaData,  # noqa: F401
+    DeviceMetaData,  # noqa: F401,
+    NewLocationToken,  # noqa: F401
 )
 from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
@@ -75,7 +76,14 @@ class AsyncDatabaseSession:
         async with self._engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
-        await self.create_admin_account(self.async_session)
+        user = await self.create_admin_account(self.async_session)
+        user_loc = UserLocation(
+            id=get_indent(),
+            country="UNKNOWN",
+            owner=user,
+            enabled=True,
+        )
+        await self.create_user_location_query(user_loc)
 
     async def drop_tables(self) -> None:
         async with self._engine.begin() as conn:
@@ -94,7 +102,7 @@ class AsyncDatabaseSession:
         info["cpu_count"] = cpu_count()
         return GetInfoResponse(info=info, message="System information")
 
-    async def create_admin_account(self, async_session: AsyncSession) -> None:
+    async def create_admin_account(self, async_session: AsyncSession) -> User:
         admin_username: str = self.cf.contacts["username"]
         if await self.get_user_by_username(admin_username) is None:
             admin_email: str = self.cf.contacts["email"]
@@ -115,7 +123,7 @@ class AsyncDatabaseSession:
                 async_session.add(admin_user)
                 await async_session.commit()
                 self.logger.info(f"account with id {admin_user.id} created")
-                return None
+                return admin_user
             except PostgresError:
                 await async_session.rollback()
                 raise
@@ -164,3 +172,18 @@ class AsyncDatabaseSession:
 
     def is_geo_ip_enabled(self) -> bool:
         return self.cf.is_geo_ip_enabled
+
+    async def create_user_location_query(
+        self, user_loc: UserLocation
+    ) -> UserLocation | None:
+        self.async_session.add(user_loc)
+        result = None
+        try:
+            await self.async_session.commit()
+            result = user_loc
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to create user location: ", e)
+            raise
+        finally:
+            return result

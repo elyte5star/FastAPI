@@ -81,18 +81,3 @@ class AuthQueries(AsyncDatabaseSession):
             raise
         finally:
             return result
-
-    async def create_user_location_query(
-        self, user_loc: UserLocation
-    ) -> UserLocation | None:
-        self.async_session.add(user_loc)
-        result = None
-        try:
-            await self.async_session.commit()
-            result = user_loc
-        except PostgresError as e:
-            await self.async_session.rollback()
-            self.logger.error("Failed to create user location: ", e)
-            raise
-        finally:
-            return result

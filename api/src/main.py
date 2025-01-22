@@ -12,6 +12,7 @@ from fastapi import Request, status
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from modules.middleware.base import CustomHeaderMiddleware
+from modules.middleware.log import LoggerMiddleWare
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 import time
@@ -20,14 +21,14 @@ import time
 
 cfg = handler.cfg
 
-logger = handler.logger
+log = handler.logger
 
-# Set up logging
-logging.basicConfig(
-    handlers=[get_console_handler(), get_file_handler(cfg.log_file_path)],
-    encoding=cfg.encoding,
-    level=cfg.log_type,
-)
+# # Set up logging
+# logging.basicConfig(
+#     handlers=[get_console_handler(), get_file_handler(cfg.log_file_path)],
+#     encoding=cfg.encoding,
+#     level=cfg.log_type,
+# )
 
 
 @asynccontextmanager
@@ -67,6 +68,7 @@ app.add_middleware(EventHandlerASGIMiddleware, handlers=[APIEvents()])
 # app.add_middleware(SessionMiddleware, secret_key=cfg.secret_key, max_age=1500)
 
 ALLOWED_HOSTS = ["*"]
+
 if cfg.origins:
     ALLOWED_HOSTS = [str(origin) for origin in cfg.origins]
 
@@ -80,11 +82,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# TRUSTED_HOSTS = ["*.elyte.com"]
 # TrustedHostMiddleware
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
+# app.add_middleware(TrustedHostMiddleware, allowed_hosts=TRUSTED_HOSTS)
 
 # HEADER middleware
 app.add_middleware(CustomHeaderMiddleware)
+
+# Logging middleware
+app.add_middleware(
+    LoggerMiddleWare,
+    file_path=cfg.log_file_path,
+    log_level=cfg.log_type,
+)
 
 # Static files
 app.mount("/static", StaticFiles(directory="./modules/static"), name="static")
@@ -95,7 +105,7 @@ async def custom_http_exception_handler(
     request: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
     start_time = time.perf_counter()
-    logger.warning(f"{repr(exc.detail)}!!")
+    log.warning(f"{repr(exc.detail)}!!")
     body = await request.body()
     stop_time = time.perf_counter()
     process_time = stop_time - start_time

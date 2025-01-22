@@ -52,7 +52,9 @@ class DifferentLocationChecker(DeviceMetaDataChecker):
         new_loc_token = NewLocationToken(
             id=get_indent(), token=get_indent(), location=user_loc
         )
-        new_loc_token = await self.create_new_location_token_query(new_loc_token)
+        new_loc_token = await self.create_new_location_token_query(
+            new_loc_token,
+        )
         return new_loc_token
 
     async def get_country_from_ip(self, ip: str) -> str:

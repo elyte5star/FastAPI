@@ -68,13 +68,15 @@ class Otp(Base):
     id = Column(String(60), primary_key=True, index=True)
     email = Column(String(20), unique=True, index=True)
     token = Column(String(200), index=True)
-    expiry = Column("expiryDate",DateTime(timezone=True))
+    expiry = Column("expiryDate", DateTime(timezone=True))
     userid = Column(
         String(60),
         ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
-    owner = relationship("User", back_populates="otp", single_parent=True)
+    owner = relationship(
+        "User", back_populates="otp", single_parent=True, lazy="selectin"
+    )
 
 
 class PasswordResetToken(Base):

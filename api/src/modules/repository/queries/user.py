@@ -102,7 +102,6 @@ class UserQueries(AsyncDatabaseSession):
     async def get_otp_by_token_query(self, token: str) -> Otp | None:
         stmt = self.select(Otp).where(Otp.token == token)
         result = await self.async_session.execute(stmt)
-        await self.async_session.refresh(result, ["owner"])
         return result.scalars().first()
 
     async def del_otp_by_expiry_date_less_than(self, now: datetime) -> None:
@@ -178,21 +177,6 @@ class UserQueries(AsyncDatabaseSession):
             self.logger.error("Failed to update otp:", e)
             raise
 
-    async def create_new_location_token_query(
-        self, new_loc_token: NewLocationToken
-    ) -> NewLocationToken | None:
-        self.async_session.add(new_loc_token)
-        result = None
-        try:
-            await self.async_session.commit()
-            result = new_loc_token
-        except PostgresError as e:
-            await self.async_session.rollback()
-            self.logger.error("Failed to create new location token: ", e)
-            raise
-        finally:
-            return result
-
     async def del_new_location_query(self, id: str) -> None:
         stmt = self.delete(NewLocationToken).where(NewLocationToken.id == id)
         try:
@@ -202,21 +186,6 @@ class UserQueries(AsyncDatabaseSession):
             await self.async_session.rollback()
             self.logger.error("Failed to delete new location:", e)
             raise
-
-    async def create_user_location_query(
-        self, user_loc: UserLocation
-    ) -> UserLocation | None:
-        self.async_session.add(user_loc)
-        result = None
-        try:
-            await self.async_session.commit()
-            result = user_loc
-        except PostgresError as e:
-            await self.async_session.rollback()
-            self.logger.error("Failed to create user location: ", e)
-            raise
-        finally:
-            return result
 
     async def update_user_loc_query(self, id: str, data: dict) -> None:
         stmt = (

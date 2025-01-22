@@ -59,3 +59,8 @@ class EmailRequestSchema(BaseReq):
 class OtpRequest(BaseReq):
     email: EmailStr
     result: BaseResponse = BaseResponse()
+
+
+class NewOtpRequest(BaseReq):
+    token: str
+    result: BaseResponse = BaseResponse()

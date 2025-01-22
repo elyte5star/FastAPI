@@ -4,6 +4,7 @@ from modules.repository.request_models.user import (
     GetUsersRequest,
     OtpRequest,
     DeleteUserRequest,
+    NewOtpRequest,
 )
 from modules.repository.response_models.user import (
     CreateUserResponse,
@@ -55,6 +56,7 @@ class UserHandler(UserQueries):
                 telephone=req.telephone,
                 discount=0.0,
                 created_by=req.username,
+                active=True,
             )
             user = await self.create_user_query(new_user)
             if user is not None:
@@ -139,28 +141,28 @@ class UserHandler(UserQueries):
         return otp
 
     # USER NEW OTP REQUEST
-    async def generate_new_otp(
+    async def _generate_new_otp(
         self,
-        req: OtpRequest,
+        req: NewOtpRequest,
         request: Request,
     ) -> BaseResponse:
-        otp = await self.get_otp_by_email_query(req.email)
+        otp = await self.get_otp_by_token_query(req.token)
         if otp is not None:
-            token = self.create_timed_token(req.email)
+            token = self.create_timed_token(otp.owner.email)
             app_url = self.get_app_url(request)
-            expiry = time_now_utc() + time_delta(self.config.otp_expiry)
+            expiry = time_now_utc() + time_delta(self.cf.otp_expiry)
             changes = {"token": token, "expiry": expiry}
             await self.update_otp_query(otp.id, changes)
             event_payload = SignUpPayload(
                 userid=otp.owner.id,
-                email=otp.ower.email,
+                email=otp.owner.email,
                 token=token,
                 expiry=expiry,
                 app_url=app_url,
             )
             dispatch(UserEvents.SIGNED_UP, event_payload)
             return req.req_success(
-                f"New Otp created for user with email::{req.email}",
+                f"New Otp created for user with email::{otp.owner.email}",
             )
         return req.req_failure("new Otp cant be created")
 
@@ -279,7 +281,11 @@ class UserHandler(UserQueries):
     def verify_email_token(self, token: str, expiration: int = 3600) -> bool:
         serializer = URLSafeTimedSerializer(self.config.secret_key)
         try:
-            _ = serializer.loads(token, salt=self.config.rounds, max_age=expiration)
+            _ = serializer.loads(
+                token,
+                salt=self.config.rounds,
+                max_age=expiration,
+            )
             return True
         except SignatureExpired:
             return False
