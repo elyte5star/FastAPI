@@ -1,4 +1,4 @@
-API with Go Fiber.
+API with FastAPI.
 
 ## Project Setup
 
