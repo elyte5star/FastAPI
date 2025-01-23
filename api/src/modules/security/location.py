@@ -32,10 +32,10 @@ class DifferentLocationChecker(DeviceMetaDataChecker):
         self, username: str, ip: str
     ) -> NewLocationToken | None:
         if not self.is_geo_ip_enabled():
-            self.cf.logger.warning("GEO IP DISABALED BY ADMIN")
+            self.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
         country = await self.get_country_from_ip(ip)
-        self.cf.logger.info(f"country :: {country} ====****")
+        self.logger.info(f"country :: {country} ====****")
         user = await self.get_user_by_username(username)
         user_loc = await self.find_user_location_by_country_and_user_query(
             country, user
@@ -67,5 +67,5 @@ class DifferentLocationChecker(DeviceMetaDataChecker):
                 country = response.country.name
                 return country
         except Exception as e:
-            self.cf.logger.error(e)
+            self.logger.error(e)
             return country

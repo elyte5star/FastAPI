@@ -1,7 +1,8 @@
 import handler
 import logging
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.trustedhost import TrustedHostMiddleware
+
+# from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.staticfiles import StaticFiles
 from modules.middleware.log import get_file_handler, get_console_handler
 from fastapi.encoders import jsonable_encoder
@@ -24,11 +25,11 @@ cfg = handler.cfg
 log = handler.logger
 
 # # Set up logging
-# logging.basicConfig(
-#     handlers=[get_console_handler(), get_file_handler(cfg.log_file_path)],
-#     encoding=cfg.encoding,
-#     level=cfg.log_type,
-# )
+logging.basicConfig(
+    handlers=[get_console_handler(), get_file_handler(cfg.log_file_path)],
+    encoding=cfg.encoding,
+    level=cfg.log_type,
+)
 
 
 @asynccontextmanager
@@ -67,10 +68,8 @@ app.add_middleware(EventHandlerASGIMiddleware, handlers=[APIEvents()])
 # Include Session
 # app.add_middleware(SessionMiddleware, secret_key=cfg.secret_key, max_age=1500)
 
-ALLOWED_HOSTS = ["*"]
 
-if cfg.origins:
-    ALLOWED_HOSTS = [str(origin) for origin in cfg.origins]
+ALLOWED_HOSTS = [str(origin) for origin in cfg.origins] if cfg.origins else ["*"]
 
 
 # CORS middleware

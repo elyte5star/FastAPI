@@ -179,7 +179,7 @@ class UserHandler(UserQueries):
         await self.update_user_query(user.id, dict(enabled=True))
         is_deleted = await self.delete_otp_by_id_query(otp.id)
         if not is_deleted:
-            self.cf.logger.warning("Old OTP not deleted")
+            self.logger.warning("Old OTP not deleted")
         return TOKEN_VALID
 
     async def is_otp_valid(self, otp: Otp) -> bool:
@@ -306,7 +306,7 @@ class UserHandler(UserQueries):
 
     async def add_user_location(self, user: User, ip: str):
         if not self.is_geo_ip_enabled():
-            self.cf.logger.warning("GEO IP DISABALED BY ADMIN")
+            self.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
         country = await self.get_country_from_ip(ip)
         user_loc = UserLocation(
@@ -336,5 +336,5 @@ class UserHandler(UserQueries):
                 country = response.country.name
                 return country
         except Exception as e:
-            self.cf.logger.error(e)
+            self.logger.error(e)
             return country

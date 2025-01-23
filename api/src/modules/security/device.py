@@ -14,7 +14,11 @@ class DeviceMetaDataChecker(AuthQueries):
         ip = self.get_client_ip_address(request)
         city = await self.get_city_from_ip(ip)
         device_details = self.get_device_details(request)
-        existing_device = await self.find_existing_device(user.id, device_details, city)
+        existing_device = await self.find_existing_device(
+            user.id,
+            device_details,
+            city,
+        )
         if existing_device is None:
             event_payload = {
                 "username": user.username,
@@ -53,7 +57,7 @@ class DeviceMetaDataChecker(AuthQueries):
                 city = response.city.name
                 return city
         except Exception as e:
-            self.cf.logger.error(e)
+            self.logger.error(e)
             return city
 
     def get_device_details(self, request: Request) -> str:
@@ -73,6 +77,6 @@ class DeviceMetaDataChecker(AuthQueries):
 
     async def login_notification(self, user: User, request: Request) -> None:
         if not self.is_geo_ip_enabled():
-            self.cf.logger.warning("GEO IP DISABALED BY ADMIN")
+            self.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
         await self.verify_device(user, request)

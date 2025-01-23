@@ -19,7 +19,7 @@ API with FastAPI.
     DB_URL="postgresql+asyncpg://userExample:54321@localhost/elyte"
     CLIENT_URL="*"
     LOG_PATH="./api.log"
-    "
+    
     
   ```
   ```

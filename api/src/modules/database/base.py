@@ -160,6 +160,7 @@ class AsyncDatabaseSession:
             raise
 
     def get_app_url(self, request: Request) -> str:
+        # request.url.path, request.url.port, request.url.scheme
         client_url = self.get_client_url()
         if client_url is None:
             origin_url = dict(request.scope["headers"]).get(b"referer", b"").decode()

@@ -49,7 +49,7 @@ class LoginAttemptChecker(DifferentLocationChecker):
             if expire < current_time:
                 del self.attempts_cache[key]
                 self.attempt_count = 0
-                self.cf.logger.warning(f"IP:{key} UNBLOCKED")
+                self.logger.warning(f"IP:{key} UNBLOCKED")
                 return True
         return False
 
@@ -57,7 +57,7 @@ class LoginAttemptChecker(DifferentLocationChecker):
         cookie = request.cookies.get(name)
         if cookie is not None:
             return cookie
-        self.cf.logger.warning(f"Cookie with name :{name} not found!")
+        self.logger.warning(f"Cookie with name :{name} not found!")
         return None
 
     async def reset_user_failed_attempts(self, user: User) -> None:
@@ -68,7 +68,7 @@ class LoginAttemptChecker(DifferentLocationChecker):
         user.is_locked = True
         changes = dict(lock_time=time_now_utc(), is_locked=True)
         await self.update_user_query(userid, changes)
-        self.cf.logger.warning(f"User with id: {userid} is locked")
+        self.logger.warning(f"User with id: {userid} is locked")
 
     async def increase_user_failed_attempts(self, user: User) -> None:
         user_failed_attempts = user.failed_attempts
