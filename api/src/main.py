@@ -103,8 +103,8 @@ app.mount("/static", StaticFiles(directory="./modules/static"), name="static")
 async def custom_http_exception_handler(
     request: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
-    start_time = time.perf_counter()
     log.warning(f"{repr(exc.detail)}!!")
+    start_time = time.perf_counter()
     body = await request.body()
     stop_time = time.perf_counter()
     process_time = stop_time - start_time
