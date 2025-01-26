@@ -19,44 +19,51 @@ class EmailService:
 
     async def send_plain_text(self, req: EmailRequestSchema) -> bool:
         message = MessageSchema(
-            subject=req.body["subject"],
+            subject=req.subject,
             recipients=req.recipients,
-            body=req.body["message"],
+            body=req.body,
             subtype=MessageType.plain,
         )
         try:
             await self.fm.send_message(message)
             return True  # req.req_success(f"Message sent to {req.recipients}")
         except ConnectionErrors as e:
-            self.config.logger.error("Couldn't not send email", e)
+            self.logger.error("Couldn't not send email", e)
             return False  # req.req_failure("Couldn't not send email")
 
     async def send_email_to_user(self, req: EmailRequestSchema) -> bool:
         message = MessageSchema(
-            subject=req.body["subject"],
+            subject=req.subject,
             recipients=req.recipients,
-            body=req.body["message"],
+            body=req.body,
             subtype=MessageType.html,
         )
         try:
-            await self.fm.send_message(message, template_name=req.template_name)
+            await self.fm.send_message(
+                message,
+                template_name=req.template_name,
+            )
             return True
         except ConnectionErrors as e:
-            self.config.logger.error("Couldn't not send email", e)
+            self.logger.error("Couldn't not send email", e)
             return False  # req.req_failure("Couldn't not send email")
 
     async def send_invoice(
         self, background_tasks: BackgroundTasks, req: EmailRequestSchema
     ) -> bool:
         message = MessageSchema(
-            subject=req.body["subject"],
+            subject=req.subject,
             recipients=req.recipients,
-            body=req.body["message"],
+            body=req.body,
             subtype=MessageType.html,
             attachments=[req.file],
         )
         try:
-            background_tasks.add_task(self.fm.send_message, message, req.template_name)
+            background_tasks.add_task(
+                self.fm.send_message,
+                message,
+                req.template_name,
+            )
             return True  # req.req_success(f"Invoice sent to {req.emails}")
         except ConnectionErrors as e:
             self.config.logger.error("Couldn't not send invoice", e)

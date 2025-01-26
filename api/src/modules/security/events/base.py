@@ -32,7 +32,7 @@ class SignUpPayload(BaseModel):
 
 
 @payload_schema.register(event_name=UserEvents.STRANGE_LOCATION)
-class StrangeLocationPayload(BaseModel):
+class StrangeLocation(BaseModel):
     username: str
     ip: str
     token: str
@@ -43,8 +43,9 @@ class StrangeLocationPayload(BaseModel):
 
 
 @payload_schema.register(event_name=UserEvents.UNKNOWN_DEVICE_LOGIN)
-class NewDeviceLoginPayload(BaseModel):
+class NewDeviceLogin(BaseModel):
     username: str
+    email: EmailStr
     device_details: str
     ip: str
     location: str
@@ -60,7 +61,7 @@ class APIEvents(BaseEventHandler):
                 print(payload)
             case UserEvents.UNKNOWN_DEVICE_LOGIN:
                 payload = event[1]
-                print(payload)
+                print("New device",payload)
             case UserEvents.UNKNOWN_USER_AUTH_FAILURE:
                 payload = event[1]
                 print(payload)

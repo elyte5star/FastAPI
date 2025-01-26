@@ -4,7 +4,7 @@ from fastapi import Request
 import geoip2.database
 from modules.utils.misc import get_indent, time_now_utc
 from fastapi_events.dispatcher import dispatch
-from modules.security.events.base import UserEvents
+from modules.security.events.base import UserEvents, NewDeviceLogin
 from modules.repository.schema.users import User
 
 
@@ -20,12 +20,13 @@ class DeviceMetaDataChecker(AuthQueries):
             city,
         )
         if existing_device is None:
-            event_payload = {
-                "username": user.username,
-                "device_details": device_details,
-                "ip": ip,
-                "location": city,
-            }
+            event_payload = NewDeviceLogin(
+                username=user.username,
+                email=user.email,
+                device_details=device_details,
+                ip=ip,
+                location=city,
+            )
             dispatch(UserEvents.UNKNOWN_DEVICE_LOGIN, event_payload)
             new_device_meta_data = DeviceMetaData(
                 id=get_indent(),

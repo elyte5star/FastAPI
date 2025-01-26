@@ -103,7 +103,7 @@ class AsyncDatabaseSession:
         return GetInfoResponse(info=info, message="System information")
 
     async def create_admin_account(self, async_session: AsyncSession) -> User:
-        admin_username: str = self.cf.contacts["username"]
+        admin_username = self.cf.contacts["username"]
         if await self.get_user_by_username(admin_username) is None:
             admin_email: str = self.cf.contacts["email"]
             tel: str = self.cf.contacts["telephone"]

@@ -1,11 +1,11 @@
-from modules.repository.response_models.auth import TokenResponse, TokenData
+from modules.repository.response_models.auth import TokenResponse
 from modules.repository.request_models.auth import LoginRequest, RefreshTokenRequest
 import bcrypt
 from modules.repository.validators.base import is_valid_email
 from typing import Optional
 from datetime import timedelta
 from jose import jwt
-from modules.utils.misc import time_delta, time_now, get_indent, time_now_utc
+from modules.utils.misc import time_delta, time_now, get_indent
 from modules.repository.schema.users import User
 from fastapi import Request, Response
 from modules.security.login_attempt import LoginAttemptChecker
@@ -26,7 +26,10 @@ class AuthenticationHandler(LoginAttemptChecker):
                 return req.req_failure(
                     " Account unverified or locked. Please, contact admin "
                 )
-            if self.verify_password(req.password.get_secret_value(), user.password):
+            if self.verify_password(
+                req.password.get_secret_value(),
+                user.password,
+            ):
                 active = True
                 role = "USER" if not user.admin else "ADMIN"
                 data = {
@@ -41,8 +44,10 @@ class AuthenticationHandler(LoginAttemptChecker):
                     "discount": user.discount,
                     "accountNonLocked": not user.is_locked,
                 }
+                strange = await self.on_login_success(user, request)
+                if strange:
+                    return req.req_failure("Login attempt from different location")
                 token_data = await self.create_token_response(user, data)
-                await self.on_login_success(user, request)
                 req.result.data = token_data
                 return req.req_success(
                     f"User with username/email : {req.username} is authorized"
@@ -51,18 +56,6 @@ class AuthenticationHandler(LoginAttemptChecker):
         return req.req_failure(
             f"User {req.username} is not authorized.Incorrect username or password"
         )
-
-    def verify_password(
-        self,
-        plain_password: str,
-        hashed_password: str,
-    ) -> bool:
-        if bcrypt.checkpw(
-            plain_password.encode(self.cf.encoding),
-            hashed_password.encode(self.cf.encoding),
-        ):
-            return True
-        return False
 
     async def create_token_response(self, user: User, data: dict) -> dict:
         access_token_expiry = time_delta(self.cf.token_expire_min)
@@ -87,11 +80,26 @@ class AuthenticationHandler(LoginAttemptChecker):
             tokenId=data["jti"],
         )
 
-    async def on_login_success(self, user: User, request: Request):
+    def verify_password(
+        self,
+        plain_password: str,
+        hashed_password: str,
+    ) -> bool:
+        if bcrypt.checkpw(
+            plain_password.encode(self.cf.encoding),
+            hashed_password.encode(self.cf.encoding),
+        ):
+            return True
+        return False
+
+    async def on_login_success(self, user: User, request: Request) -> bool:
         if user.failed_attempts > 0:
             await self.reset_user_failed_attempts(user)
         await self.login_notification(user, request)
-        await self.check_strange_location(user, request)
+        is_strange = await self.check_strange_location(user, request)
+        if is_strange:
+            return True
+        return False
 
     async def on_login_failure(self, user: User, request: Request):
         if user is None:

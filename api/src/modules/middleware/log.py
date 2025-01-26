@@ -7,9 +7,24 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.encoders import jsonable_encoder
 from typing import Callable
 import json
+from os import path
+from pathlib import Path
+from psutil import cpu_percent, virtual_memory
+
+base_dir = Path(__file__).parent.parent.parent
+logs_target = path.join(base_dir, "api.log")
+logs_error_target = path.join(base_dir, "error.log")
+
+
+class PsutilFilter(logging.Filter):
+    def filter(self, record) -> bool:
+        record.user = "API"
+        record.psutil = f"c{cpu_percent():02.0f}m{virtual_memory().percent:02.0f}"
+        return True
+
 
 FORMATTER = logging.Formatter(
-    "%(levelname)s :: %(asctime)s :: %(name)s :: %(funcName)s :: %(message)s"
+    "%(levelname)s::%(psutil)s::%(asctime)s :: %(name)s :: %(funcName)s :: %(message)s"
 )
 
 
@@ -25,111 +40,70 @@ def get_file_handler(filename: str):
     return file_handler
 
 
-def get_logger(filename: str, logger_name: str = __name__) -> logging.Logger:
-    logger = logging.getLogger(logger_name)
+def log_config(console_log_level: str = "DEBUG") -> dict:
 
-    logger.setLevel(logging.DEBUG)  # better to have too much log than not enough
+    LOGGING_CONFIG = {
+        "version": 1,
+        "filters": {"psutil": {"()": "modules.middleware.log.PsutilFilter"}},
+        "formatters": {
+            "json": {
+                "format": "%(levelname)s :: %(asctime)s :: %(name)s :: %(funcName)s :: %(message)s",
+                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            },
+            "error": {
+                "format": "%(levelname)s :: %(asctime)s :: %(name)s :: %(funcName)s :: %(message)s",
+                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            },
+            "standard": {
+                "format": "%(levelname)s :: %(asctime)s :: %(name)s :: %(funcName)s :: %(message)s"
+            },
+        },
+        "handlers": {
+            "console": {
+                "level": console_log_level,
+                "class": "logging.StreamHandler",
+                "formatter": "standard",
+                "stream": sys.stdout,
+                "filters": ["psutil"],
+            },
+            "info_rotating_file_handler": {
+                "level": "INFO",
+                "formatter": "json",
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": logs_target,
+                "mode": "a",
+                "maxBytes": 1048576,
+                "backupCount": 10,
+                "encoding": "utf8",
+            },
+            "error_file_handler": {
+                "level": "WARNING",
+                "formatter": "error",
+                "class": "logging.FileHandler",
+                "filename": logs_error_target,
+                "mode": "a",
+            },
+            "critical_mail_handler": {
+                "level": "CRITICAL",
+                "formatter": "error",
+                "class": "logging.handlers.SMTPHandler",
+                "mailhost": "localhost",
+                "fromaddr": "monitoring@domain.com",
+                "toaddrs": ["dev@domain.com", "qa@domain.com"],
+                "subject": "Critical error with application name",
+            },
+        },
+        "root": {
+            "level": "NOTSET",
+            "handlers": [
+                "console",
+                "info_rotating_file_handler",
+                "error_file_handler",
+                "critical_mail_handler",
+            ],
+        },
+    }
+    return LOGGING_CONFIG
 
-    logger.addHandler(get_console_handler())
-    logger.addHandler(get_file_handler(filename))
-    # with this pattern, it's rarely necessary to propagate the error up to parent
-    logger.propagate = False
-
-    return logger
 
 
-class AsyncIteratorWrapper:
-    """The following is a utility class that transforms a
-    regular iterable to an asynchronous one.
-
-    link: https://www.python.org/dev/peps/pep-0492/#example-2
-    """
-
-    def __init__(self, obj):
-        self._it = iter(obj)
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        try:
-            value = next(self._it)
-        except StopIteration:
-            raise StopAsyncIteration
-        return value
-
-
-class LoggerMiddleWare(BaseHTTPMiddleware):
-    def __init__(
-        self,
-        app: FastAPI,
-        log_level=logging.NOTSET,
-        file_path=None,
-    ):
-        super().__init__(app)
-        self.file_path = file_path
-        self._log_level = log_level
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(self._log_level)
-        self.logger.addHandler(get_console_handler())
-        self.logger.addHandler(get_file_handler(self.file_path))
-
-    async def dispatch(self, request, call_next):
-        try:
-            # response = await call_next(request)
-            request_dict = await self._log_request(request)
-            response, response_dict = await self._log_response(call_next, request)
-            logging_dict = {"request": request_dict, "response": response_dict}
-            self.logger.info(logging_dict)
-            return response
-        except RuntimeError as exc:
-            if (
-                str(exc) == "No response returned."
-            ) and await request.is_disconnected():
-                return JSONResponse(
-                    status_code=status.HTTP_204_NO_CONTENT,
-                    content=jsonable_encoder(
-                        {
-                            "message": str(exc.errors()),
-                            "body": exc.body,
-                            "success": False,
-                        }
-                    ),
-                )
-            raise
-
-    async def _log_request(self, request: Request) -> dict:
-        url_path = request.url.path
-        if request.query_params:
-            url_path += f"?{request.query_params}"
-        ip = ""
-        xf_header = request.headers.get("X-Forwarded-For")
-        if xf_header is not None:
-            ip = xf_header.split(",")[0]
-        else:
-            ip = request.client.host
-        request_logging_dict = {
-            "method": request.method,
-            "path": url_path,
-            "ip": ip,
-        }
-        return request_logging_dict
-
-    async def _log_response(
-        self, call_next: Callable, request: Request
-    ) -> tuple[Response, dict]:
-        response: Response = await call_next(request)
-        overall_status = "successful" if response.status_code < 400 else "failed"
-        response_logging = {
-            "status": overall_status,
-            "status_code": response.status_code,
-        }
-        resp_body = [section async for section in response.__dict__["body_iterator"]]
-        response.__setattr__("body_iterator", AsyncIteratorWrapper(resp_body))
-        try:
-            resp_body = json.loads(resp_body[0].decode())
-        except Exception:
-            resp_body = str(resp_body)
-
-        # response_logging["body"] = resp_body
-        return response, response_logging

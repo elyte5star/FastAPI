@@ -143,7 +143,8 @@ class ApiConfig:
         self.client_url = str(getenv("CLIENT_URL", self.client_url))
         self.refresh_token_expire_min = int(
             getenv(
-                "API_JWT_REFRESH_TOKEN_EXPIRE_MINUTES", self.refresh_token_expire_min
+                "API_JWT_REFRESH_TOKEN_EXPIRE_MINUTES",
+                self.refresh_token_expire_min,
             )
         )
         self.mail_password = str(getenv("MAIL_PASSWORD"))

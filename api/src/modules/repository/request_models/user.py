@@ -1,4 +1,4 @@
-from pydantic import EmailStr, model_validator
+from pydantic import EmailStr, model_validator, FilePath
 from fastapi.exceptions import RequestValidationError
 from typing_extensions import Self
 from modules.repository.request_models.base import BaseResponse
@@ -16,7 +16,6 @@ from modules.repository.validators.base import (
 )
 from modules.repository.request_models.base import BaseReq
 from typing import Any, Optional
-from fastapi import UploadFile, File
 
 
 class CreateUserRequest(BaseReq):
@@ -49,11 +48,11 @@ class GetUsersRequest(BaseReq):
 
 
 class EmailRequestSchema(BaseReq):
+    subject: str
     recipients: list[EmailStr]
     body: dict[str, Any]
-    file: UploadFile = File(...)
+    file: Optional[FilePath] = None
     template_name: Optional[str] = None
-    result: BaseResponse = BaseResponse()
 
 
 class OtpRequest(BaseReq):

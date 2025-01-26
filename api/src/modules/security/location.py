@@ -4,29 +4,27 @@ from modules.repository.schema.users import NewLocationToken, UserLocation, User
 import geoip2.database
 from modules.utils.misc import get_indent
 from fastapi_events.dispatcher import dispatch
-from modules.security.events.base import UserEvents
+from modules.security.events.base import UserEvents, StrangeLocation
 
 
 class DifferentLocationChecker(DeviceMetaDataChecker):
 
-    async def check_strange_location(self, user: User, request: Request):
+    async def check_strange_location(self, user: User, request: Request) -> bool:
         ip_address = self.get_client_ip_address(request)
         loc_token = await self.is_new_login_location(user.username, ip_address)
         if loc_token is not None:
             app_url = self.get_app_url(request)
-            event_payload = {
-                "app_url": app_url,
-                "ip": ip_address,
-                "token": loc_token.token,
-                "username": user.username,
-                "email": user.email,
-                "country": loc_token.location.country,
-            }
+            event_payload = StrangeLocation(
+                app_url=app_url,
+                ip=ip_address,
+                token=loc_token.token,
+                username=user.username,
+                email=user.email,
+                country=loc_token.location.country,
+            )
             dispatch(UserEvents.STRANGE_LOCATION, event_payload)
-            # raise HTTPException(
-            #     status_code=status.HTTP_403_FORBIDDEN,
-            #     detail="Unusual location",
-            # )
+            return True
+        return False
 
     async def is_new_login_location(
         self, username: str, ip: str

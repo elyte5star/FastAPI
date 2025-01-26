@@ -28,7 +28,7 @@ debug = true
 auth_type = ["MANUAL", "MSOFT","GOOGLE"]
 host_url = "http://localhost:8000/"
 log_type = "DEBUG"
-log_file_path="../api.log"
+log_file_path="../extreme_api.log"
 login_attempts=3
 lock_duration = 15
 enabled_geoip=true
@@ -156,6 +156,7 @@ fastapi-mail = "^1.4.2"
 itsdangerous = "^2.2.0"
 geoip2 = "^4.8.1"
 aiofiles = "^24.1.0"
+python-json-logger = "^3.2.1"
 
 
 [build-system]
