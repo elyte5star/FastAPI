@@ -22,6 +22,7 @@ from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
 from asyncpg.exceptions import PostgresError
 from fastapi import Request
+from itsdangerous import URLSafeTimedSerializer
 
 
 class AsyncDatabaseSession:
@@ -103,7 +104,7 @@ class AsyncDatabaseSession:
         return GetInfoResponse(info=info, message="System information")
 
     async def create_admin_account(self, async_session: AsyncSession) -> User:
-        admin_username = self.cf.contacts["username"]
+        admin_username: str = self.cf.contacts["username"]
         if await self.get_user_by_username(admin_username) is None:
             admin_email: str = self.cf.contacts["email"]
             tel: str = self.cf.contacts["telephone"]
@@ -160,7 +161,6 @@ class AsyncDatabaseSession:
             raise
 
     def get_app_url(self, request: Request) -> str:
-        # request.url.path, request.url.port, request.url.scheme
         client_url = self.get_client_url()
         if client_url is None:
             origin_url = dict(request.scope["headers"]).get(b"referer", b"").decode()
@@ -188,3 +188,17 @@ class AsyncDatabaseSession:
             raise
         finally:
             return result
+
+    def create_timed_token(self, email: str) -> str:
+        serializer = URLSafeTimedSerializer(
+            self.cf.secret_key, salt=str(self.cf.rounds)
+        )
+        return serializer.dumps(email)
+
+    def get_client_ip_address(self, request: Request) -> str:
+        xf_header = request.headers.get("X-Forwarded-For")
+        if xf_header is not None:
+            return xf_header.split(",")[0]
+        return "128.101.101.101"  # for testing Richfield,United States
+        # return "41.238.0.198" # for testing Giza, Egypt
+        #return request.client.host

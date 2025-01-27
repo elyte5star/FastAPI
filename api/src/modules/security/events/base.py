@@ -4,6 +4,10 @@ from fastapi_events.handlers.base import BaseEventHandler
 from fastapi_events.registry.payload_schema import registry as payload_schema
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from modules.settings.configuration import ApiConfig
+from modules.security.events.email import EmailService
+from modules.repository.request_models.user import EmailRequestSchema
+from modules.utils.misc import time_now_utc
 
 
 class UserEvents(Enum):
@@ -51,25 +55,111 @@ class NewDeviceLogin(BaseModel):
     location: str
     # locale:str future?
 
+@payload_schema.register(event_name=UserEvents.BLOCKED)
+class BlockedUserAccount(BaseModel):
+    userid: str
+    username: str
+    email: EmailStr
+    blocked_date: datetime
+
+
+class APIEventsHandler(EmailService):
+         
+    async def unknown_device_notification(self, event_payload: dict):
+        model = NewDeviceLogin(**event_payload)
+        subject = "New Login Notification"
+        body = {
+            "Device details": model.device_details,
+            "Location": model.location,
+            "IP Address": model.ip,
+        }
+        email_req = EmailRequestSchema(
+            subject=subject,
+            recipients=[model.email],
+            body=body,
+        )
+        is_sent = await self.send_plain_text(email_req)
+        if is_sent:
+            self.config.logger.info(f"Email sent to :{event_payload.email}")
+            return True
+        self.config.logger.warning(f"Email not sent to :{event_payload.email}")
+        return False
+
+    async def confirm_registration_notification(
+        self,
+        event_payload: SignUpPayload,
+    ):
+        subject = "Registration Confirmation"
+        body = {
+            "confirmationUrl": (
+                event_payload.app_url
+                + "/registrationConfirm?token="
+                + event_payload.token
+            ),
+            "message": f"""You registered successfully.
+            Your ID is :{event_payload.userid}.
+            To confirm your registration, please click on the below link.""",
+            "expiry": f" The link expires in {event_payload.expiry} seconds",
+            "home": event_payload.app_url,
+        }
+        email_req = EmailRequestSchema(
+            subject=subject,
+            recipients=[event_payload.email],
+            body=body,
+            template_name="confirm_registration.html",
+        )
+        is_sent = await self.send_email_to_user(email_req)
+        if is_sent:
+            self.config.logger.info(f"Email sent to :{event_payload.email}")
+            return True
+        self.config.logger.warning(f"Email not sent to :{event_payload.email}")
+        return False
+
+    async def strange_location__login_notification(
+        self,
+        event_payload: StrangeLocation,
+    ):
+        subject = "Login attempt from different location"
+        print(StrangeLocation.app_url)
+        body = {
+            "country": event_payload.country,
+            "ip": event_payload.ip,
+            "Date": time_now_utc(),
+            "enableLocationLink": event_payload.app_url
+            + "/user/enableNewLoc?token="
+            + event_payload.token,
+            "changePassUri": event_payload.app_url + "/user/updatePassword",
+        }
+        email_req = EmailRequestSchema(
+            subject=subject,
+            recipients=[event_payload.email],
+            body=body,
+            template_name="unusual_location.html",
+        )
+        is_sent = await self.send_email_to_user(email_req)
+        if is_sent:
+            self.config.logger.info(f"Email sent to :{event_payload.email}")
+            return True
+        self.config.logger.warning(f"Email not sent to :{event_payload.email}")
+        return False
+
 
 class APIEvents(BaseEventHandler):
+    def __init__(self, config: ApiConfig) -> None:
+        self._handler = APIEventsHandler(config)
 
     async def handle(self, event: Event) -> None:
         match event[0]:
             case UserEvents.SIGNED_UP:
                 payload = event[1]
-                print(payload)
+                await self._handler.confirm_registration_notification(payload)
             case UserEvents.UNKNOWN_DEVICE_LOGIN:
                 payload = event[1]
-                print("New device",payload)
-            case UserEvents.UNKNOWN_USER_AUTH_FAILURE:
-                payload = event[1]
-                print(payload)
+                await self._handler.unknown_device_notification(payload)
             case UserEvents.BLOCKED:
                 payload = event[1]
-                print(payload)
             case UserEvents.STRANGE_LOCATION:
                 payload = event[1]
-                print(payload)
+                await self._handler.strange_location__login_notification(payload)
             case _:
                 return "UNKNOWN EVENT ALERT ADMIN"

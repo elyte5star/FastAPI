@@ -58,7 +58,7 @@ for route in handler.routes:
 
 
 # Add events middleware
-app.add_middleware(EventHandlerASGIMiddleware, handlers=[APIEvents()])
+app.add_middleware(EventHandlerASGIMiddleware, handlers=[APIEvents(cfg)])
 
 
 # Include Session

@@ -18,6 +18,7 @@ class EmailService:
         self.config = config
 
     async def send_plain_text(self, req: EmailRequestSchema) -> bool:
+        print("I got here")
         message = MessageSchema(
             subject=req.subject,
             recipients=req.recipients,
@@ -26,10 +27,10 @@ class EmailService:
         )
         try:
             await self.fm.send_message(message)
-            return True  # req.req_success(f"Message sent to {req.recipients}")
+            return True
         except ConnectionErrors as e:
             self.logger.error("Couldn't not send email", e)
-            return False  # req.req_failure("Couldn't not send email")
+            return False
 
     async def send_email_to_user(self, req: EmailRequestSchema) -> bool:
         message = MessageSchema(
@@ -46,7 +47,7 @@ class EmailService:
             return True
         except ConnectionErrors as e:
             self.logger.error("Couldn't not send email", e)
-            return False  # req.req_failure("Couldn't not send email")
+            return False
 
     async def send_invoice(
         self, background_tasks: BackgroundTasks, req: EmailRequestSchema
@@ -84,12 +85,6 @@ class EmailService:
     ) -> bool:
         _ = await checker.blacklist_rm_email(email)
         return True
-
-    def generate_confirmation_token(self, email: str):
-        serializer = URLSafeTimedSerializer(
-            self.cf.secret_key, salt=self.cf.security_salt
-        )
-        return serializer.dumps(email)
 
     def verify_email_token(self, token: str, expiration: int = 3600) -> bool:
         serializer = URLSafeTimedSerializer(self.config.secret_key)

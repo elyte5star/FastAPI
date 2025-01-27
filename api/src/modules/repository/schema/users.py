@@ -53,7 +53,7 @@ class UserLocation(Base):
 
 class NewLocationToken(Base):
     id = Column(String(60), primary_key=True, index=True)
-    token = Column(String(60), index=True)
+    token = Column(String(100), index=True)
     user_loc_id = Column(
         String(60),
         ForeignKey("userlocation.id", onupdate="CASCADE", ondelete="CASCADE"),
@@ -67,7 +67,7 @@ class NewLocationToken(Base):
 class Otp(Base):
     id = Column(String(60), primary_key=True, index=True)
     email = Column(String(20), unique=True, index=True)
-    token = Column(String(200), index=True)
+    token = Column(String(100), index=True)
     expiry = Column("expiryDate", DateTime(timezone=True))
     userid = Column(
         String(60),

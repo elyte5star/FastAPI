@@ -20,7 +20,7 @@ class DeviceMetaDataChecker(AuthQueries):
             city,
         )
         if existing_device is None:
-            event_payload = NewDeviceLogin(
+            event_payload = dict(
                 username=user.username,
                 email=user.email,
                 device_details=device_details,
@@ -39,14 +39,6 @@ class DeviceMetaDataChecker(AuthQueries):
         else:
             changes = {"last_login_date": time_now_utc()}
             _ = await self.update_device_meta_data_query(existing_device.id, changes)
-
-    def get_client_ip_address(self, request: Request) -> str:
-        xf_header = request.headers.get("X-Forwarded-For")
-        if xf_header is not None:
-            return xf_header.split(",")[0]
-        # return "128.101.101.101"  # for testing Richfield,United States
-        # return "41.238.0.198" # for testing Giza, Egypt
-        return request.client.host
 
     async def get_city_from_ip(self, ip: str) -> str:
         city = "UNKNOWN"

@@ -1,12 +1,6 @@
 import logging
 import sys
 from logging.handlers import TimedRotatingFileHandler
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi import status, FastAPI, Request
-from fastapi.responses import JSONResponse, Response
-from fastapi.encoders import jsonable_encoder
-from typing import Callable
-import json
 from os import path
 from pathlib import Path
 from psutil import cpu_percent, virtual_memory
@@ -16,7 +10,7 @@ logs_target = path.join(base_dir, "api.log")
 logs_error_target = path.join(base_dir, "error.log")
 
 
-class PsutilFilter(logging.Filter):
+class UserFilter(logging.Filter):
     def filter(self, record) -> bool:
         record.user = "API"
         record.psutil = f"c{cpu_percent():02.0f}m{virtual_memory().percent:02.0f}"
@@ -44,7 +38,7 @@ def log_config(console_log_level: str = "DEBUG") -> dict:
 
     LOGGING_CONFIG = {
         "version": 1,
-        "filters": {"psutil": {"()": "modules.middleware.log.PsutilFilter"}},
+        "filters": {"psutil": {"()": "modules.middleware.log.UserFilter"}},
         "formatters": {
             "json": {
                 "format": "%(levelname)s :: %(asctime)s :: %(name)s :: %(funcName)s :: %(message)s",
@@ -104,6 +98,3 @@ def log_config(console_log_level: str = "DEBUG") -> dict:
         },
     }
     return LOGGING_CONFIG
-
-
-

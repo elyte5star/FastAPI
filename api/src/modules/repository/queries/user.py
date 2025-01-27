@@ -130,7 +130,8 @@ class UserQueries(AsyncDatabaseSession):
         otps = result.scalars().all()
         return otps
 
-    async def update_otp_query(self, id: str, data: dict) -> None:
+    async def update_otp_query(self, id: str, data: dict) -> dict | None:
+        result = None
         stmt = (
             self.sqlalchemy_update(Otp)
             .where(Otp.id == id)
@@ -138,8 +139,9 @@ class UserQueries(AsyncDatabaseSession):
             .execution_options(synchronize_session="fetch")
         )
         try:
-            await self.async_session.execute(stmt)
-            await self.async_session.commit()
+            result = await self.async_session.execute(stmt)
+            result = result.last_updated_params()
+            return result
         except PostgresError as e:
             await self.async_session.rollback()
             self.logger.error("Failed to update otp:", e)

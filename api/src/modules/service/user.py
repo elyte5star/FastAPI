@@ -5,6 +5,7 @@ from modules.repository.request_models.user import (
     OtpRequest,
     DeleteUserRequest,
     NewOtpRequest,
+    EnableLocationRequest,
 )
 from modules.repository.response_models.user import (
     CreateUserResponse,
@@ -112,12 +113,6 @@ class UserHandler(UserQueries):
         dispatch(UserEvents.SIGNED_UP, event_payload)
         return req.req_success(f"Otp created and sent to email::{user.email}")
 
-    def create_timed_token(self, email: str) -> str:
-        serializer = URLSafeTimedSerializer(
-            self.cf.secret_key, salt=str(self.cf.rounds)
-        )
-        return serializer.dumps(email)
-
     async def generate_confirmation_token(
         self,
         userid: str,
@@ -170,7 +165,7 @@ class UserHandler(UserQueries):
         otp = await self.get_otp_by_token_query(token=token)
         if otp is None:
             return TOKEN_INVALID
-        valid = await self.is_otp_valid()
+        valid = await self.is_otp_valid(otp)
         if not valid:
             return TOKEN_EXPIRED
         user = await self.get_user_by_id(otp.userid)
@@ -293,16 +288,24 @@ class UserHandler(UserQueries):
             return False
 
     # LOCATION
+    async def _enable_new_loc(self, req: EnableLocationRequest) -> BaseResponse:
+        country = self.is_valid_new_location_token(req.token)
+        if country is not None:
+            return req.req_success(f"{country} enabled.")
+        return req.req_failure("Invalid Login Location!")
 
     async def is_valid_new_location_token(self, token: str) -> str | None:
-        loc_token = await self.find_new_location_by_token_query(token)
-        if loc_token is None:
-            return None
-        user_loc = await self.find_new_location_by_token_query(loc_token)
-        user_loc.enabled = True
-        await self.update_user_loc_query(user_loc.id, user_loc)
-        await self.del_new_location_query(loc_token.id)
-        return user_loc.country
+        new_loc_token = await self.find_new_location_by_token_query(token)
+        if new_loc_token is not None:
+            user_loc = new_loc_token.location
+            result = await self.update_user_loc_query(
+                user_loc.id,
+                dict(enabled=True),
+            )
+            self.logger.debug(result)
+            await self.del_new_location_query(new_loc_token.id)
+            return user_loc.country
+        return None
 
     async def add_user_location(self, user: User, ip: str):
         if not self.is_geo_ip_enabled():
@@ -318,13 +321,6 @@ class UserHandler(UserQueries):
         if ip in LOCAL_HOST_ADDRESSES:
             return True
         return False
-
-    def get_client_ip_address(self, request: Request) -> str:
-        xf_header = request.headers.get("X-Forwarded-For")
-        if xf_header is not None:
-            return xf_header.split(",")[0]
-        # return "41.238.0.198"  # for testing Egypt
-        return request.client.host
 
     async def get_country_from_ip(self, ip: str) -> str:
         country = "UNKNOWN"

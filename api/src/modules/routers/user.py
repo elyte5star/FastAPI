@@ -14,6 +14,7 @@ from modules.repository.request_models.user import (
     DeleteUserRequest,
     OtpRequest,
     NewOtpRequest,
+    EnableLocationRequest,
 )
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
 from pydantic import EmailStr
@@ -75,6 +76,14 @@ class UserRouter(UserHandler):
             dependencies=[Depends(RoleChecker(["ADMIN"]))],
             description="Get Users, Admin right required",
         )
+        self.router.add_api_route(
+            path="/enableNewLoc/{token}",
+            endpoint=self.enable_new_loc,
+            response_model=BaseResponse,
+            methods=["GET"],
+            dependencies=[Depends(RoleChecker(config.roles))],
+            description="Enable New Location Login",
+        )
 
     async def create_user(
         self, req: Annotated[CreateUserRequest, Depends()], request: Request
@@ -124,3 +133,6 @@ class UserRouter(UserHandler):
         return await self._generate_new_otp(
             NewOtpRequest(credentials=current_user, token=token), request
         )
+
+    async def enable_new_loc(self, token: str) -> BaseResponse:
+        return await self._enable_new_loc(EnableLocationRequest(token=token))
