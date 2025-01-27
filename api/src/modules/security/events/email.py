@@ -16,9 +16,9 @@ class EmailService:
     def __init__(self, config: ApiConfig):
         self.fm = FastMail(config.email_config)
         self.config = config
-
+       
     async def send_plain_text(self, req: EmailRequestSchema) -> bool:
-        print("I got here")
+
         message = MessageSchema(
             subject=req.subject,
             recipients=req.recipients,
@@ -29,7 +29,7 @@ class EmailService:
             await self.fm.send_message(message)
             return True
         except ConnectionErrors as e:
-            self.logger.error("Couldn't not send email", e)
+            self.config.logger.error("Couldn't not send email", e)
             return False
 
     async def send_email_to_user(self, req: EmailRequestSchema) -> bool:
@@ -46,7 +46,7 @@ class EmailService:
             )
             return True
         except ConnectionErrors as e:
-            self.logger.error("Couldn't not send email", e)
+            self.config.logger.error("Couldn't not send email", e)
             return False
 
     async def send_invoice(

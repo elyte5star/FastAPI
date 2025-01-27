@@ -20,7 +20,7 @@ class DeviceMetaDataChecker(AuthQueries):
             city,
         )
         if existing_device is None:
-            event_payload = dict(
+            event_payload = NewDeviceLogin(
                 username=user.username,
                 email=user.email,
                 device_details=device_details,

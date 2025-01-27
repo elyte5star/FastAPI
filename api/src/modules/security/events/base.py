@@ -64,20 +64,19 @@ class BlockedUserAccount(BaseModel):
 
 
 class APIEventsHandler(EmailService):
-         
-    async def unknown_device_notification(self, event_payload: dict):
-        model = NewDeviceLogin(**event_payload)
+
+    async def unknown_device_notification(self, event_payload:NewDeviceLogin):
         subject = "New Login Notification"
         body = {
-            "Device details": model.device_details,
-            "Location": model.location,
-            "IP Address": model.ip,
+            "Device details": event_payload.device_details,
+            "Location": event_payload.location,
+            "IP Address": event_payload.ip,
         }
         email_req = EmailRequestSchema(
             subject=subject,
-            recipients=[model.email],
+            recipients=[event_payload.email],
             body=body,
-        )
+        )    
         is_sent = await self.send_plain_text(email_req)
         if is_sent:
             self.config.logger.info(f"Email sent to :{event_payload.email}")

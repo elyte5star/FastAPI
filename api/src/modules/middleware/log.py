@@ -5,9 +5,9 @@ from os import path
 from pathlib import Path
 from psutil import cpu_percent, virtual_memory
 
-base_dir = Path(__file__).parent.parent.parent
-logs_target = path.join(base_dir, "api.log")
-logs_error_target = path.join(base_dir, "error.log")
+base_dir = Path(__file__).parent.parent.parent.parent.parent
+logs_target = path.join(base_dir / "logs", "api.log")
+logs_error_target = path.join(base_dir / "logs", "error.log")
 
 
 class UserFilter(logging.Filter):

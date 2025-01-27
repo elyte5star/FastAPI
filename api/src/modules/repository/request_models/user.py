@@ -1,4 +1,4 @@
-from pydantic import EmailStr, model_validator, FilePath
+from pydantic import EmailStr, model_validator, FilePath, BaseModel
 from fastapi.exceptions import RequestValidationError
 from typing_extensions import Self
 from modules.repository.request_models.base import BaseResponse
@@ -47,7 +47,7 @@ class GetUsersRequest(BaseReq):
     result: GetUsersResponse = GetUsersResponse()
 
 
-class EmailRequestSchema(BaseReq):
+class EmailRequestSchema(BaseModel):
     subject: str
     recipients: list[EmailStr]
     body: dict[str, Any]
