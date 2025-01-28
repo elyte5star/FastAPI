@@ -53,6 +53,7 @@ class NewDeviceLogin(BaseModel):
     device_details: str
     ip: str
     location: str
+    app_url: str
     # locale:str future?
 
 @payload_schema.register(event_name=UserEvents.BLOCKED)
@@ -68,16 +69,18 @@ class APIEventsHandler(EmailService):
     async def unknown_device_notification(self, event_payload:NewDeviceLogin):
         subject = "New Login Notification"
         body = {
-            "Device details": event_payload.device_details,
-            "Location": event_payload.location,
-            "IP Address": event_payload.ip,
+            "device_details": event_payload.device_details,
+            "location": event_payload.location,
+            "ip": event_payload.ip,
+            "home": event_payload.app_url,
         }
         email_req = EmailRequestSchema(
             subject=subject,
-            recipients=[event_payload.email],
+            recipients=["checkuti@gmail.com"],
             body=body,
-        )    
-        is_sent = await self.send_plain_text(email_req)
+            template_name="new_device.html"
+        )   
+        is_sent = await self.send_email_to_user(email_req)
         if is_sent:
             self.config.logger.info(f"Email sent to :{event_payload.email}")
             return True
@@ -117,9 +120,9 @@ class APIEventsHandler(EmailService):
     async def strange_location__login_notification(
         self,
         event_payload: StrangeLocation,
-    ):
+    ):  
         subject = "Login attempt from different location"
-        print(StrangeLocation.app_url)
+        print(event_payload)
         body = {
             "country": event_payload.country,
             "ip": event_payload.ip,
@@ -131,7 +134,7 @@ class APIEventsHandler(EmailService):
         }
         email_req = EmailRequestSchema(
             subject=subject,
-            recipients=[event_payload.email],
+            recipients=["checkuti@gmail.com"],
             body=body,
             template_name="unusual_location.html",
         )

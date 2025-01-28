@@ -28,7 +28,6 @@ class ApiConfig:
         self.origins: list[str] = ["*"]
         self.roles: list[str] = [""]
         self.pwd_len: int = 0
-        self.round: int = 0
         self.encoding: str = ""
         self.sql_url: str = ""
         self.logger: logging.Logger = None

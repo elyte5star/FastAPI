@@ -26,6 +26,7 @@ class DeviceMetaDataChecker(AuthQueries):
                 device_details=device_details,
                 ip=ip,
                 location=city,
+                app_url=self.get_app_url(request),
             )
             dispatch(UserEvents.UNKNOWN_DEVICE_LOGIN, event_payload)
             new_device_meta_data = DeviceMetaData(

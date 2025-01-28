@@ -96,10 +96,10 @@ class AuthenticationHandler(LoginAttemptChecker):
     async def on_login_success(self, user: User, request: Request) -> bool:
         if user.failed_attempts > 0:
             await self.reset_user_failed_attempts(user)
-        await self.login_notification(user, request)
         is_strange = await self.check_strange_location(user, request)
         if is_strange:
             return True
+        await self.login_notification(user, request)
         return False
 
     async def on_login_failure(self, user: User, request: Request):
