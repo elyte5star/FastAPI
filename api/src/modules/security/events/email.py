@@ -9,14 +9,13 @@ from fastapi_mail.errors import ConnectionErrors
 from modules.repository.validators.base import default_checker
 from fastapi import BackgroundTasks, Depends
 from fastapi_mail.email_utils import DefaultChecker
-from itsdangerous import URLSafeTimedSerializer, BadTimeSignature, SignatureExpired
 
 
 class EmailService:
     def __init__(self, config: ApiConfig):
         self.fm = FastMail(config.email_config)
         self.config = config
-       
+
     async def send_plain_text(self, req: EmailRequestSchema) -> bool:
 
         message = MessageSchema(
@@ -85,16 +84,6 @@ class EmailService:
     ) -> bool:
         _ = await checker.blacklist_rm_email(email)
         return True
-
-    def verify_email_token(self, token: str, expiration: int = 3600) -> bool:
-        serializer = URLSafeTimedSerializer(self.config.secret_key)
-        try:
-            _ = serializer.loads(token, salt=self.config.rounds, max_age=expiration)
-            return True
-        except SignatureExpired:
-            return False
-        except BadTimeSignature:
-            return False
 
     async def check_disposable_email(
         self,

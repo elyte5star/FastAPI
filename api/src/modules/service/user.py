@@ -273,20 +273,6 @@ class UserHandler(UserQueries):
         await self.delete_user_query(user.id)
         return req.req_success(f"User with id::{req.userid} deleted")
 
-    def verify_email_token(self, token: str, expiration: int = 3600) -> bool:
-        serializer = URLSafeTimedSerializer(self.config.secret_key)
-        try:
-            _ = serializer.loads(
-                token,
-                salt=self.config.rounds,
-                max_age=expiration,
-            )
-            return True
-        except SignatureExpired:
-            return False
-        except BadTimeSignature:
-            return False
-
     # LOCATION
     async def _enable_new_loc(self, req: EnableLocationRequest) -> BaseResponse:
         country = self.is_valid_new_location_token(req.token)

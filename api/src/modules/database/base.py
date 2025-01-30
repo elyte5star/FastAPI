@@ -22,7 +22,11 @@ from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
 from asyncpg.exceptions import PostgresError
 from fastapi import Request
-from itsdangerous import URLSafeTimedSerializer
+from itsdangerous import (
+    URLSafeTimedSerializer,
+    BadTimeSignature,
+    SignatureExpired,
+)
 
 
 class AsyncDatabaseSession:
@@ -201,4 +205,18 @@ class AsyncDatabaseSession:
             return xf_header.split(",")[0]
         return "128.101.101.101"  # for testing Richfield,United States
         # return "41.238.0.198" # for testing Giza, Egypt
-        #return request.client.host
+        # return request.client.host
+
+    def verify_email_token(self, token: str, expiration: int = 3600) -> bool:
+        serializer = URLSafeTimedSerializer(self.config.secret_key)
+        try:
+            _ = serializer.loads(
+                token,
+                salt=self.config.rounds,
+                max_age=expiration,
+            )
+            return True
+        except SignatureExpired:
+            return False
+        except BadTimeSignature:
+            return False
