@@ -81,14 +81,7 @@ class AsyncDatabaseSession:
         async with self._engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
-        user = await self.create_admin_account(self.async_session)
-        user_loc = UserLocation(
-            id=get_indent(),
-            country="UNKNOWN",
-            owner=user,
-            enabled=True,
-        )
-        await self.create_user_location_query(user_loc)
+            await self.create_admin_account(self.async_session)
 
     async def drop_tables(self) -> None:
         async with self._engine.begin() as conn:
@@ -107,7 +100,7 @@ class AsyncDatabaseSession:
         info["cpu_count"] = cpu_count()
         return GetInfoResponse(info=info, message="System information")
 
-    async def create_admin_account(self, async_session: AsyncSession) -> User:
+    async def create_admin_account(self, async_session: AsyncSession) -> None:
         admin_username: str = self.cf.contacts["username"]
         if await self.get_user_by_username(admin_username) is None:
             admin_email: str = self.cf.contacts["email"]
@@ -127,12 +120,21 @@ class AsyncDatabaseSession:
             try:
                 async_session.add(admin_user)
                 await async_session.commit()
-                self.logger.info(f"account with id {admin_user.id} created")
-                return admin_user
+                print(f"account with id {admin_user.id} created")
+                await self.admin_location(admin_user)
             except PostgresError:
                 await async_session.rollback()
                 raise
         self.logger.info(f"Admin account with name {admin_username} exist already")
+
+    async def admin_location(self, user: User):
+        user_loc = UserLocation(
+            id=get_indent(),
+            country="UNKNOWN",
+            owner=user,
+            enabled=True,
+        )
+        await self.create_user_location_query(user_loc)
 
     async def get_user_by_id(self, userid: str) -> User | None:
         stmt = self.select(User).where(User.id == userid)
