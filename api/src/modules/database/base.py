@@ -120,7 +120,6 @@ class AsyncDatabaseSession:
             try:
                 async_session.add(admin_user)
                 await async_session.commit()
-                
                 self.logger.info(f"account with id {admin_user.id} created")
                 await self.admin_location(admin_user)
                 return None

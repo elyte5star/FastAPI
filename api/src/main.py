@@ -4,7 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.staticfiles import StaticFiles
-from modules.middleware.log import get_file_handler, get_console_handler
+from modules.middleware.log import (
+    info_file_handler,
+    get_console_handler,
+    smtp_log_handler,
+    error_file_handler,
+)
 from fastapi.encoders import jsonable_encoder
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exceptions import RequestValidationError
@@ -29,7 +34,12 @@ log = handler.logger
 
 # Set up logging
 logging.basicConfig(
-    handlers=[get_console_handler(), get_file_handler()],
+    handlers=[
+        get_console_handler(),
+        info_file_handler(),
+        smtp_log_handler(cfg),
+        error_file_handler(),
+    ],
     encoding=cfg.encoding,
     level=cfg.log_type,
 )
@@ -103,7 +113,7 @@ async def custom_http_exception_handler(
 ) -> JSONResponse:
     log.warning(f"{repr(exc.detail)}!!")
     start_time = time.perf_counter()
-    body = await request.body()
+    _ = await request.body()
     stop_time = time.perf_counter()
     process_time = stop_time - start_time
     return JSONResponse(

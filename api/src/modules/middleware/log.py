@@ -1,10 +1,10 @@
 import logging
 import sys
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler, SMTPHandler
 from os import path, getenv
 from pathlib import Path
-from psutil import cpu_percent, virtual_memory
 from pythonjsonlogger import jsonlogger
+from modules.settings.configuration import ApiConfig
 
 
 base_dir = Path(__file__).parent.parent.parent.parent.parent
@@ -12,13 +12,12 @@ logs_target = path.join(base_dir / "logs", "api.log")
 logs_error_target = path.join(base_dir / "logs", "error.log")
 
 
-fmt = "%(levelname)s::%(psutil)s::%(asctime)s :: %(name)s :: %(funcName)s :: Run by: %(current_user)s :: %(message)s"
+fmt = "%(levelname)s::%(asctime)s :: %(name)s :: %(funcName)s :: Run by: %(current_user)s :: %(message)s"
 
 
 class UserFilter(logging.Filter):
     def filter(self, record) -> bool:
         record.current_user = str(getenv("current_user", "API"))
-        record.psutil = f"c{cpu_percent():02.0f}m{virtual_memory().percent:02.0f}"
         return True
 
 
@@ -37,12 +36,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
             log_record["level"] = record.levelname
 
 
-FORMATTER = logging.Formatter(
-    fmt,
-    defaults={
-        "current_user": "API",
-    },
-)
+FORMATTER = logging.Formatter(fmt)
 
 
 def get_console_handler():
@@ -52,86 +46,34 @@ def get_console_handler():
     return console_handler
 
 
-def get_file_handler(filename: str = logs_target):
+def smtp_log_handler(cfg: ApiConfig):
+    smtp_handler = SMTPHandler(
+        mailhost=[cfg.mail_server, cfg.mail_port],
+        fromaddr=cfg.email,
+        toaddrs=["checkuti@gmail.com"],
+        subject="Exceptional Log",
+        credentials=(cfg.mail_username, cfg.mail_password),
+        secure=None,
+    )
+    smtp_handler.setFormatter(FORMATTER)
+    smtp_handler.addFilter(UserFilter())
+    smtp_handler.setLevel(logging.CRITICAL)
+    return smtp_handler
+
+
+def info_file_handler(filename: str = logs_target):
     file_handler = TimedRotatingFileHandler(filename, when="midnight")
     formatter = CustomJsonFormatter(fmt)
     file_handler.setFormatter(formatter)
     file_handler.addFilter(UserFilter())
+    file_handler.setLevel(logging.INFO)
     return file_handler
 
 
-def log_config(console_log_level: str = "DEBUG") -> dict:
-
-    LOGGING_CONFIG = {
-        "version": 1,
-        "disable_existing_loggers": True,
-        "filters": {"psutil": {"()": "modules.middleware.log.UserFilter"}},
-        "formatters": {
-            "json": {
-                "format": fmt,
-                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            },
-            "error": {
-                "format": fmt,
-                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            },
-            "standard": {"format": fmt},
-        },
-        "handlers": {
-            "console": {
-                "level": console_log_level,
-                "class": "logging.StreamHandler",
-                "formatter": "standard",
-                "stream": "ext://sys.stdout",
-                "filters": ["psutil"],
-            },
-            "info_rotating_file_handler": {
-                "level": "INFO",
-                "formatter": "json",
-                "class": "logging.handlers.RotatingFileHandler",
-                "filename": logs_target,
-                "mode": "a",
-                "maxBytes": 1048576,
-                "backupCount": 10,
-            },
-            "error_file_handler": {
-                "level": "WARNING",
-                "formatter": "error",
-                "class": "logging.FileHandler",
-                "filename": logs_error_target,
-                "mode": "a",
-                "filters": ["psutil"],
-            },
-            "critical_mail_handler": {
-                "level": "CRITICAL",
-                "formatter": "error",
-                "class": "logging.handlers.SMTPHandler",
-                "mailhost": "localhost",
-                "fromaddr": "monitoring@domain.com",
-                "toaddrs": ["dev@domain.com", "qa@domain.com"],
-                "subject": "Critical error with application name",
-                "filters": ["psutil"],
-            },
-        },
-        "loggers": {
-            "": {
-                "level": console_log_level,
-                "handlers": ["console"],
-            },
-            "__main__": {  # if __name__ == '__main__'
-                "handlers": ["console"],
-                "level": console_log_level,
-                "propagate": False,
-            },
-            "src.modules": {
-                "level": "WARNING",
-                "propagate": False,
-                "handlers": [
-                    "info_rotating_file_handler",
-                    "error_file_handler",
-                    "console",
-                ],
-            },
-        },
-    }
-    return LOGGING_CONFIG
+def error_file_handler(filename: str = logs_error_target):
+    file_handler = TimedRotatingFileHandler(filename, when="midnight")
+    formatter = CustomJsonFormatter(fmt)
+    file_handler.setFormatter(formatter)
+    file_handler.addFilter(UserFilter())
+    file_handler.setLevel(logging.WARNING)
+    return file_handler

@@ -46,7 +46,7 @@ class StrangeLocation(BaseModel):
     # locale:str future?
 
 
-@payload_schema.register(event_name=UserEvents.UNKNOWN_DEVICE_LOGIN)
+#@payload_schema.register(event_name=UserEvents.UNKNOWN_DEVICE_LOGIN)
 class NewDeviceLogin(BaseModel):
     username: str
     email: EmailStr
@@ -66,7 +66,7 @@ class BlockedUserAccount(BaseModel):
 
 class APIEventsHandler(EmailService):
 
-    async def unknown_device_notification(self, event_payload:NewDeviceLogin):
+    async def unknown_device_notification(self, event_payload: NewDeviceLogin):
         subject = "New Login Notification"
         body = {
             "device_details": event_payload.device_details,
