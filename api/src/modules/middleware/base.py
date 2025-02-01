@@ -8,5 +8,5 @@ class CustomHeaderMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         process_time = time.perf_counter() - start_time
         response.headers["X-Process-Time"] = str(process_time)
-        response.headers["root_path"] = request.scope.get("root_path")
+        response.headers["path"] = request.url.path
         return response

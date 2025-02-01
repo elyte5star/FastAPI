@@ -81,7 +81,7 @@ class AsyncDatabaseSession:
         async with self._engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
-            await self.create_admin_account(self.async_session)
+        await self.create_admin_account(self.async_session)
 
     async def drop_tables(self) -> None:
         async with self._engine.begin() as conn:
@@ -120,8 +120,10 @@ class AsyncDatabaseSession:
             try:
                 async_session.add(admin_user)
                 await async_session.commit()
-                print(f"account with id {admin_user.id} created")
+                
+                self.logger.info(f"account with id {admin_user.id} created")
                 await self.admin_location(admin_user)
+                return None
             except PostgresError:
                 await async_session.rollback()
                 raise

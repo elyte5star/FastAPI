@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.staticfiles import StaticFiles
-from modules.middleware.log import log_config
+from modules.middleware.log import get_file_handler, get_console_handler
 from fastapi.encoders import jsonable_encoder
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exceptions import RequestValidationError
@@ -24,7 +24,15 @@ cfg = handler.cfg
 log = handler.logger
 
 # # Set up logging
-logging.config.dictConfig(log_config(cfg.log_type))
+# logging.config.dictConfig(log_config(cfg.log_type))
+
+
+# Set up logging
+logging.basicConfig(
+    handlers=[get_console_handler(), get_file_handler()],
+    encoding=cfg.encoding,
+    level=cfg.log_type,
+)
 
 
 @asynccontextmanager
@@ -106,7 +114,6 @@ async def custom_http_exception_handler(
                 "stop_time": stop_time,
                 "process_time": process_time,
                 "message": str(exc.detail),
-                "body": body.decode(),
                 "success": False,
             }
         ),
