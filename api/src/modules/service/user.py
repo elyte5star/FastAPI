@@ -26,7 +26,7 @@ import geoip2.database
 
 from fastapi import Request
 from fastapi_events.dispatcher import dispatch
-from modules.utils.misc import get_indent, time_delta, time_now_utc
+from modules.utils.misc import get_indent, time_delta, time_now
 from modules.security.events.base import UserEvents, SignUpPayload
 from modules.repository.queries.user import UserQueries
 
@@ -35,8 +35,6 @@ TOKEN_INVALID = "invalidToken"
 TOKEN_EXPIRED = "expired"
 TOKEN_VALID = "valid"
 USER_ENABLED = "enabled"
-
-LOCAL_HOST_ADDRESSES = ["0:0:0:0:0:0:0:1", "127.0.1.1", "127.0.0.1"]
 
 
 class UserHandler(UserQueries):
@@ -107,6 +105,7 @@ class UserHandler(UserQueries):
         event_payload = SignUpPayload(
             userid=user.id,
             email=user.email,
+            username=user.username,
             token=new_otp.token,
             expiry=new_otp.expiry,
             app_url=app_url,
@@ -120,7 +119,7 @@ class UserHandler(UserQueries):
         email: str,
     ) -> Otp:
         token = self.create_timed_token(email)
-        expiry = time_now_utc() + time_delta(self.cf.otp_expiry)
+        expiry = time_now() + time_delta(self.cf.otp_expiry)
         otp = await self.get_otp_by_email_query(email)
         if otp is None:
             new_otp = Otp(
@@ -146,11 +145,12 @@ class UserHandler(UserQueries):
         if otp is not None:
             token = self.create_timed_token(otp.owner.email)
             app_url = self.get_app_url(request)
-            expiry = time_now_utc() + time_delta(self.cf.otp_expiry)
+            expiry = time_now() + time_delta(self.cf.otp_expiry)
             changes = {"token": token, "expiry": expiry}
             await self.update_otp_query(otp.id, changes)
             event_payload = SignUpPayload(
                 userid=otp.owner.id,
+                username=otp.owner.username,
                 email=otp.owner.email,
                 token=token,
                 expiry=expiry,
@@ -181,7 +181,7 @@ class UserHandler(UserQueries):
     async def is_otp_valid(self, otp: Otp) -> bool:
         if (
             self.verify_email_token(otp.token, self.cf.otp_expiry * 60)
-            or otp.expiry < time_now_utc()
+            or otp.expiry < time_now()
         ):
             return True
         return False
@@ -303,11 +303,6 @@ class UserHandler(UserQueries):
             id=get_indent(), country=country, owner=user, enabled=True
         )
         await self.create_user_location_query(user_loc)
-
-    def check_if_ip_is_local(self, ip: str) -> bool:
-        if ip in LOCAL_HOST_ADDRESSES:
-            return True
-        return False
 
     async def get_country_from_ip(self, ip: str) -> str:
         country = "UNKNOWN"

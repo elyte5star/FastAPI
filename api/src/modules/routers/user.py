@@ -33,7 +33,7 @@ class UserRouter(UserHandler):
             description="Create user account",
         )
         self.router.add_api_route(
-            path="/create-confirmation-token/{email}",
+            path="/create-registration-otp/{email}",
             status_code=status.HTTP_202_ACCEPTED,
             endpoint=self.create_verification_otp,
             response_model=BaseResponse,
@@ -43,7 +43,7 @@ class UserRouter(UserHandler):
         )
 
         self.router.add_api_route(
-            path="/resend-registration-token/{token}",
+            path="/signup/resend-registration-otp/{token}",
             status_code=status.HTTP_202_ACCEPTED,
             endpoint=self.resend_verification_otp,
             response_model=BaseResponse,
@@ -77,12 +77,20 @@ class UserRouter(UserHandler):
             description="Get Users, Admin right required",
         )
         self.router.add_api_route(
-            path="/enableNewLoc/{token}",
+            path="/enable-new-location/{token}",
             endpoint=self.enable_new_loc,
             response_model=BaseResponse,
             methods=["GET"],
             dependencies=[Depends(RoleChecker(config.roles))],
             description="Enable New Location Login",
+        )
+        self.router.add_api_route(
+            path="/signup/verify-otp/{token}",
+            endpoint=self.verify_registration_otp,
+            response_model=BaseResponse,
+            methods=["GET"],
+            dependencies=[Depends(RoleChecker(config.roles))],
+            description="Confirm user registration",
         )
 
     async def create_user(
@@ -128,11 +136,11 @@ class UserRouter(UserHandler):
         self,
         token: str,
         request: Request,
-        current_user: Annotated[JWTPrincipal, Depends(security)],
     ) -> BaseResponse:
-        return await self._generate_new_otp(
-            NewOtpRequest(credentials=current_user, token=token), request
-        )
+        return await self._generate_new_otp(NewOtpRequest(token=token), request)
 
     async def enable_new_loc(self, token: str) -> BaseResponse:
         return await self._enable_new_loc(EnableLocationRequest(token=token))
+
+    async def verify_registration_otp(self, token: str) -> BaseResponse:
+        pass
