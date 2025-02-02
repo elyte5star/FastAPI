@@ -35,7 +35,7 @@ class EmailService:
         message = MessageSchema(
             subject=req.subject,
             recipients=req.recipients,
-            body=req.body,
+            template_body=req.body,
             subtype=MessageType.html,
         )
         try:

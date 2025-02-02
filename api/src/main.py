@@ -1,6 +1,7 @@
 import handler
 import logging
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 # from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.staticfiles import StaticFiles
@@ -151,3 +152,7 @@ def favicon():
 @app.get("/")
 async def root():
     return {"message": "Hello Bigger Applications!"}
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, port=7000)

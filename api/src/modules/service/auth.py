@@ -44,8 +44,8 @@ class AuthenticationHandler(LoginAttemptChecker):
                     "discount": user.discount,
                     "accountNonLocked": not user.is_locked,
                 }
-                strange = await self.on_login_success(user, request)
-                if strange:
+                strange_loc = await self.on_login_success(user, request)
+                if strange_loc:
                     return req.req_failure("Login attempt from different location")
                 token_data = await self.create_token_response(user, data)
                 req.result.data = token_data
@@ -56,6 +56,21 @@ class AuthenticationHandler(LoginAttemptChecker):
         return req.req_failure(
             f"User {req.username} is not authorized.Incorrect username or password"
         )
+
+    async def on_login_success(self, user: User, request: Request) -> bool:
+        if user.failed_attempts > 0:
+            await self.reset_user_failed_attempts(user)
+        is_strange = await self.check_strange_location(user, request)
+        if is_strange:
+            return True
+        await self.login_notification(user, request)
+        return False
+
+    async def on_login_failure(self, user: User, request: Request):
+        if user is None:
+            print("Yes")
+        else:
+            await self.increase_user_failed_attempts(user)
 
     async def create_token_response(self, user: User, data: dict) -> dict:
         access_token_expiry = time_delta(self.cf.token_expire_min)
@@ -92,21 +107,6 @@ class AuthenticationHandler(LoginAttemptChecker):
         ):
             return True
         return False
-
-    async def on_login_success(self, user: User, request: Request) -> bool:
-        if user.failed_attempts > 0:
-            await self.reset_user_failed_attempts(user)
-        is_strange = await self.check_strange_location(user, request)
-        if is_strange:
-            return True
-        await self.login_notification(user, request)
-        return False
-
-    async def on_login_failure(self, user: User, request: Request):
-        if user is None:
-            print("Yes")
-        else:
-            await self.increase_user_failed_attempts(user)
 
     def create_token(
         self,

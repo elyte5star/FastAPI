@@ -28,6 +28,7 @@ class DeviceMetaDataChecker(AuthQueries):
                 location=city,
                 app_url=self.get_app_url(request),
             )
+
             dispatch(UserEvents.UNKNOWN_DEVICE_LOGIN, event_payload)
             new_device_meta_data = DeviceMetaData(
                 id=get_indent(),
@@ -39,7 +40,10 @@ class DeviceMetaDataChecker(AuthQueries):
             await self.create_device_meta_data_query(new_device_meta_data)
         else:
             changes = {"last_login_date": time_now_utc()}
-            _ = await self.update_device_meta_data_query(existing_device.id, changes)
+            _ = await self.update_device_meta_data_query(
+                existing_device.id,
+                changes,
+            )
 
     async def get_city_from_ip(self, ip: str) -> str:
         city = "UNKNOWN"

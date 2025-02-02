@@ -24,7 +24,7 @@ classifiers = [
 
 
 [api]
-debug = true
+debug = 1
 auth_type = ["MANUAL", "MSOFT","GOOGLE"]
 host_url = "http://localhost:8000/"
 log_type = "DEBUG"
@@ -157,6 +157,7 @@ itsdangerous = "^2.2.0"
 geoip2 = "^4.8.1"
 aiofiles = "^24.1.0"
 python-json-logger = "^3.2.1"
+jinja2 = "^3.1.5"
 
 
 [build-system]

@@ -1,11 +1,11 @@
 from enum import Enum
 from fastapi_events.typing import Event
 from fastapi_events.handlers.base import BaseEventHandler
-from fastapi_events.registry.payload_schema import registry as payload_schema
-from pydantic import BaseModel, EmailStr
-from datetime import datetime
-from modules.settings.configuration import ApiConfig
 from modules.security.events.email import EmailService
+from modules.settings.configuration import ApiConfig
+from pydantic import BaseModel, EmailStr
+from fastapi_events.registry.payload_schema import registry as payload_schema
+from datetime import datetime
 from modules.repository.request_models.user import EmailRequestSchema
 from modules.utils.misc import time_now_utc
 
@@ -28,6 +28,7 @@ class UserEvents(Enum):
 @payload_schema.register(event_name=UserEvents.SIGNED_UP)
 class SignUpPayload(BaseModel):
     userid: str
+    username: str
     email: EmailStr
     expiry: datetime
     token: str
@@ -46,7 +47,7 @@ class StrangeLocation(BaseModel):
     # locale:str future?
 
 
-#@payload_schema.register(event_name=UserEvents.UNKNOWN_DEVICE_LOGIN)
+@payload_schema.register(event_name=UserEvents.UNKNOWN_DEVICE_LOGIN)
 class NewDeviceLogin(BaseModel):
     username: str
     email: EmailStr
@@ -55,6 +56,7 @@ class NewDeviceLogin(BaseModel):
     location: str
     app_url: str
     # locale:str future?
+
 
 @payload_schema.register(event_name=UserEvents.BLOCKED)
 class BlockedUserAccount(BaseModel):
@@ -73,13 +75,14 @@ class APIEventsHandler(EmailService):
             "location": event_payload.location,
             "ip": event_payload.ip,
             "home": event_payload.app_url,
+            "username": event_payload.username
         }
         email_req = EmailRequestSchema(
             subject=subject,
-            recipients=["checkuti@gmail.com"],
+            recipients=[event_payload.email],
             body=body,
-            template_name="new_device.html"
-        )   
+            template_name="new_device.html",
+        )
         is_sent = await self.send_email_to_user(email_req)
         if is_sent:
             self.config.logger.info(f"Email sent to :{event_payload.email}")
@@ -87,7 +90,7 @@ class APIEventsHandler(EmailService):
         self.config.logger.warning(f"Email not sent to :{event_payload.email}")
         return False
 
-    async def confirm_registration_notification(
+    async def confirm_registration(
         self,
         event_payload: SignUpPayload,
     ):
@@ -99,7 +102,7 @@ class APIEventsHandler(EmailService):
                 + event_payload.token
             ),
             "message": f"""You registered successfully.
-            Your ID is :{event_payload.userid}.
+            Your ID is : {event_payload.userid}.
             To confirm your registration, please click on the below link.""",
             "expiry": f" The link expires in {event_payload.expiry} seconds",
             "home": event_payload.app_url,
@@ -117,16 +120,13 @@ class APIEventsHandler(EmailService):
         self.config.logger.warning(f"Email not sent to :{event_payload.email}")
         return False
 
-    async def strange_location__login_notification(
-        self,
-        event_payload: StrangeLocation,
-    ):  
+    async def strange_location_login_notice(self, event_payload: StrangeLocation):
         subject = "Login attempt from different location"
-        print(event_payload)
         body = {
             "country": event_payload.country,
+            "username": event_payload.username,
             "ip": event_payload.ip,
-            "Date": time_now_utc(),
+            "time": time_now_utc().strftime("%d-%m-%Y, %H:%M:%S"),
             "enableLocationLink": event_payload.app_url
             + "/user/enableNewLoc?token="
             + event_payload.token,
@@ -134,7 +134,7 @@ class APIEventsHandler(EmailService):
         }
         email_req = EmailRequestSchema(
             subject=subject,
-            recipients=["checkuti@gmail.com"],
+            recipients=[str(event_payload.email)],
             body=body,
             template_name="unusual_location.html",
         )
@@ -147,21 +147,21 @@ class APIEventsHandler(EmailService):
 
 
 class APIEvents(BaseEventHandler):
-    def __init__(self, config: ApiConfig) -> None:
-        self._handler = APIEventsHandler(config)
+    def __init__(self, cfg: ApiConfig):
+        self.event_handler = APIEventsHandler(cfg)
+        self.cfg = cfg
 
     async def handle(self, event: Event) -> None:
-        match event[0]:
+        event_name, payload = event
+        match event_name:
             case UserEvents.SIGNED_UP:
-                payload = event[1]
-                await self._handler.confirm_registration_notification(payload)
-            case UserEvents.UNKNOWN_DEVICE_LOGIN:
-                payload = event[1]
-                await self._handler.unknown_device_notification(payload)
-            case UserEvents.BLOCKED:
-                payload = event[1]
+                await self.event_handler.confirm_registration(payload)
             case UserEvents.STRANGE_LOCATION:
-                payload = event[1]
-                await self._handler.strange_location__login_notification(payload)
+                await self.event_handler.strange_location_login_notice(payload)
+            case UserEvents.UNKNOWN_DEVICE_LOGIN:
+                await self.event_handler.unknown_device_notification(payload)
+            case UserEvents.BLOCKED:
+                self.cfg.logger.info(payload)
             case _:
-                return "UNKNOWN EVENT ALERT ADMIN"
+                self.cfg.logger.warning(payload)
+                

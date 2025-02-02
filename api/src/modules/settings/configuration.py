@@ -23,7 +23,7 @@ class ApiConfig:
         self.log_type: str = ""
         self.log_file_path: str = ""
         self.host_url: str = ""
-        self.debug: bool = False
+        self.debug: int = 0
         self.auth_type: str = ""
         self.origins: list[str] = ["*"]
         self.roles: list[str] = [""]
@@ -106,16 +106,6 @@ class ApiConfig:
         self.use_credentials = config.api.doc.contact["use_credentials"]
         self.validate_certs = config.api.doc.contact["validate_certs"]
         self.email = config.api.doc.contact["email"]
-        self.email_config = ConnectionConfig(
-            MAIL_USERNAME=self.mail_username,
-            MAIL_PASSWORD=self.mail_password,
-            MAIL_FROM=self.email,
-            MAIL_PORT=self.mail_port,
-            MAIL_SERVER=self.mail_server,
-            MAIL_STARTTLS=self.mail_starttls,
-            MAIL_SSL_TLS=self.mail_ssl_tls,
-            TEMPLATE_FOLDER=Path(__file__).parent.parent / "templates",
-        )
 
         self.name = config.api.doc["name"]
         self.terms = config.api.doc.terms_of_service
@@ -136,6 +126,19 @@ class ApiConfig:
         self.token_expire_min = int(
             getenv("API_JWT_TOKEN_EXPIRE_MINUTES", self.token_expire_min)
         )
+        self.mail_password = str(getenv("MAIL_PASSWORD"))
+        self.email_config = ConnectionConfig(
+            MAIL_USERNAME=self.mail_username,
+            MAIL_PASSWORD=self.mail_password,
+            MAIL_FROM=self.email,
+            MAIL_PORT=self.mail_port,
+            MAIL_SERVER=self.mail_server,
+            MAIL_STARTTLS=self.mail_starttls,
+            MAIL_SSL_TLS=self.mail_ssl_tls,
+            MAIL_DEBUG=self.debug,
+            MAIL_FROM_NAME="E-COMMERCE APPLICATION ",
+            TEMPLATE_FOLDER=Path(__file__).parent.parent / "templates",
+        )
         if self.log_file_path == "":
             self.log_file_path = str(getenv("LOG_PATH"))
         self.origins = json.loads(getenv("API_CORS_ORIGINS", '["*"]'))
@@ -146,7 +149,6 @@ class ApiConfig:
                 self.refresh_token_expire_min,
             )
         )
-        self.mail_password = str(getenv("MAIL_PASSWORD"))
         return self
 
     def pretty_print(self):

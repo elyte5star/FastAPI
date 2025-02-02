@@ -77,3 +77,80 @@ def error_file_handler(filename: str = logs_error_target):
     file_handler.addFilter(UserFilter())
     file_handler.setLevel(logging.WARNING)
     return file_handler
+
+
+def log_config(console_log_level: str = "DEBUG") -> dict:
+
+    LOGGING_CONFIG = {
+        "version": 1,
+        "disable_existing_loggers": True,
+        "filters": {"current_user": {"()": "modules.middleware.log.UserFilter"}},
+        "formatters": {
+            "json": {
+                "format": fmt,
+                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            },
+            "error": {
+                "format": fmt,
+                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            },
+            "standard": {"format": fmt},
+        },
+        "handlers": {
+            "console": {
+                "level": console_log_level,
+                "class": "logging.StreamHandler",
+                "formatter": "standard",
+                "stream": "ext://sys.stdout",
+                "filters": ["current_user"],
+            },
+            "info_rotating_file_handler": {
+                "level": "INFO",
+                "formatter": "json",
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": logs_target,
+                "mode": "a",
+                "maxBytes": 1048576,
+                "backupCount": 10,
+            },
+            "error_file_handler": {
+                "level": "WARNING",
+                "formatter": "error",
+                "class": "logging.FileHandler",
+                "filename": logs_error_target,
+                "mode": "a",
+                "filters": ["current_user"],
+            },
+            "critical_mail_handler": {
+                "level": "CRITICAL",
+                "formatter": "error",
+                "class": "logging.handlers.SMTPHandler",
+                "mailhost": "localhost",
+                "fromaddr": "monitoring@domain.com",
+                "toaddrs": ["dev@domain.com", "qa@domain.com"],
+                "subject": "Critical error with application name",
+                "filters": ["current_user"],
+            },
+        },
+        "loggers": {
+            "": {
+                "level": console_log_level,
+                "handlers": ["console"],
+            },
+            "__main__": {  # if __name__ == '__main__'
+                "handlers": ["console"],
+                "level": console_log_level,
+                "propagate": False,
+            },
+            "src.modules": {
+                "level": "WARNING",
+                "propagate": False,
+                "handlers": [
+                    "info_rotating_file_handler",
+                    "error_file_handler",
+                    "console",
+                ],
+            },
+        },
+    }
+    return LOGGING_CONFIG

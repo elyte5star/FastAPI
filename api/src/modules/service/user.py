@@ -29,7 +29,7 @@ from fastapi_events.dispatcher import dispatch
 from modules.utils.misc import get_indent, time_delta, time_now_utc
 from modules.security.events.base import UserEvents, SignUpPayload
 from modules.repository.queries.user import UserQueries
-from itsdangerous import URLSafeTimedSerializer, BadTimeSignature, SignatureExpired
+
 
 TOKEN_INVALID = "invalidToken"
 TOKEN_EXPIRED = "expired"
@@ -84,6 +84,7 @@ class UserHandler(UserQueries):
         )
         event_payload = SignUpPayload(
             userid=new_user.id,
+            username=new_user.username,
             email=new_user.email,
             token=otp_token.token,
             expiry=otp_token.expiry,

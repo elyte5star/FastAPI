@@ -1,5 +1,5 @@
 from modules.security.device import DeviceMetaDataChecker
-from fastapi import Request, HTTPException, status
+from fastapi import Request
 from modules.repository.schema.users import NewLocationToken, UserLocation, User
 import geoip2.database
 from modules.utils.misc import get_indent
@@ -9,7 +9,11 @@ from modules.security.events.base import UserEvents, StrangeLocation
 
 class DifferentLocationChecker(DeviceMetaDataChecker):
 
-    async def check_strange_location(self, user: User, request: Request) -> bool:
+    async def check_strange_location(
+        self,
+        user: User,
+        request: Request,
+    ) -> bool:
         ip_address = self.get_client_ip_address(request)
         loc_token = await self.is_new_login_location(user, ip_address)
         if loc_token is not None:
