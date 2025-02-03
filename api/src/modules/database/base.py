@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
 )
-from modules.repository.schema.base import Base
+from modules.repository.schema.base import Base, Audit
 from modules.utils.misc import get_indent
 from modules.repository.schema.users import (
     User,  # noqa: F401
@@ -162,9 +162,22 @@ class AsyncDatabaseSession:
         try:
             await self.async_session.execute(stmt)
             await self.async_session.commit()
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error("Failed to update user:", e)
+            raise
+
+    async def update_user_audit_query(self, userid: str, data: dict):
+        stmt = (
+            self.sqlalchemy_update(Audit)
+            .where(Audit.id == userid)
+            .values(data)
+            .execution_options(synchronize_session="fetch")
+        )
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except PostgresError:
+            await self.async_session.rollback()
             raise
 
     def get_app_url(self, request: Request) -> str:
@@ -206,16 +219,16 @@ class AsyncDatabaseSession:
         xf_header = request.headers.get("X-Forwarded-For")
         if xf_header is not None:
             return xf_header.split(",")[0]
-        #return "128.101.101.101"  # for testing Richfield,United States
+        # return "128.101.101.101"  # for testing Richfield,United States
         # return "41.238.0.198" # for testing Giza, Egypt
         return request.client.host
 
     def verify_email_token(self, token: str, expiration: int = 3600) -> bool:
-        serializer = URLSafeTimedSerializer(self.config.secret_key)
+        serializer = URLSafeTimedSerializer(self.cf.secret_key)
         try:
             _ = serializer.loads(
                 token,
-                salt=self.config.rounds,
+                salt=str(self.cf.rounds),
                 max_age=expiration,
             )
             return True

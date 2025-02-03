@@ -24,24 +24,39 @@ classifiers = [
 
 
 [api]
-debug = true
+debug = 1
 auth_type = ["MANUAL", "MSOFT","GOOGLE"]
 host_url = "http://localhost:8000/"
-log_type = "INFO"
-log_file_path="./modules/static/log_file.log"
+log_type = "DEBUG"
+log_file_path="../extreme_api.log"
+login_attempts=3
+lock_duration = 15
+enabled_geoip=true
+otp_expiry=30
 
 [api.doc]
 description = """
    #   Interactive Documentation for e-Market
    """
-name = "FastAPI Application."
+name = "FastAPI Application"
 terms_of_service = "https://github.com/elyte5star/FastAPI.git"
 version = "1.0"
 
 [api.doc.contact]
-email = "checkuti@gmail.com"
+email = "elyte5star@gmail.com"
 name = "Utimore Services AS"
 url = "https://github.com/elyte5star"
+username="elyte"
+telephone="889851919"
+password="$2b$10$rQcvrrW2JcvjV2XM5TG3zeJd6oHPthld3VfRLsvyV2UJFO0.BxACO"
+mail_from_name = 'E-COMMERCE APPLICATION'
+mail_port = 587
+mail_server = 'smtp.gmail.com'
+mail_ssl_tls = false
+mail_starttls = true
+mail_username = 'elyte5star'
+use_credentials = true
+validate_certs = true
 
 [api.doc.contact.license]
 name = "Proprietary"
@@ -57,9 +72,11 @@ rounds = 10
 algorithm = "HS256" 
 grant_type = "refresh_token" 
 refresh_token_expire_min = 43200 #30 days
-secret_key = "0c2214c33cc65769166ec5248bb0ec6a15e892ba649e36fefc5732d9c1ba100" 
+secret_key = "0c2214poetry self add poetry-plugin-shellc33cc65769166ec5248bb0ec6a15e892ba649e36fefc5732d9c1ba100" 
 token_expire_min = 50 
 token_url = "/token" 
+roles=["ADMIN","USER"]
+
 
 
 [database]
@@ -119,7 +136,6 @@ warn_untyped_fields = true
 python = "^3.12"
 pydantic = {extras = ["email"], version = "^2.10.4"}
 pyconfs = "^0.5.5"
-sqlmodel = "^0.0.22"
 fastapi = {extras = ["standard"], version = "^0.115.6"}
 aio-pika = "^9.5.4"
 asyncpg = "^0.30.0"
@@ -133,6 +149,15 @@ python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 pydocstyle = "^6.3.0"
 python-dotenv = "^1.0.1"
 apscheduler = "^3.11.0"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
+pytz = "^2024.2"
+fastapi-events = {extras = ["otel"], version = "^0.12.2"}
+fastapi-mail = "^1.4.2"
+itsdangerous = "^2.2.0"
+geoip2 = "^4.8.1"
+aiofiles = "^24.1.0"
+python-json-logger = "^3.2.1"
+jinja2 = "^3.1.5"
 
 
 [build-system]

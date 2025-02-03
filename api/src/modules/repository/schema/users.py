@@ -22,7 +22,9 @@ class User(Audit):
     password_reset = relationship(
         "PasswordResetToken", uselist=False, back_populates="owner"
     )
-    locations: Mapped[Set["UserLocation"]] = relationship(back_populates="owner")
+    locations: Mapped[Set["UserLocation"]] = relationship(
+        back_populates="owner",
+    )
 
     def __repr__(self):
         return (

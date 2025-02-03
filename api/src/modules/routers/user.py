@@ -15,6 +15,7 @@ from modules.repository.request_models.user import (
     OtpRequest,
     NewOtpRequest,
     EnableLocationRequest,
+    VerifyRegistrationOtpRequest,
 )
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
 from pydantic import EmailStr
@@ -39,7 +40,7 @@ class UserRouter(UserHandler):
             response_model=BaseResponse,
             dependencies=[Depends(RoleChecker(["ADMIN"]))],
             methods=["GET"],
-            description="Send user verification code",
+            description="Admin send user verification code",
         )
 
         self.router.add_api_route(
@@ -78,10 +79,9 @@ class UserRouter(UserHandler):
         )
         self.router.add_api_route(
             path="/enable-new-location/{token}",
-            endpoint=self.enable_new_loc,
+            endpoint=self.enable_new_location,
             response_model=BaseResponse,
             methods=["GET"],
-            dependencies=[Depends(RoleChecker(config.roles))],
             description="Enable New Location Login",
         )
         self.router.add_api_route(
@@ -89,7 +89,6 @@ class UserRouter(UserHandler):
             endpoint=self.verify_registration_otp,
             response_model=BaseResponse,
             methods=["GET"],
-            dependencies=[Depends(RoleChecker(config.roles))],
             description="Confirm user registration",
         )
 
@@ -137,10 +136,15 @@ class UserRouter(UserHandler):
         token: str,
         request: Request,
     ) -> BaseResponse:
-        return await self._generate_new_otp(NewOtpRequest(token=token), request)
+        return await self._generate_new_otp(
+            NewOtpRequest(token=token),
+            request,
+        )
 
-    async def enable_new_loc(self, token: str) -> BaseResponse:
+    async def enable_new_location(self, token: str) -> BaseResponse:
         return await self._enable_new_loc(EnableLocationRequest(token=token))
 
     async def verify_registration_otp(self, token: str) -> BaseResponse:
-        pass
+        return await self.confirm_user_registration(
+            VerifyRegistrationOtpRequest(token=token)
+        )

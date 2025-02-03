@@ -136,7 +136,7 @@ class ApiConfig:
             MAIL_STARTTLS=self.mail_starttls,
             MAIL_SSL_TLS=self.mail_ssl_tls,
             MAIL_DEBUG=self.debug,
-            MAIL_FROM_NAME="E-COMMERCE APPLICATION ",
+            MAIL_FROM_NAME="Elyte Application",
             TEMPLATE_FOLDER=Path(__file__).parent.parent / "templates",
         )
         if self.log_file_path == "":

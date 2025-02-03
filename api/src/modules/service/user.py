@@ -6,6 +6,7 @@ from modules.repository.request_models.user import (
     DeleteUserRequest,
     NewOtpRequest,
     EnableLocationRequest,
+    VerifyRegistrationOtpRequest,
 )
 from modules.repository.response_models.user import (
     CreateUserResponse,
@@ -26,12 +27,12 @@ import geoip2.database
 
 from fastapi import Request
 from fastapi_events.dispatcher import dispatch
-from modules.utils.misc import get_indent, time_delta, time_now
+from modules.utils.misc import get_indent, time_delta, time_now, time_now_utc
 from modules.security.events.base import UserEvents, SignUpPayload
 from modules.repository.queries.user import UserQueries
 
 
-TOKEN_INVALID = "invalidToken"
+TOKEN_INVALID = "invalid_token"
 TOKEN_EXPIRED = "expired"
 TOKEN_VALID = "valid"
 USER_ENABLED = "enabled"
@@ -72,7 +73,7 @@ class UserHandler(UserQueries):
         self,
         new_user: User,
         request: Request,
-    ):
+    ) -> None:
         ip = self.get_client_ip_address(request)
         app_url = self.get_app_url(request)
         await self.add_user_location(new_user, ip)
@@ -162,6 +163,17 @@ class UserHandler(UserQueries):
             )
         return req.req_failure("new Otp cant be created")
 
+    async def confirm_user_registration(
+        self,
+        req: VerifyRegistrationOtpRequest,
+    ) -> BaseResponse:
+        result = await self.verify_otp(req.token)
+        if result == "valid":
+            return req.req_success("Your account verified successfully")
+        elif result == "expired" or result == "invalid_token":
+            return req.req_failure("invalid_token or expired token")
+        return req.req_success("Your account is already activated")
+
     async def verify_otp(self, token: str) -> str:
         otp = await self.get_otp_by_token_query(token=token)
         if otp is None:
@@ -172,16 +184,21 @@ class UserHandler(UserQueries):
         user = await self.get_user_by_id(otp.userid)
         if user.enabled:
             return USER_ENABLED
-        await self.update_user_query(user.id, dict(enabled=True))
-        is_deleted = await self.delete_otp_by_id_query(otp.id)
-        if not is_deleted:
-            self.logger.warning("Old OTP not deleted")
+        await self.update_user_query(
+            user.id,
+            dict(
+                enabled=True,
+                modified_at=time_now(),
+                modified_by=user.username,
+            ),
+        )
+        await self.delete_otp_by_id_query(otp.id)
         return TOKEN_VALID
 
     async def is_otp_valid(self, otp: Otp) -> bool:
         if (
             self.verify_email_token(otp.token, self.cf.otp_expiry * 60)
-            or otp.expiry < time_now()
+            and otp.expiry > time_now_utc()
         ):
             return True
         return False

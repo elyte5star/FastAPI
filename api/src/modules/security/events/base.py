@@ -102,10 +102,11 @@ class APIEventsHandler(EmailService):
                 + "/users/signup/verify-otp?token="
                 + event_payload.token
             ),
+            "otp": event_payload.token,
             "username": event_payload.username,
             "message": f"""You registered successfully. Your ID is : {event_payload.userid}.
             To confirm your registration, please click on the below link.""",
-            "expiry": f" The link expires in {expiry.strftime("%d/%m/%Y, %H:%M")}.",
+            "expiry": f" The OTP link expires on {expiry.strftime("%d/%m/%Y, %H:%M")}.",
             "home": event_payload.app_url,
         }
         email_req = EmailRequestSchema(
