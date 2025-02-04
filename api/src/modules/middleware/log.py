@@ -5,6 +5,7 @@ from os import path, getenv
 from pathlib import Path
 from pythonjsonlogger import jsonlogger
 from modules.settings.configuration import ApiConfig
+from modules.utils.misc import get_indent
 
 
 base_dir = Path(__file__).parent.parent.parent.parent.parent
@@ -12,12 +13,13 @@ logs_target = path.join(base_dir / "logs", "api.log")
 logs_error_target = path.join(base_dir / "logs", "error.log")
 
 
-fmt = "%(levelname)s::%(asctime)s :: %(name)s :: %(funcName)s :: Run by: %(current_user)s :: %(message)s"
+fmt = "%(levelname)s::%(asctime)s::%(name)s::%(funcName)s::USER:%(current_user)s::LOG_ID:%(log_id)s::%(message)s"
 
 
 class UserFilter(logging.Filter):
     def filter(self, record) -> bool:
         record.current_user = str(getenv("current_user", "API"))
+        record.log_id = get_indent()
         return True
 
 
@@ -28,8 +30,6 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
             record,
             message_dict,
         )
-        if not log_record.get("current_user"):
-            log_record["current_user"] = "API"
         if log_record.get("level"):
             log_record["level"] = log_record["level"].upper()
         else:

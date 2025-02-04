@@ -25,6 +25,9 @@ class User(Audit):
     locations: Mapped[Set["UserLocation"]] = relationship(
         back_populates="owner", cascade="all, delete-orphan"
     )
+    __mapper_args__ = {
+        "polymorphic_identity": "user",
+    }
 
     def __repr__(self):
         return (

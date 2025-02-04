@@ -91,7 +91,9 @@ class AsyncDatabaseSession:
 
     async def system_info(self) -> dict:
         async with self.async_session as _:
-            _, kwargs = self._engine.dialect.create_connect_args(self._engine.url)
+            _, kwargs = self._engine.dialect.create_connect_args(
+                self._engine.url,
+            )
         info = dict(
             database_parameters=kwargs,
             sqlalchemy_version=__version__,
@@ -126,7 +128,7 @@ class AsyncDatabaseSession:
             except PostgresError:
                 await async_session.rollback()
                 raise
-        self.logger.info(f"Admin account with name {admin_username} exist already")
+        self.logger.info(f"Account with name {admin_username} exist already")
 
     async def admin_location(self, user: User):
         user_loc = UserLocation(
@@ -152,25 +154,11 @@ class AsyncDatabaseSession:
         users = await self.async_session.execute(stmt)
         return users.scalars().first()
 
-    async def update_user_query(self, userid: str, data: dict):
+    async def update_user_query(self, userid: str, user_data: dict):
         stmt = (
             self.sqlalchemy_update(User)
             .where(User.id == userid)
-            .values(data)
-            .execution_options(synchronize_session="fetch")
-        )
-        try:
-            await self.async_session.execute(stmt)
-            await self.async_session.commit()
-        except PostgresError:
-            await self.async_session.rollback()
-            raise
-
-    async def update_user_audit_query(self, userid: str, data: dict):
-        stmt = (
-            self.sqlalchemy_update(Audit)
-            .where(Audit.id == userid)
-            .values(data)
+            .values(user_data)
             .execution_options(synchronize_session="fetch")
         )
         try:

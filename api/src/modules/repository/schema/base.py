@@ -20,3 +20,12 @@ class Audit(Base):
     modified_at = Column(DateTime(timezone=True))
     modified_by = Column(String(10))
     created_by = Column(String(10), nullable=False)
+    type = Column(String)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "audit",
+        "polymorphic_on": "type",
+    }
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.created_at!r})"
