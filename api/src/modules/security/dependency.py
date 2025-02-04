@@ -88,9 +88,12 @@ class RoleChecker:
     def __init__(self, allowed_roles: list[str]):
         self.allowed_roles = allowed_roles
 
-    def __call__(self, current_user: Annotated[JWTPrincipal, Depends(security)]):
+    def __call__(
+        self,
+        current_user: Annotated[JWTPrincipal, Depends(security)],
+    ):
         if current_user.role in self.allowed_roles:
-            return True
+            return current_user
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="InsufficientPermissions. Requires the 'admin' role.",

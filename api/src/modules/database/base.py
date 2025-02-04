@@ -2,7 +2,6 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import inspect, event, select, __version__, delete, or_, and_
 from sqlalchemy import update as sqlalchemy_update
 from sqlalchemy.engine import Engine
-from modules.repository.response_models.base import GetInfoResponse
 from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     AsyncEngine,
@@ -90,15 +89,16 @@ class AsyncDatabaseSession:
     async def db_queries(self):
         pass
 
-    async def system_info(self):
-        info = {}
-        async with self.get_session() as _:
+    async def system_info(self) -> dict:
+        async with self.async_session as _:
             _, kwargs = self._engine.dialect.create_connect_args(self._engine.url)
-        info["database_parameters"] = kwargs
-        info["sqlalchemy_version"] = __version__
-        info["tables_in_database"] = await self.async_inspect_schema()
-        info["cpu_count"] = cpu_count()
-        return GetInfoResponse(info=info, message="System information")
+        info = dict(
+            database_parameters=kwargs,
+            sqlalchemy_version=__version__,
+            tables_in_database=await self.async_inspect_schema(),
+            cpu_count=cpu_count(),
+        )
+        return info
 
     async def create_admin_account(self, async_session: AsyncSession) -> None:
         admin_username: str = self.cf.contacts["username"]

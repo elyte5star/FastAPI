@@ -2,6 +2,7 @@ from modules.settings.configuration import ApiConfig
 from fastapi.logger import logger
 from modules.routers.auth import AuthRouter
 from modules.routers.user import UserRouter
+from modules.routers.system import SystemInfoRouter
 from fastapi import APIRouter
 from modules.database.base import AsyncDatabaseSession
 
@@ -15,7 +16,13 @@ auth_router = AuthRouter(cfg)
 
 user_router = UserRouter(cfg)
 
-routes: tuple[APIRouter, ...] = (auth_router.router, user_router.router)
+system_router = SystemInfoRouter(cfg)
+
+routes: tuple[APIRouter, ...] = (
+    auth_router.router,
+    user_router.router,
+    system_router.router,
+)
 
 
 async def on_api_start():

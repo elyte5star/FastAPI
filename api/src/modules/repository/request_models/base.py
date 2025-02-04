@@ -1,13 +1,19 @@
 import time
 from modules.utils.misc import get_indent
-from modules.repository.response_models.base import BaseResponse
+from modules.repository.response_models.base import (
+    BaseResponse,
+    GetInfoResponse,
+)
 from pydantic import BaseModel, ConfigDict
 from modules.security.dependency import JWTPrincipal
 from typing import Optional
 
 
 class BaseReq(BaseModel):
-    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
+    model_config = ConfigDict(
+        validate_assignment=True,
+        str_strip_whitespace=True,
+    )
     credentials: Optional[JWTPrincipal] = None
 
     def model_post_init(self, ctx):
@@ -37,3 +43,7 @@ class BaseReq(BaseModel):
     def req_process_time(self):
         self.result.stop_time = time.perf_counter()
         self.result.process_time = str((self.result.stop_time - self.result.start_time))
+
+
+class GetSystemInfoRequest(BaseReq):
+    result: GetInfoResponse = GetInfoResponse()

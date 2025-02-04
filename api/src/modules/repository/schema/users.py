@@ -23,17 +23,21 @@ class User(Audit):
         "PasswordResetToken", uselist=False, back_populates="owner"
     )
     locations: Mapped[Set["UserLocation"]] = relationship(
-        back_populates="owner",
+        back_populates="owner", cascade="all, delete-orphan"
     )
 
     def __repr__(self):
         return (
             f"<{self.__class__.__name__}("
-            f"id::{self.id}, "
-            f"failed_attempts::{self.failed_attempts}, "
-            f"lock_time::{self.lock_time},"
-            f"username::{self.username},"
-            f"email::{self.email},"
+            f" id:{self.id}, "
+            f" failed_attempts:{self.failed_attempts}, "
+            f" lock_time:{self.lock_time},"
+            f" username:{self.username},"
+            f" email:{self.email},"
+            f" created_at:{self.created_at},"
+            f" created_by:{self.created_by},"
+            f" modified_at:{self.modified_at},"
+            f" modified_by:{self.modified_by}"
             f")>"
         )
 

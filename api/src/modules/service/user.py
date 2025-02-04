@@ -182,6 +182,7 @@ class UserHandler(UserQueries):
         if not valid:
             return TOKEN_EXPIRED
         user = await self.get_user_by_id(otp.userid)
+
         if user.enabled:
             return USER_ENABLED
         await self.update_user_query(
