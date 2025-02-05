@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
 )
-from modules.repository.schema.base import Base, Audit
+from modules.repository.schema.base import Base
 from modules.utils.misc import get_indent
 from modules.repository.schema.users import (
     User,  # noqa: F401
@@ -74,6 +74,7 @@ class AsyncDatabaseSession:
 
     @event.listens_for(Engine, "connect")
     def my_on_connect(dbapi_con, connection_record):
+        print("New DBAPI connection:", dbapi_con.cursor())
         pass
 
     async def create_tables(self):
@@ -176,7 +177,7 @@ class AsyncDatabaseSession:
         return client_url
 
     def get_client_url(self) -> str:
-        client_urls: list = self.cf.origins
+        client_urls = self.cf.origins
         return next(iter(client_urls)) if client_urls else None
 
     def is_geo_ip_enabled(self) -> bool:

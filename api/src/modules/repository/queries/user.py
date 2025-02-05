@@ -8,6 +8,7 @@ from modules.repository.schema.users import (
 from modules.database.base import AsyncDatabaseSession
 from asyncpg.exceptions import PostgresError
 from datetime import datetime
+from modules.utils.misc import time_now
 
 
 class UserQueries(AsyncDatabaseSession):
@@ -29,6 +30,20 @@ class UserQueries(AsyncDatabaseSession):
         result = await self.async_session.execute(stmt)
         users = result.scalars().all()
         return users
+
+    async def activate_new_user_account(self, userid: str):
+        stmt = self.select(User).where(User.id == userid)
+        try:
+            users = await self.async_session.execute(stmt)
+            user = users.scalars().first()
+            user.modified_at = time_now()
+            user.enabled = True
+            user.modified_by = user.username
+            await self.async_session.commit()
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error(f"Failed to activate user:{e}")
+            raise
 
     async def delete_user_query(self, userid: str) -> bool:
         stmt = self.delete(User).where(User.id == userid)

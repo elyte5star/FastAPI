@@ -175,24 +175,16 @@ class UserHandler(UserQueries):
         return req.req_success("Your account is already activated")
 
     async def verify_otp(self, token: str) -> str:
-        otp = await self.get_otp_by_token_query(token=token)
+        otp = await self.get_otp_by_token_query(token)
         if otp is None:
             return TOKEN_INVALID
         valid = await self.is_otp_valid(otp)
         if not valid:
             return TOKEN_EXPIRED
-        user = await self.get_user_by_id(otp.userid)
-
+        user = otp.owner
         if user.enabled:
             return USER_ENABLED
-        await self.update_user_query(
-            user.id,
-            dict(
-                enabled=True,
-                modified_at=time_now(),
-                modified_by=user.username,
-            ),
-        )
+        await self.activate_new_user_account(user.id)
         await self.delete_otp_by_id_query(otp.id)
         return TOKEN_VALID
 
@@ -293,7 +285,10 @@ class UserHandler(UserQueries):
         return req.req_success(f"User with id::{req.userid} deleted")
 
     # LOCATION
-    async def _enable_new_loc(self, req: EnableLocationRequest) -> BaseResponse:
+    async def _enable_new_loc(
+        self,
+        req: EnableLocationRequest,
+    ) -> BaseResponse:
         country = self.is_valid_new_location_token(req.token)
         if country is not None:
             return req.req_success(f"{country} enabled.")

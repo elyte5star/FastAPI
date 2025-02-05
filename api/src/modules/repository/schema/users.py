@@ -97,7 +97,12 @@ class PasswordResetToken(Base):
         ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
-    owner = relationship("User", back_populates="password_reset", single_parent=True)
+    owner = relationship(
+        "User",
+        back_populates="password_reset",
+        single_parent=True,
+        lazy="selectin",
+    )
 
 
 class DeviceMetaData(Base):
