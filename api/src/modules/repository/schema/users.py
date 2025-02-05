@@ -123,9 +123,23 @@ class DeviceMetaData(Base):
 
 
 class UserAddress(Base):
-    id = Column(String(60), ForeignKey("audit.id"), primary_key=True, index=True)
+    id = Column(String(60), primary_key=True, index=True)
     full_name = Column(String(30), index=True)
     street_address = Column("streetAddress", String(30), index=True)
     country = Column(String(30))
     state = Column(String(30))
     zip = Column(String(10), index=True)
+
+
+class Enquiry(Audit):
+    id = Column(
+        String(60),
+        ForeignKey("audit.id"),
+        primary_key=True,
+        index=True,
+    )
+    client_name = Column(String(20), nullable=False)
+    client_email = Column(String(20), nullable=False)
+    country = Column(String(30), nullable=False)
+    subject = Column(String(30), index=True)
+    message = Column(String(600))

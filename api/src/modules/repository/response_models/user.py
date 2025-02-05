@@ -39,3 +39,7 @@ class GetUserResponse(BaseResponse):
 
 class GetUsersResponse(BaseResponse):
     users: list[UserDetails] = []
+
+
+class ClientEnquiryResponse(BaseResponse):
+    eid: str = ""

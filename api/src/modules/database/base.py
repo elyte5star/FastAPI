@@ -16,6 +16,7 @@ from modules.repository.schema.users import (
     Otp,  # noqa: F401
     DeviceMetaData,  # noqa: F401,
     NewLocationToken,  # noqa: F401
+    Enquiry  # noqa: F401
 )
 from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig

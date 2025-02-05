@@ -4,11 +4,12 @@ from modules.repository.schema.users import (
     NewLocationToken,
     UserLocation,
     PasswordResetToken,
+    Enquiry,
 )
 from modules.database.base import AsyncDatabaseSession
 from asyncpg.exceptions import PostgresError
 from datetime import datetime
-from modules.utils.misc import time_now
+from modules.utils.misc import time_now_utc
 
 
 class UserQueries(AsyncDatabaseSession):
@@ -36,7 +37,7 @@ class UserQueries(AsyncDatabaseSession):
         try:
             users = await self.async_session.execute(stmt)
             user = users.scalars().first()
-            user.modified_at = time_now()
+            user.modified_at = time_now_utc()
             user.enabled = True
             user.modified_by = user.username
             await self.async_session.commit()
@@ -261,6 +262,19 @@ class UserQueries(AsyncDatabaseSession):
         except PostgresError as e:
             await self.async_session.rollback()
             self.logger.error("Failed to delete password-reset_token:", e)
+            raise
+        finally:
+            return result
+
+    async def create_enquiry_query(self, enquiry: Enquiry) -> str:
+        self.async_session.add(enquiry)
+        result = ""
+        try:
+            await self.async_session.commit()
+            result = enquiry.id
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error(f"Failed to create user enquiry: {e}")
             raise
         finally:
             return result

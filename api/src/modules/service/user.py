@@ -7,6 +7,7 @@ from modules.repository.request_models.user import (
     NewOtpRequest,
     EnableLocationRequest,
     VerifyRegistrationOtpRequest,
+    UserEnquiryRequest,
 )
 from modules.repository.response_models.user import (
     CreateUserResponse,
@@ -15,12 +16,14 @@ from modules.repository.response_models.user import (
     GetUsersResponse,
     BaseResponse,
     CreatedUserData,
+    ClientEnquiryResponse,
 )
 from modules.repository.schema.users import (
     User,
     Otp,
     PasswordResetToken,
     UserLocation,
+    Enquiry,
 )
 import bcrypt
 import geoip2.database
@@ -329,3 +332,19 @@ class UserHandler(UserQueries):
         except Exception as e:
             self.logger.error(e)
             return country
+
+    async def _create_enquiry(self, req: UserEnquiryRequest) -> ClientEnquiryResponse:
+        client_enquiry = Enquiry(
+            id=get_indent(),
+            client_name=req.enquiry.client_name,
+            client_email=req.enquiry.client_email,
+            country=req.enquiry.country,
+            subject=req.enquiry.subject,
+            message=req.enquiry.message,
+            created_by=req.enquiry.client_name,
+        )
+        result = await self.create_enquiry_query(client_enquiry)
+        if result != "":
+            req.result.eid = result
+            return req.req_success(f"Enquiry with id::{result} created")
+        return req.req_failure("Couldn't create enquiry")

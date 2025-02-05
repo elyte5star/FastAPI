@@ -6,6 +6,7 @@ from modules.repository.response_models.user import (
     CreateUserResponse,
     GetUsersResponse,
     BaseResponse,
+    ClientEnquiryResponse,
 )
 from modules.repository.request_models.user import (
     CreateUserRequest,
@@ -16,6 +17,9 @@ from modules.repository.request_models.user import (
     NewOtpRequest,
     EnableLocationRequest,
     VerifyRegistrationOtpRequest,
+    CreateUser,
+    UserEnquiryRequest,
+    UserEnquiry,
 )
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
 from pydantic import EmailStr
@@ -91,11 +95,21 @@ class UserRouter(UserHandler):
             methods=["GET"],
             description="Confirm user registration",
         )
+        self.router.add_api_route(
+            path="/customer/service",
+            endpoint=self.create_enquiry,
+            response_model=ClientEnquiryResponse,
+            summary="Customer Service",
+            methods=["POST"],
+        )
 
     async def create_user(
-        self, req: Annotated[CreateUserRequest, Depends()], request: Request
+        self, new_user: Annotated[CreateUser, Depends()], request: Request
     ) -> CreateUserResponse:
-        return await self._create_user(req, request)
+        return await self._create_user(
+            CreateUserRequest(new_user=new_user),
+            request,
+        )
 
     async def get_users(
         self, current_user: Annotated[JWTPrincipal, Depends(security)]
@@ -148,3 +162,8 @@ class UserRouter(UserHandler):
         return await self.confirm_user_registration(
             VerifyRegistrationOtpRequest(token=token)
         )
+
+    async def create_enquiry(
+        self, enquiry: Annotated[UserEnquiry, Depends()]
+    ) -> ClientEnquiryResponse:
+        return await self._create_enquiry(UserEnquiryRequest(enquiry=enquiry))
