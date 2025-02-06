@@ -143,3 +143,7 @@ class Enquiry(Audit):
     country = Column(String(30), nullable=False)
     subject = Column(String(30), index=True)
     message = Column(String(600))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "enquiry",
+    }

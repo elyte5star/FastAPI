@@ -85,7 +85,7 @@ class UserEnquiry(BaseModel):
     client_email: VerifyEmail
     country: str
     subject: str
-    message: str = Field(min_length=3, max_length=600)
+    message: str = Field(min_length=3, max_length=500)
 
 
 class UserEnquiryRequest(BaseReq):
