@@ -14,6 +14,7 @@ class UserEvents(Enum):
     SIGNED_UP = "USER_SIGNED_UP"
     ACTIVATED = "USER_ACTIVATED"
     RESET_PASSWORD = "USER_PASSWORD"
+    CLIENT_ENQUIRY = "INQUIRY"
     OTP = "USER_OTP"
     STRANGE_LOCATION = "USER_LOCATION"
     BLOCKED = "USER_BLOCKED"
@@ -57,6 +58,13 @@ class NewDeviceLogin(BaseModel):
     app_url: str
     # locale:str future?
 
+@payload_schema.register(event_name=UserEvents.CLIENT_ENQUIRY)
+class ClientEnquiry(BaseModel):
+    eid: str
+    client_name: str
+    email: EmailStr
+    message: str
+    app_url: str
 
 @payload_schema.register(event_name=UserEvents.BLOCKED)
 class BlockedUserAccount(BaseModel):
@@ -104,7 +112,8 @@ class APIEventsHandler(EmailService):
             ),
             "otp": event_payload.token,
             "username": event_payload.username,
-            "message": f"""You registered successfully. Your ID is : {event_payload.userid}.
+            "message": f"""You registered successfully.
+             Your ID is: {event_payload.userid}.
             To confirm your registration, please click on the below link.""",
             "expiry": f" The OTP link expires on {expiry.strftime("%d/%m/%Y, %H:%M")}.",
             "home": event_payload.app_url,
@@ -147,6 +156,26 @@ class APIEventsHandler(EmailService):
         self.config.logger.warning(f"Email not sent to :{event_payload.email}")
         return False
 
+    async def client_enquiry(self, event_payload: ClientEnquiry):
+        subject = "New client Enquiry"
+        body = {"message": event_payload.message,
+               "case_id": event_payload.eid,
+               "client_name": event_payload.client_name,
+               "time": time_now_utc().strftime('%d-%m-%Y, %H:%M:%S'),
+                "home": event_payload.app_url,
+        }
+        email_req = EmailRequestSchema(
+            subject=subject,
+            recipients=[str(event_payload.email), self.config.email],
+            body=body,
+            template_name="enquiry.html",
+        )
+        is_sent = await self.send_email_to_user(email_req)
+        if is_sent:
+            self.config.logger.info(f"Email sent to :{email_req.recipients}")
+            return True
+        return False
+            
 
 class APIEvents(BaseEventHandler):
     def __init__(self, cfg: ApiConfig):
@@ -162,8 +191,8 @@ class APIEvents(BaseEventHandler):
                 await self.event_handler.strange_location_login_notice(payload)
             case UserEvents.UNKNOWN_DEVICE_LOGIN:
                 await self.event_handler.unknown_device_notification(payload)
-            case UserEvents.BLOCKED:
-                self.cfg.logger.info(payload)
+            case UserEvents.CLIENT_ENQUIRY:
+                await self.event_handler.client_enquiry(payload)
             case _:
                 self.cfg.logger.warning(payload)
                 

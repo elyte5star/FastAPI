@@ -86,6 +86,7 @@ class UserEnquiry(BaseModel):
     country: str
     subject: str
     message: str = Field(min_length=3, max_length=500)
+    is_closed: bool = False
 
 
 class UserEnquiryRequest(BaseReq):

@@ -1,11 +1,24 @@
-from sqlalchemy import Boolean, Column, String, DateTime, Float, Integer, ForeignKey
+from sqlalchemy import (
+    Boolean,
+    Column,
+    String,
+    DateTime,
+    Float,
+    Integer,
+    ForeignKey,
+)
 from modules.repository.schema.base import Audit, Base
 from sqlalchemy.orm import relationship, Mapped
 from typing import Set
 
 
 class User(Audit):
-    id = Column(String(60), ForeignKey("audit.id"), primary_key=True, index=True)
+    id = Column(
+        String(60),
+        ForeignKey("audit.id"),
+        primary_key=True,
+        index=True,
+    )
     email = Column(String(20), unique=True, index=True)
     username = Column(String(20), unique=True, index=True)
     password = Column(String(100), nullable=False)
@@ -143,6 +156,7 @@ class Enquiry(Audit):
     country = Column(String(30), nullable=False)
     subject = Column(String(30), index=True)
     message = Column(String(600))
+    is_closed = Column(Boolean, default=False)
 
     __mapper_args__ = {
         "polymorphic_identity": "enquiry",

@@ -31,7 +31,7 @@ import geoip2.database
 from fastapi import Request
 from fastapi_events.dispatcher import dispatch
 from modules.utils.misc import get_indent, time_delta, time_now, time_now_utc
-from modules.security.events.base import UserEvents, SignUpPayload
+from modules.security.events.base import UserEvents, SignUpPayload, ClientEnquiry
 from modules.repository.queries.user import UserQueries
 
 
@@ -333,7 +333,11 @@ class UserHandler(UserQueries):
             self.logger.error(e)
             return country
 
-    async def _create_enquiry(self, req: UserEnquiryRequest) -> ClientEnquiryResponse:
+    async def _create_enquiry(
+        self,
+        req: UserEnquiryRequest,
+        request: Request,
+    ) -> ClientEnquiryResponse:
         client_enquiry = Enquiry(
             id=get_indent(),
             client_name=req.enquiry.client_name,
@@ -344,7 +348,15 @@ class UserHandler(UserQueries):
             created_by=req.enquiry.client_name,
         )
         result = await self.create_enquiry_query(client_enquiry)
-        if result != "":
+        if result:
             req.result.eid = result
-            return req.req_success(f"Enquiry with id::{result} created")
+            event_payload = ClientEnquiry(
+                message=req.enquiry.message,
+                client_name=req.enquiry.client_name,
+                eid=result,
+                email=req.enquiry.client_email,
+                app_url=self.get_app_url(request),
+            )
+            dispatch(UserEvents.CLIENT_ENQUIRY, event_payload)
+            return req.req_success(f"Enquiry with id: {result} created")
         return req.req_failure("Couldn't create enquiry")

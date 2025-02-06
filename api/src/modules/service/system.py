@@ -6,7 +6,10 @@ from modules.database.base import AsyncDatabaseSession
 
 
 class SystemHandler(AsyncDatabaseSession):
-    async def _get_sys_info(self, req: GetSystemInfoRequest) -> GetInfoResponse:
+    async def _get_sys_info(
+        self,
+        req: GetSystemInfoRequest,
+    ) -> GetInfoResponse:
         result = await self.system_info()
         req.result.info = result
         self.logger.info(f"{req.credentials.username} checked the system")

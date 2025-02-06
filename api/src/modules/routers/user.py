@@ -164,6 +164,11 @@ class UserRouter(UserHandler):
         )
 
     async def create_enquiry(
-        self, enquiry: Annotated[UserEnquiry, Depends()]
+        self,
+        enquiry: Annotated[UserEnquiry, Depends()],
+        request: Request,
     ) -> ClientEnquiryResponse:
-        return await self._create_enquiry(UserEnquiryRequest(enquiry=enquiry))
+        return await self._create_enquiry(
+            UserEnquiryRequest(enquiry=enquiry),
+            request,
+        )
