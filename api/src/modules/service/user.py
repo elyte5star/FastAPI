@@ -273,7 +273,7 @@ class UserHandler(UserQueries):
     async def _delete_user(self, req: DeleteUserRequest) -> BaseResponse:
         user = await self.get_user_by_id(req.userid)
         if user is None:
-            return req.req_failure(f"No user with id :: {req.userid}")
+            return req.req_failure(f"No user with id: {req.userid}")
         otp: Otp = await self.get_otp_by_user_query(user)
         if otp is not None:
             await self.delete_otp_by_id_query(otp.id)

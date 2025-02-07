@@ -154,7 +154,7 @@ def email_validator(email: str) -> str:
         email = emailinfo.normalized
         return email
     except EmailNotValidError:
-        raise RequestValidationError(f"{email} is an invalid/disposable")
+        raise RequestValidationError(f"{email} is an invalid/disposable email")
 
 
 VerifyEmail = Annotated[str, AfterValidator(email_validator)]
