@@ -251,14 +251,14 @@ class UserQueries(AsyncDatabaseSession):
             self.logger.error("Failed to update otp:", e)
             raise
 
-    async def find_passw_reset_token_by_token_query(
+    async def find_passw_token_by_token_query(
         self, token: str
     ) -> PasswordResetToken | None:
         stmt = self.select(PasswordResetToken).where(PasswordResetToken.token == token)
         result = await self.async_session.execute(stmt)
         return result.scalars().first()
 
-    async def find_passw_reset_token_by_user_query(
+    async def find_passw_token_by_user_query(
         self, user: User
     ) -> PasswordResetToken:
         stmt = self.select(PasswordResetToken).where(PasswordResetToken.owner == user)

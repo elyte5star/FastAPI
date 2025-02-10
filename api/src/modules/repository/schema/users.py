@@ -123,7 +123,7 @@ class Otp(Base):
 
 class PasswordResetToken(Base):
     id = Column(String(60), primary_key=True, index=True)
-    token = Column(String(60), index=True)
+    token = Column(String(100), index=True)
     expiry = Column("expiryDate", DateTime(timezone=True))
     userid = Column(
         String(60),

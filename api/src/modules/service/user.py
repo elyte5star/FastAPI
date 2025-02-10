@@ -8,7 +8,7 @@ from modules.repository.request_models.user import (
     EnableLocationRequest,
     VerifyRegistrationOtpRequest,
     UserEnquiryRequest,
-    ResetUserRequest,
+    ResetUserPasswordRequest,
     UpdateUserPasswordRequest,
     SaveUserPassswordRequest,
 )
@@ -340,26 +340,27 @@ class UserHandler(UserQueries):
 
     # RESET USER PASSWORD (user forgot password)
     async def _reset_user_password(
-        self, req: ResetUserRequest, request: Request
+        self, req: ResetUserPasswordRequest, request: Request
     ) -> BaseResponse:
-        user = await self.find_user_by_email(req.email)
+        user = await self.find_user_by_email(req.data.email)
         if user is not None:
             token = self.create_timed_token(user.email)
             expiry = time_now() + time_delta(self.cf.otp_expiry)
-            password_reset_token = self.find_passw_reset_token_by_user_query(
+            password_reset_token = await self.find_passw_token_by_user_query(
                 user,
             )
             if password_reset_token is None:
                 new_reset_token = PasswordResetToken(
                     id=get_indent(), token=token, expiry=expiry, userid=user.id
                 )
-                self.create_pass_reset_query(new_reset_token)
+                await self.create_pass_reset_query(new_reset_token)
             else:
                 changes = {"token": token, "expiry": expiry}
-                await self.update_pass_token_query(
+                _ = await self.update_pass_token_query(
                     password_reset_token.id,
                     changes,
                 )
+
             event_payload = ResetUserPassword(
                 username=user.username,
                 email=user.email,

@@ -187,7 +187,7 @@ class APIEventsHandler(EmailService):
             return True
         return False
 
-    async def reset_user_password(self, event_payload:ResetUserPassword):
+    async def reset_user_password(self, event_payload: ResetUserPassword):
         subject = "Reset Password"
         expiry = event_payload.expiry
         body = {

@@ -94,8 +94,12 @@ class UserEnquiryRequest(BaseReq):
     result: ClientEnquiryResponse = ClientEnquiryResponse()
 
 
-class ResetUserRequest(BaseReq):
+class ResetUserPassword(BaseModel):
     email: VerifyEmail
+
+
+class ResetUserPasswordRequest(BaseReq):
+    data: ResetUserPassword = None
     result: BaseResponse = BaseResponse()
 
 

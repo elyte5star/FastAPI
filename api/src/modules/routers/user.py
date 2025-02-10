@@ -20,7 +20,8 @@ from modules.repository.request_models.user import (
     CreateUser,
     UserEnquiryRequest,
     UserEnquiry,
-    ResetUserRequest,
+    ResetUserPasswordRequest,
+    ResetUserPassword,
     UpdateUserPassword,
     UpdateUserPasswordRequest,
     SaveUserPassswordRequest,
@@ -202,10 +203,10 @@ class UserRouter(UserHandler):
         )
 
     async def reset_user_password(
-        self, email: EmailStr, request: Request
+        self, data: ResetUserPassword, request: Request
     ) -> BaseResponse:
         return await self._reset_user_password(
-            ResetUserRequest(email=email),
+            ResetUserPasswordRequest(data=data),
             request,
         )
 
