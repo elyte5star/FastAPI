@@ -23,7 +23,7 @@ from modules.repository.request_models.user import (
     ResetUserRequest,
     UpdateUserPassword,
     UpdateUserPasswordRequest,
-    SaveUserPassswordRequest
+    SaveUserPassswordRequest,
 )
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
 from pydantic import EmailStr
@@ -122,7 +122,7 @@ class UserRouter(UserHandler):
             summary="Update user password",
             methods=["POST"],
         )
-        
+
         self.router.add_api_route(
             path="/save-password",
             endpoint=self.save_user_password,
@@ -209,12 +209,12 @@ class UserRouter(UserHandler):
             request,
         )
 
-    async def update_user_password(self, update: UpdateUserPassword) -> BaseResponse:
+    async def update_user_password(self, data: UpdateUserPassword) -> BaseResponse:
         return await self._update_user_password(
-            UpdateUserPasswordRequest(update_password=update)
+            UpdateUserPasswordRequest(update_password=data)
         )
 
-    async def save_user_password(self, update: UpdateUserPassword) -> BaseResponse:
+    async def save_user_password(self, data: UpdateUserPassword) -> BaseResponse:
         return await self._save_user_password(
-            SaveUserPassswordRequest(update_password=update)
+            SaveUserPassswordRequest(save_password=data)
         )
