@@ -81,12 +81,13 @@ class ResetUserPassword(BaseModel):
     email: EmailStr
     app_url: str
     token: str
+    expiry: datetime
 
 
 class APIEventsHandler(EmailService):
 
     async def unknown_device_notification(self, event_payload: NewDeviceLogin):
-        subject = "New Login Notification"
+        subject = "New device login notification"
         body = {
             "device_details": event_payload.device_details,
             "location": event_payload.location,
@@ -111,7 +112,7 @@ class APIEventsHandler(EmailService):
         self,
         event_payload: SignUpPayload,
     ):
-        subject = "Registration Confirmation"
+        subject = "Registration confirmation"
         expiry = event_payload.expiry
         body = {
             "confirmationUrl": (
@@ -167,7 +168,7 @@ class APIEventsHandler(EmailService):
         return False
 
     async def client_enquiry(self, event_payload: ClientEnquiry):
-        subject = "New client Enquiry"
+        subject = "New client enquiry"
         body = {
             "message": event_payload.message,
             "case_id": event_payload.eid,
@@ -188,7 +189,7 @@ class APIEventsHandler(EmailService):
         return False
 
     async def reset_user_password(self, event_payload: ResetUserPassword):
-        subject = "Reset Password"
+        subject = "Reset password"
         expiry = event_payload.expiry
         body = {
             "home": event_payload.app_url,
@@ -232,4 +233,3 @@ class APIEvents(BaseEventHandler):
                 await self.event_handler.reset_user_password(payload)
             case _:
                 self.cfg.logger.warning(payload)
-                
