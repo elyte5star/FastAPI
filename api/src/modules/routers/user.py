@@ -20,6 +20,10 @@ from modules.repository.request_models.user import (
     CreateUser,
     UserEnquiryRequest,
     UserEnquiry,
+    ResetUserRequest,
+    UpdateUserPassword,
+    UpdateUserPasswordRequest,
+    SaveUserPassswordRequest
 )
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
 from pydantic import EmailStr
@@ -86,7 +90,7 @@ class UserRouter(UserHandler):
             endpoint=self.enable_new_location,
             response_model=BaseResponse,
             methods=["GET"],
-            description="Enable New Location Login",
+            description="Verify new location Login",
         )
         self.router.add_api_route(
             path="/signup/verify-otp/{token}",
@@ -100,6 +104,30 @@ class UserRouter(UserHandler):
             endpoint=self.create_enquiry,
             response_model=ClientEnquiryResponse,
             summary="Customer Service",
+            methods=["POST"],
+        )
+
+        self.router.add_api_route(
+            path="/reset-password",
+            endpoint=self.reset_user_password,
+            response_model=BaseResponse,
+            summary="Reset user password",
+            methods=["POST"],
+        )
+
+        self.router.add_api_route(
+            path="/update-password",
+            endpoint=self.update_user_password,
+            response_model=BaseResponse,
+            summary="Update user password",
+            methods=["POST"],
+        )
+        
+        self.router.add_api_route(
+            path="/save-password",
+            endpoint=self.save_user_password,
+            response_model=BaseResponse,
+            summary="Save user password",
             methods=["POST"],
         )
 
@@ -171,4 +199,22 @@ class UserRouter(UserHandler):
         return await self._create_enquiry(
             UserEnquiryRequest(enquiry=enquiry),
             request,
+        )
+
+    async def reset_user_password(
+        self, email: EmailStr, request: Request
+    ) -> BaseResponse:
+        return await self._reset_user_password(
+            ResetUserRequest(email=email),
+            request,
+        )
+
+    async def update_user_password(self, update: UpdateUserPassword) -> BaseResponse:
+        return await self._update_user_password(
+            UpdateUserPasswordRequest(update_password=update)
+        )
+
+    async def save_user_password(self, update: UpdateUserPassword) -> BaseResponse:
+        return await self._save_user_password(
+            SaveUserPassswordRequest(update_password=update)
         )

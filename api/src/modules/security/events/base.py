@@ -65,6 +65,7 @@ class ClientEnquiry(BaseModel):
     email: EmailStr
     message: str
     app_url: str
+    expiry: datetime
 
 @payload_schema.register(event_name=UserEvents.BLOCKED)
 class BlockedUserAccount(BaseModel):
@@ -72,6 +73,14 @@ class BlockedUserAccount(BaseModel):
     username: str
     email: EmailStr
     blocked_date: datetime
+
+
+@payload_schema.register(event_name=UserEvents.RESET_PASSWORD)
+class ResetUserPassword(BaseModel):
+    username: str
+    email: EmailStr
+    app_url: str
+    token: str
 
 
 class APIEventsHandler(EmailService):
@@ -132,7 +141,7 @@ class APIEventsHandler(EmailService):
         return False
 
     async def strange_location_login_notice(self, event_payload: StrangeLocation):
-        subject = "Login attempt from different location"
+        subject = "Login attempt from a different location"
         body = {
             "country": event_payload.country,
             "username": event_payload.username,
@@ -142,6 +151,7 @@ class APIEventsHandler(EmailService):
             + "/users/enable-new-location?token="
             + event_payload.token,
             "changePassUri": event_payload.app_url + "/user/update-password",
+
         }
         email_req = EmailRequestSchema(
             subject=subject,
@@ -158,11 +168,12 @@ class APIEventsHandler(EmailService):
 
     async def client_enquiry(self, event_payload: ClientEnquiry):
         subject = "New client Enquiry"
-        body = {"message": event_payload.message,
-               "case_id": event_payload.eid,
-               "client_name": event_payload.client_name,
-               "time": time_now_utc().strftime('%d-%m-%Y, %H:%M:%S'),
-                "home": event_payload.app_url,
+        body = {
+            "message": event_payload.message,
+            "case_id": event_payload.eid,
+            "client_name": event_payload.client_name,
+            "time": time_now_utc().strftime('%d-%m-%Y, %H:%M:%S'),
+            "home": event_payload.app_url,
         }
         email_req = EmailRequestSchema(
             subject=subject,
@@ -175,7 +186,31 @@ class APIEventsHandler(EmailService):
             self.config.logger.info(f"Email sent to :{email_req.recipients}")
             return True
         return False
-            
+
+    async def reset_user_password(self, event_payload:ResetUserPassword):
+        subject = "Reset Password"
+        expiry = event_payload.expiry
+        body = {
+            "home": event_payload.app_url,
+            "username": event_payload.username,
+            "resetLink": event_payload.app_url
+            + "/users/change-password?token="
+            + event_payload.token,
+            "expiry": expiry.strftime("%d/%m/%Y,%H:%M"),
+            "token": event_payload.token,
+        }
+        email_req = EmailRequestSchema(
+            subject=subject,
+            recipients=[event_payload.email],
+            body=body,
+            template_name="reset_password.html",
+        )
+        is_sent = await self.send_email_to_user(email_req)
+        if is_sent:
+            self.config.logger.info(f"Email sent to :{email_req.recipients}")
+            return True
+        return False
+
 
 class APIEvents(BaseEventHandler):
     def __init__(self, cfg: ApiConfig):
@@ -193,6 +228,8 @@ class APIEvents(BaseEventHandler):
                 await self.event_handler.unknown_device_notification(payload)
             case UserEvents.CLIENT_ENQUIRY:
                 await self.event_handler.client_enquiry(payload)
+            case UserEvents.RESET_PASSWORD:
+                await self.event_handler.reset_user_password(payload)
             case _:
                 self.cfg.logger.warning(payload)
                 

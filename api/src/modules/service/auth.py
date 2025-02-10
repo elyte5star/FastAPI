@@ -18,7 +18,7 @@ class AuthenticationHandler(LoginAttemptChecker):
         is_email, email = is_valid_email(req.username)
         user = None
         if is_email:
-            user = await self.get_user_by_email(email)
+            user = await self.find_user_by_email(email)
         else:
             user = await self.get_user_by_username(req.username)
         if user is not None:
@@ -30,7 +30,9 @@ class AuthenticationHandler(LoginAttemptChecker):
                 req.password.get_secret_value(),
                 user.password,
             ):
-                active = True
+                strange_loc = await self.on_login_success(user, request)
+                if strange_loc:
+                    return req.req_failure("Login attempt from different location")
                 role = "USER" if not user.admin else "ADMIN"
                 data = {
                     "userid": user.id,
@@ -38,15 +40,12 @@ class AuthenticationHandler(LoginAttemptChecker):
                     "email": user.email,
                     "admin": user.admin,
                     "enabled": user.enabled,
-                    "active": active,
+                    "active": user.active,
                     "role": role,
                     "jti": get_indent(),
                     "discount": user.discount,
                     "accountNonLocked": not user.is_locked,
                 }
-                strange_loc = await self.on_login_success(user, request)
-                if strange_loc:
-                    return req.req_failure("Login attempt from different location")
                 token_data = await self.create_token_response(user, data)
                 req.result.data = token_data
                 return req.req_success(
@@ -132,7 +131,7 @@ class AuthenticationHandler(LoginAttemptChecker):
             req.data.grant_type == self.cf.grant_type
             and req.credentials.token_id == req.data.token_id
         ):
-            user = await self.get_user_by_id(req.credentials.userid)
+            user = await self.find_user_by_id(req.credentials.userid)
             if user is not None:
                 if not user.enabled or user.is_locked:
                     return req.req_failure(" Account Not Verified/Locked ")

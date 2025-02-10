@@ -221,6 +221,36 @@ class UserQueries(AsyncDatabaseSession):
             raise
 
     # PASSWORD RESET
+    async def create_pass_reset_query(self, token: PasswordResetToken) -> str:
+        self.async_session.add(token)
+        result = ""
+        try:
+            await self.async_session.commit()
+            result = token.id
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error(f"Failed to create usr reset password: {e}")
+            raise
+        finally:
+            return result
+
+    async def update_pass_token_query(self, id: str, data: dict) -> dict | None:
+        result = None
+        stmt = (
+            self.sqlalchemy_update(PasswordResetToken)
+            .where(PasswordResetToken.id == id)
+            .values(data)
+            .execution_options(synchronize_session="fetch")
+        )
+        try:
+            result = await self.async_session.execute(stmt)
+            result = result.last_updated_params()
+            return result
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to update otp:", e)
+            raise
+
     async def find_passw_reset_token_by_token_query(
         self, token: str
     ) -> PasswordResetToken | None:

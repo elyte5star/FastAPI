@@ -8,6 +8,9 @@ from modules.repository.request_models.user import (
     EnableLocationRequest,
     VerifyRegistrationOtpRequest,
     UserEnquiryRequest,
+    ResetUserRequest,
+    UpdateUserPasswordRequest,
+    SaveUserPassswordRequest,
 )
 from modules.repository.response_models.user import (
     CreateUserResponse,
@@ -31,7 +34,12 @@ import geoip2.database
 from fastapi import Request
 from fastapi_events.dispatcher import dispatch
 from modules.utils.misc import get_indent, time_delta, time_now, time_now_utc
-from modules.security.events.base import UserEvents, SignUpPayload, ClientEnquiry
+from modules.security.events.base import (
+    UserEvents,
+    SignUpPayload,
+    ClientEnquiry,
+    ResetUserPassword,
+)
 from modules.repository.queries.user import UserQueries
 
 
@@ -98,7 +106,7 @@ class UserHandler(UserQueries):
     async def _create_verification_otp(
         self, req: OtpRequest, request: Request
     ) -> BaseResponse:
-        user = await self.get_user_by_email(req.email)
+        user = await self.find_user_by_email(req.email)
         if user is None:
             return req.req_failure(f"User with email {req.email} not found")
         app_url = self.get_app_url(request)
@@ -206,19 +214,9 @@ class UserHandler(UserQueries):
         ).decode(self.cf.encoding)
         return hashed_password
 
-    def check_if_valid_old_password(self, user: User, password: str) -> bool:
-        return bcrypt.checkpw(
-            password.encode(self.cf.encoding),
-            user.password.encode(self.cf.encoding),
-        )
-
-    def change_user_password(self, user: User, password: str) -> None:
-        hashed_password = self.hash_password(password)
-        self.update_user_query(user.id, dict(password=hashed_password))
-
     async def _get_user(self, req: GetUserRequest) -> GetUserResponse:
         # include RBAC
-        user = await self.get_user_by_id(req.userid)
+        user = await self.find_user_by_id(req.userid)
         if user is not None:
             user_info = UserDetails(
                 userid=user.id,
@@ -271,18 +269,16 @@ class UserHandler(UserQueries):
         return req.req_success(f"Total number of users: {len(users)}")
 
     async def _delete_user(self, req: DeleteUserRequest) -> BaseResponse:
-        user = await self.get_user_by_id(req.userid)
+        user = await self.find_user_by_id(req.userid)
         if user is None:
             return req.req_failure(f"No user with id: {req.userid}")
         otp: Otp = await self.get_otp_by_user_query(user)
         if otp is not None:
             await self.delete_otp_by_id_query(otp.id)
-        password_rest_token: PasswordResetToken = (
-            await self.find_passw_reset_token_by_user_query(user)
-        )
-        if password_rest_token is not None:
+        password_reset_token = await self.find_passw_reset_token_by_user_query(user)
+        if password_reset_token is not None:
             await self.delete_passw_reset_token_by_id_query(
-                password_rest_token.id,
+                password_reset_token.id,
             )
         await self.delete_user_query(user.id)
         return req.req_success(f"User with id::{req.userid} deleted")
@@ -292,7 +288,7 @@ class UserHandler(UserQueries):
         self,
         req: EnableLocationRequest,
     ) -> BaseResponse:
-        country = self.is_valid_new_location_token(req.token)
+        country = await self.is_valid_new_location_token(req.token)
         if country is not None:
             return req.req_success(f"{country} enabled.")
         return req.req_failure("Invalid Login Location!")
@@ -301,11 +297,10 @@ class UserHandler(UserQueries):
         new_loc_token = await self.find_new_location_by_token_query(token)
         if new_loc_token is not None:
             user_loc = new_loc_token.location
-            result = await self.update_user_loc_query(
+            await self.update_user_loc_query(
                 user_loc.id,
                 dict(enabled=True),
             )
-            self.logger.debug(result)
             await self.del_new_location_query(new_loc_token.id)
             return user_loc.country
         return None
@@ -332,6 +327,57 @@ class UserHandler(UserQueries):
         except Exception as e:
             self.logger.error(e)
             return country
+
+    def check_if_valid_old_password(self, user: User, password: str) -> bool:
+        return bcrypt.checkpw(
+            password.encode(self.cf.encoding),
+            user.password.encode(self.cf.encoding),
+        )
+
+    def change_user_password(self, user: User, password: str) -> None:
+        hashed_password = self.hash_password(password)
+        self.update_user_query(user.id, dict(password=hashed_password))
+
+    # RESET USER PASSWORD (user forgot password)
+    async def _reset_user_password(
+        self, req: ResetUserRequest, request: Request
+    ) -> BaseResponse:
+        user = await self.find_user_by_email(req.email)
+        if user is not None:
+            token = self.create_timed_token(user.email)
+            expiry = time_now() + time_delta(self.cf.otp_expiry)
+            password_reset_token = self.find_passw_reset_token_by_user_query(
+                user,
+            )
+            if password_reset_token is None:
+                new_reset_token = PasswordResetToken(
+                    id=get_indent(), token=token, expiry=expiry, userid=user.id
+                )
+                self.create_pass_reset_query(new_reset_token)
+            else:
+                changes = {"token": token, "expiry": expiry}
+                await self.update_pass_token_query(
+                    password_reset_token.id,
+                    changes,
+                )
+            event_payload = ResetUserPassword(
+                username=user.username,
+                email=user.email,
+                token=token,
+                expiry=expiry,
+                app_url=self.get_app_url(request),
+            )
+            dispatch(UserEvents.RESET_PASSWORD, event_payload)
+            return req.req_success(
+                f"New password reset token sent to: {user.email}",
+            )
+        return req.req_failure("User doesn't exist")
+
+    async def _save_user_password(self, req: SaveUserPassswordRequest):
+        pass
+
+    async def _update_user_password(self, req: UpdateUserPasswordRequest):
+        pass
 
     async def _create_enquiry(
         self,

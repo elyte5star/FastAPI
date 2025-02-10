@@ -16,7 +16,7 @@ from modules.repository.schema.users import (
     Otp,  # noqa: F401
     DeviceMetaData,  # noqa: F401,
     NewLocationToken,  # noqa: F401
-    Enquiry  # noqa: F401
+    Enquiry,  # noqa: F401
 )
 from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
@@ -100,16 +100,17 @@ class AsyncDatabaseSession:
             database_parameters=kwargs,
             sqlalchemy_version=__version__,
             tables_in_database=await self.async_inspect_schema(),
+            queue_parameters=self.cf.rabbit_connect_string,
             cpu_count=cpu_count(),
         )
         return info
 
     async def create_admin_account(self, async_session: AsyncSession) -> None:
-        admin_username: str = self.cf.contacts["username"]
+        admin_username = self.cf.contacts["username"]
         if await self.get_user_by_username(admin_username) is None:
-            admin_email: str = self.cf.contacts["email"]
-            tel: str = self.cf.contacts["telephone"]
-            password: bytes = self.cf.contacts["password"]
+            admin_email = self.cf.contacts["email"]
+            tel = self.cf.contacts["telephone"]
+            password = self.cf.contacts["password"]
             admin_user = User(
                 id=get_indent(),
                 email=admin_email,
@@ -141,7 +142,7 @@ class AsyncDatabaseSession:
         )
         await self.create_user_location_query(user_loc)
 
-    async def get_user_by_id(self, userid: str) -> User | None:
+    async def find_user_by_id(self, userid: str) -> User | None:
         stmt = self.select(User).where(User.id == userid)
         users = await self.async_session.execute(stmt)
         return users.scalars().first()
@@ -151,7 +152,7 @@ class AsyncDatabaseSession:
         users = await self.async_session.execute(stmt)
         return users.scalars().first()
 
-    async def get_user_by_email(self, email: str) -> User | None:
+    async def find_user_by_email(self, email: str) -> User | None:
         stmt = self.select(User).where(User.email == email)
         users = await self.async_session.execute(stmt)
         return users.scalars().first()
@@ -210,7 +211,7 @@ class AsyncDatabaseSession:
         if xf_header is not None:
             return xf_header.split(",")[0]
         # return "128.101.101.101"  # for testing Richfield,United States
-        # return "41.238.0.198" # for testing Giza, Egypt
+        # return "41.238.0.198"  # for testing Giza, Egypt
         return request.client.host
 
     def verify_email_token(self, token: str, expiration: int = 3600) -> bool:

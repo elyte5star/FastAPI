@@ -15,7 +15,10 @@ class AuthRouter(AuthenticationHandler):
 
     def __init__(self, config):
         super().__init__(config)
-        self.router: APIRouter = APIRouter(prefix="/auth", tags=["Authentication"])
+        self.router: APIRouter = APIRouter(
+            prefix="/auth",
+            tags=["Authentication"],
+        )
         self.router.add_api_route(
             path="/form-login",
             endpoint=self.login,

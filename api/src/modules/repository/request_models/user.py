@@ -23,7 +23,7 @@ class CreateUser(BaseModel):
     username: ValidateUsername
     email: VerifyEmail
     password: ValidatePassword
-    confirm_password: ValidatePassword
+    confirm_password: ValidatePassword = Field(alias="confirmPassword")
     telephone: ValidateTelephone
 
     @model_validator(mode="after")
@@ -81,14 +81,35 @@ class VerifyRegistrationOtpRequest(BaseReq):
 
 
 class UserEnquiry(BaseModel):
-    client_name: str = Field(min_length=3, max_length=10)
-    client_email: VerifyEmail
+    client_name: str = Field(min_length=3, max_length=10, alias="clientName")
+    client_email: VerifyEmail = Field(alias="clientEmail")
     country: str
     subject: str
     message: str = Field(min_length=3, max_length=500)
-    is_closed: bool = False
+    is_closed: bool = Field(default=False, alias="isClosed")
 
 
 class UserEnquiryRequest(BaseReq):
     enquiry: UserEnquiry = None
     result: ClientEnquiryResponse = ClientEnquiryResponse()
+
+
+class ResetUserRequest(BaseReq):
+    email: VerifyEmail
+    result: BaseResponse = BaseResponse()
+
+
+class UpdateUserPassword(BaseModel):
+    old_password: str = Field(alias="oldPassword")
+    new_password: ValidatePassword = Field(alias="newPassword")
+    token: str
+
+
+class UpdateUserPasswordRequest(BaseReq):
+    update_password: UpdateUserPassword = None
+    result: BaseResponse = BaseResponse()
+
+
+class SaveUserPassswordRequest(BaseReq):
+    save_password: UpdateUserPassword = None
+    result: BaseResponse = BaseResponse()

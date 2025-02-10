@@ -72,6 +72,16 @@ class UserLocation(Base):
         "NewLocationToken", uselist=False, back_populates="location"
     )
 
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__}("
+            f" id:{self.id}, "
+            f" country:{self.country}, "
+            f" enabled:{self.enabled},"
+            f" userid:{self.userid},"
+            f")>"
+        )
+
 
 class NewLocationToken(Base):
     id = Column(String(60), primary_key=True, index=True)
@@ -82,8 +92,18 @@ class NewLocationToken(Base):
         nullable=False,
     )
     location = relationship(
-        "UserLocation", back_populates="new_location", single_parent=True
+        "UserLocation",
+        back_populates="new_location",
+        single_parent=True,
+        lazy="selectin",
     )
+
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__} ("
+            f" id:{self.id}, "
+            f" user_location:{self.location} )>"
+        )
 
 
 class Otp(Base):

@@ -41,7 +41,7 @@ class DifferentLocationChecker(DeviceMetaDataChecker):
         user_loc = await self.find_user_location_by_country_and_user_query(
             country, user
         )
-        if user_loc is None or not user_loc.enabled:
+        if user_loc is None:
             return await self.create_new_location_token(user, country)
         return None
 

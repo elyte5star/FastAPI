@@ -72,6 +72,15 @@ class ApiConfig:
         self.validate_certs: bool = False
         self.email_config: ConnectionConfig = None
 
+        # RabbitMQ
+        self.rabbit_host_name: str = ""
+        self.rabbit_host_port: str = ""
+        self.rabbit_connect_string: str = ""
+        self.queue_name: list = []
+        self.rabbit_user: str = ""
+        self.rabbit_pass: str = ""
+        self.rabbit_connect_string: str = ""
+
         # CLIENT
         self.client_url: str = ""
 
@@ -96,6 +105,19 @@ class ApiConfig:
         self.rounds = config.encryption.rounds
         self.encoding = config.encryption.encoding
         self.roles = config.encryption.roles
+
+        self.rabbit_host_name = config.queue.params.host_name
+        self.rabbit_host_port = config.queue.params.port
+        self.rabbit_user = config.queue.params.user
+        self.rabbit_pass = config.queue.params.pwd
+        self.queue_name = config.queue.params.my_queue
+        self.rabbit_connect_string = (
+            f"amqp://{self.rabbit_user}:{self.rabbit_pass}@"
+            + self.rabbit_host_name
+            + ":"
+            + self.rabbit_host_port
+            + "/"
+        )
 
         self.mail_username = config.api.doc.contact["mail_username"]
         self.mail_port = config.api.doc.contact["mail_port"]
