@@ -1,7 +1,6 @@
 from modules.security.device import DeviceMetaDataChecker
 from fastapi import Request
 from modules.repository.schema.users import NewLocationToken, UserLocation, User
-import geoip2.database
 from modules.utils.misc import get_indent
 from fastapi_events.dispatcher import dispatch
 from modules.security.events.base import UserEvents, StrangeLocation
@@ -36,14 +35,15 @@ class DifferentLocationChecker(DeviceMetaDataChecker):
         if not self.is_geo_ip_enabled():
             self.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
-        country = await self.get_country_from_ip(ip)
-        self.logger.debug(f"country :: {country}")
+        country, city = await self.get_location_from_ip(ip)
+        self.logger.debug(f"country: {country}, city: {city}")
         user_loc = await self.find_user_location_by_country_and_user_query(
             country, user
         )
         if user_loc is None:
             return await self.create_new_location_token(user, country)
         elif not user_loc.enabled:
+            print(" NOT EMPTY::::::::", user_loc)
             return user_loc.new_location
         return None
 
@@ -60,16 +60,3 @@ class DifferentLocationChecker(DeviceMetaDataChecker):
             new_loc_token,
         )
         return new_loc_token
-
-    async def get_country_from_ip(self, ip: str) -> str:
-        country = "UNKNOWN"
-        try:
-            with geoip2.database.Reader(
-                "./modules/static/maxmind/GeoLite2-Country.mmdb"
-            ) as reader:
-                response = reader.country(ip)
-                country = response.country.name
-                return country
-        except Exception as e:
-            self.logger.error(e)
-            return country

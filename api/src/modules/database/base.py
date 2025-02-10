@@ -27,6 +27,8 @@ from itsdangerous import (
     BadTimeSignature,
     SignatureExpired,
 )
+import geoip2.errors
+import geoip2.database
 
 
 class AsyncDatabaseSession:
@@ -212,7 +214,7 @@ class AsyncDatabaseSession:
             return xf_header.split(",")[0]
         # return "128.101.101.101"  # for testing Richfield,United States
         return "41.238.0.198"  # for testing Giza, Egypt
-        #return request.client.host
+        # return request.client.host
 
     def verify_email_token(self, token: str, expiration: int = 3600) -> bool:
         serializer = URLSafeTimedSerializer(self.cf.secret_key)
@@ -227,3 +229,15 @@ class AsyncDatabaseSession:
             return False
         except BadTimeSignature:
             return False
+
+    async def get_location_from_ip(self, ip: str) -> str:
+        location = ("UNKNOWN", "UNKNOWN")
+        try:
+            with geoip2.database.Reader(
+                "./modules/static/maxmind/GeoLite2-City.mmdb"
+            ) as reader:
+                response = reader.city(ip)
+                return (response.country.name, response.city.name)
+        except geoip2.errors.AddressNotFoundError as e:
+            self.logger.error(e)
+            return location

@@ -69,7 +69,10 @@ class UserLocation(Base):
     )
     owner = relationship("User", back_populates="locations")
     new_location = relationship(
-        "NewLocationToken", uselist=False, back_populates="location", lazy="selectin"
+        "NewLocationToken",
+        uselist=False,
+        back_populates="location",
+        lazy="selectin",
     )
 
     def __repr__(self):

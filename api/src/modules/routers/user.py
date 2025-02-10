@@ -25,6 +25,7 @@ from modules.repository.request_models.user import (
     UpdateUserPassword,
     UpdateUserPasswordRequest,
     SaveUserPassswordRequest,
+    ChangePassword,
 )
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
 from pydantic import EmailStr
@@ -33,7 +34,7 @@ from pydantic import EmailStr
 class UserRouter(UserHandler):
     def __init__(self, config):
         super().__init__(config)
-        self.router: APIRouter = APIRouter(prefix="/users", tags=["Users"])
+        self.router: APIRouter = APIRouter(prefix="/user", tags=["Users"])
         self.router.add_api_route(
             path="/signup",
             status_code=status.HTTP_201_CREATED,
@@ -146,7 +147,12 @@ class UserRouter(UserHandler):
         return await self._get_users(GetUsersRequest(credentials=current_user))
 
     async def get_user(
-        self, userid: str, current_user: Annotated[JWTPrincipal, Depends(security)]
+        self,
+        userid: str,
+        current_user: Annotated[
+            JWTPrincipal,
+            Depends(security),
+        ],
     ) -> GetUserResponse:
         return await self._get_user(
             GetUserRequest(credentials=current_user, userid=userid)
@@ -203,19 +209,30 @@ class UserRouter(UserHandler):
         )
 
     async def reset_user_password(
-        self, data: ResetUserPassword, request: Request
+        self, data: Annotated[ResetUserPassword, Depends()], request: Request
     ) -> BaseResponse:
         return await self._reset_user_password(
             ResetUserPasswordRequest(data=data),
             request,
         )
 
-    async def update_user_password(self, data: UpdateUserPassword) -> BaseResponse:
+    async def update_user_password(
+        self,
+        data: UpdateUserPassword,
+        current_user: Annotated[JWTPrincipal, Depends(security)],
+    ) -> BaseResponse:
         return await self._update_user_password(
-            UpdateUserPasswordRequest(update_password=data)
+            UpdateUserPasswordRequest(
+                credentials=current_user,
+                data=data,
+            )
         )
 
-    async def save_user_password(self, data: UpdateUserPassword) -> BaseResponse:
+    async def save_user_password(
+        self, data: Annotated[ChangePassword, Depends()]
+    ) -> BaseResponse:
         return await self._save_user_password(
-            SaveUserPassswordRequest(save_password=data)
+            SaveUserPassswordRequest(
+                data=data,
+            )
         )

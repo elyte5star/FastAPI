@@ -1,7 +1,6 @@
 from modules.repository.schema.users import DeviceMetaData
 from modules.repository.queries.auth import AuthQueries
 from fastapi import Request
-import geoip2.database
 from modules.utils.misc import get_indent, time_now_utc
 from fastapi_events.dispatcher import dispatch
 from modules.security.events.base import UserEvents, NewDeviceLogin
@@ -12,7 +11,7 @@ class DeviceMetaDataChecker(AuthQueries):
 
     async def verify_device(self, user: User, request: Request):
         ip = self.get_client_ip_address(request)
-        city = await self.get_city_from_ip(ip)
+        country, city = await self.get_location_from_ip(ip)
         device_details = self.get_device_details(request)
         existing_device = await self.find_existing_device(
             user.id,
@@ -20,16 +19,6 @@ class DeviceMetaDataChecker(AuthQueries):
             city,
         )
         if existing_device is None:
-            event_payload = NewDeviceLogin(
-                username=user.username,
-                email=user.email,
-                device_details=device_details,
-                ip=ip,
-                location=city,
-                app_url=self.get_app_url(request),
-            )
-
-            dispatch(UserEvents.UNKNOWN_DEVICE_LOGIN, event_payload)
             new_device_meta_data = DeviceMetaData(
                 id=get_indent(),
                 device_details=device_details,
@@ -38,25 +27,21 @@ class DeviceMetaDataChecker(AuthQueries):
                 userid=user.id,
             )
             await self.create_device_meta_data_query(new_device_meta_data)
+            event_payload = NewDeviceLogin(
+                username=user.username,
+                email=user.email,
+                device_details=device_details,
+                ip=ip,
+                location=f"{city}, {country}",
+                app_url=self.get_app_url(request),
+            )
+            dispatch(UserEvents.UNKNOWN_DEVICE_LOGIN, event_payload)
         else:
             changes = {"last_login_date": time_now_utc()}
             _ = await self.update_device_meta_data_query(
                 existing_device.id,
                 changes,
             )
-
-    async def get_city_from_ip(self, ip: str) -> str:
-        city = "UNKNOWN"
-        try:
-            with geoip2.database.Reader(
-                "./modules/static/maxmind/GeoLite2-City.mmdb"
-            ) as reader:
-                response = reader.city(ip)
-                city = response.city.name
-                return city
-        except Exception as e:
-            self.logger.error(e)
-            return city
 
     def get_device_details(self, request: Request) -> str:
         device_details = dict(request.scope["headers"]).get(b"user-agent", b"").decode()

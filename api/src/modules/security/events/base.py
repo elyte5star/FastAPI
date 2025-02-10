@@ -117,7 +117,7 @@ class APIEventsHandler(EmailService):
         body = {
             "confirmationUrl": (
                 event_payload.app_url
-                + "/users/signup/verify-otp?token="
+                + "/user/signup/verify-otp?token="
                 + event_payload.token
             ),
             "otp": event_payload.token,
@@ -141,7 +141,7 @@ class APIEventsHandler(EmailService):
         self.config.logger.warning(f"Email not sent to :{event_payload.email}")
         return False
 
-    async def strange_location_login_notice(self, event_payload: StrangeLocation):
+    async def strange_location_login(self, event_payload: StrangeLocation):
         subject = "Login attempt from a different location"
         body = {
             "country": event_payload.country,
@@ -149,7 +149,7 @@ class APIEventsHandler(EmailService):
             "ip": event_payload.ip,
             "time": time_now_utc().strftime("%d-%m-%Y, %H:%M:%S"),
             "enableLocationLink": event_payload.app_url
-            + "/users/enable-new-location?token="
+            + "/user/enable-new-location?token="
             + event_payload.token,
             "changePassUri": event_payload.app_url + "/user/update-password",
 
@@ -195,7 +195,7 @@ class APIEventsHandler(EmailService):
             "home": event_payload.app_url,
             "username": event_payload.username,
             "resetLink": event_payload.app_url
-            + "/users/change-password?token="
+            + "/user/change-password?token="
             + event_payload.token,
             "expiry": expiry.strftime("%d/%m/%Y,%H:%M"),
             "token": event_payload.token,
@@ -224,7 +224,7 @@ class APIEvents(BaseEventHandler):
             case UserEvents.SIGNED_UP:
                 await self.event_handler.confirm_registration(payload)
             case UserEvents.STRANGE_LOCATION:
-                await self.event_handler.strange_location_login_notice(payload)
+                await self.event_handler.strange_location_login(payload)
             case UserEvents.UNKNOWN_DEVICE_LOGIN:
                 await self.event_handler.unknown_device_notification(payload)
             case UserEvents.CLIENT_ENQUIRY:

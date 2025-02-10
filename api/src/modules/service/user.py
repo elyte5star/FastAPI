@@ -29,11 +29,9 @@ from modules.repository.schema.users import (
     Enquiry,
 )
 import bcrypt
-import geoip2.database
-
 from fastapi import Request
 from fastapi_events.dispatcher import dispatch
-from modules.utils.misc import get_indent, time_delta, time_now, time_now_utc
+from modules.utils.misc import get_indent, time_delta, time_now, time_now_utc, datetime
 from modules.security.events.base import (
     UserEvents,
     SignUpPayload,
@@ -189,7 +187,7 @@ class UserHandler(UserQueries):
         otp = await self.get_otp_by_token_query(token)
         if otp is None:
             return TOKEN_INVALID
-        valid = await self.is_otp_valid(otp)
+        valid = await self.is_otp_valid(otp.token, otp.expiry)
         if not valid:
             return TOKEN_EXPIRED
         user = otp.owner
@@ -199,10 +197,10 @@ class UserHandler(UserQueries):
         await self.delete_otp_by_id_query(otp.id)
         return TOKEN_VALID
 
-    async def is_otp_valid(self, otp: Otp) -> bool:
+    async def is_otp_valid(self, token: str, expiry: datetime) -> bool:
         if (
-            self.verify_email_token(otp.token, self.cf.otp_expiry * 60)
-            and otp.expiry > time_now_utc()
+            self.verify_email_token(token, self.cf.otp_expiry * 60)
+            and expiry > time_now_utc()
         ):
             return True
         return False
@@ -315,28 +313,9 @@ class UserHandler(UserQueries):
         )
         await self.create_user_location_query(user_loc)
 
-    async def get_country_from_ip(self, ip: str) -> str:
-        country = "UNKNOWN"
-        try:
-            with geoip2.database.Reader(
-                "./modules/static/maxmind/GeoLite2-Country.mmdb"
-            ) as reader:
-                response = reader.country(ip)
-                country = response.country.name
-                return country
-        except Exception as e:
-            self.logger.error(e)
-            return country
-
-    def check_if_valid_old_password(self, user: User, password: str) -> bool:
-        return bcrypt.checkpw(
-            password.encode(self.cf.encoding),
-            user.password.encode(self.cf.encoding),
-        )
-
-    def change_user_password(self, user: User, password: str) -> None:
+    async def change_user_password(self, user: User, password: str) -> None:
         hashed_password = self.hash_password(password)
-        self.update_user_query(user.id, dict(password=hashed_password))
+        await self.update_user_query(user.id, dict(password=hashed_password))
 
     # RESET USER PASSWORD (user forgot password)
     async def _reset_user_password(
@@ -375,10 +354,46 @@ class UserHandler(UserQueries):
         return req.req_failure("User doesn't exist")
 
     async def _save_user_password(self, req: SaveUserPassswordRequest):
-        pass
+        result = await self.validate_password_reset_token(req.data.token)
+        if result == "valid":
+            return req.req_success("Password reset successfully")
+        return req.req_failure("invalid_token or expired token")
 
+    def check_if_valid_old_password(
+        self,
+        user: User,
+        old_password: str,
+    ) -> bool:
+        return bcrypt.checkpw(
+            old_password.encode(self.cf.encoding),
+            user.password.encode(self.cf.encoding),
+        )
+
+    # Change user password
     async def _update_user_password(self, req: UpdateUserPasswordRequest):
-        pass
+        user = await self.find_user_by_email(req.credentials.email)
+        if user is not None:
+            if self.check_if_valid_old_password(user, req.data.old_password):
+                await self.change_user_password(user, req.data.new_password)
+                return req.req_success("Password updated successfully")
+        return req.req_failure("Invalid old password or user does not exist")
+
+    async def validate_password_reset_token(
+        self,
+        token: str,
+        new_password: str,
+    ):
+        pass_reset_token = await self.find_passw_token_by_token_query(token)
+        if pass_reset_token is None:
+            return TOKEN_INVALID
+        valid = await self.is_otp_valid(
+            pass_reset_token.token,
+            pass_reset_token.expiry,
+        )
+        if not valid:
+            return TOKEN_EXPIRED
+        await self.change_user_password(pass_reset_token.owner, new_password)
+        return TOKEN_VALID
 
     async def _create_enquiry(
         self,

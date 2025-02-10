@@ -106,14 +106,31 @@ class ResetUserPasswordRequest(BaseReq):
 class UpdateUserPassword(BaseModel):
     old_password: str = Field(alias="oldPassword")
     new_password: ValidatePassword = Field(alias="newPassword")
+    confirm_password: ValidatePassword = Field(alias="confirmPassword")
+
+    @model_validator(mode="after")
+    def verify_square(self) -> Self:
+        if self.new_password == self.old_password:
+            raise RequestValidationError(
+                "old password cannot be the same as new password."
+            )
+        if self.new_password != self.confirm_password:
+            raise RequestValidationError(
+                "new password and confirm password do not match"
+            )
+        return self
+
+
+class ChangePassword(BaseModel):
+    new_password: ValidatePassword = Field(alias="newPassword")
     token: str
 
 
 class UpdateUserPasswordRequest(BaseReq):
-    update_password: UpdateUserPassword = None
+    data: UpdateUserPassword = None
     result: BaseResponse = BaseResponse()
 
 
 class SaveUserPassswordRequest(BaseReq):
-    save_password: UpdateUserPassword = None
+    data: ChangePassword = None
     result: BaseResponse = BaseResponse()
