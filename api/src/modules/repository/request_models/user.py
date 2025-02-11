@@ -123,7 +123,16 @@ class UpdateUserPassword(BaseModel):
 
 class ChangePassword(BaseModel):
     new_password: ValidatePassword = Field(alias="newPassword")
+    confirm_password: ValidatePassword = Field(alias="confirmPassword")
     token: str
+
+    @model_validator(mode="after")
+    def verify_square(self) -> Self:
+        if self.new_password != self.confirm_password:
+            raise RequestValidationError(
+                "new password and confirm password do not match"
+            )
+        return self
 
 
 class UpdateUserPasswordRequest(BaseReq):

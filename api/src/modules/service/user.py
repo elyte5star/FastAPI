@@ -382,7 +382,9 @@ class UserHandler(UserQueries):
     async def _update_user_password(self, req: UpdateUserPasswordRequest):
         user = await self.find_user_by_email(req.credentials.email)
         if user is not None:
-            if self.check_if_valid_old_password(user, req.data.old_password):
+            if self.check_if_valid_old_password(
+                user.password, req.data.old_password
+            ):
                 await self.change_user_password(
                     user, req.credentials.username, req.data.new_password
                 )
@@ -391,12 +393,16 @@ class UserHandler(UserQueries):
 
     def check_if_valid_old_password(
         self,
-        user: User,
+        password_in_db: bytes,
         old_password: str,
     ) -> bool:
-        return bcrypt.checkpw(
-            old_password.encode(self.cf.encoding),
-            user.password.encode(self.cf.encoding),
+        return (
+            True
+            if bcrypt.checkpw(
+                old_password.encode(self.cf.encoding),
+                password_in_db.encode(self.cf.encoding),
+            )
+            else False
         )
 
     async def change_user_password(

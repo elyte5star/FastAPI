@@ -211,8 +211,8 @@ class AsyncDatabaseSession:
         if xf_header is not None:
             return xf_header.split(",")[0]
         # return "128.101.101.101"  # for testing Richfield,United States
-        return "41.238.0.198"  # for testing Giza, Egypt
-        # return request.client.host
+        # return "41.238.0.198"  # for testing Giza, Egypt
+        return request.client.host
 
     def verify_email_token(self, token: str, expiration: int = 3600) -> bool:
         serializer = URLSafeTimedSerializer(self.cf.secret_key)
