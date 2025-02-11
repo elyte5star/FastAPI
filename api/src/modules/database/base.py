@@ -145,9 +145,7 @@ class AsyncDatabaseSession:
         await self.create_user_location_query(user_loc)
 
     async def find_user_by_id(self, userid: str) -> User | None:
-        stmt = self.select(User).where(User.id == userid)
-        users = await self.async_session.execute(stmt)
-        return users.scalars().first()
+        return await self.async_session.get(User, userid)
 
     async def get_user_by_username(self, username: str) -> User | None:
         stmt = self.select(User).where(User.username == username)

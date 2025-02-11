@@ -23,7 +23,7 @@ class UserEvents(Enum):
     USER_AUTH_FAILURE = "USER_AUTH_FAILURE"
     UNKNOWN_USER_AUTH_FAILURE = "BRUTE_FORCE"
     UNKNOWN_DEVICE_LOGIN = "NEW_DEVICE_LOGIN"
-    UPDATED_USER_INFO = "UPDATED_USER"
+    UPDATED_USER_PASSWORD = "UPDATED_USER_PASSWORD"
 
 
 @payload_schema.register(event_name=UserEvents.SIGNED_UP)
@@ -35,6 +35,13 @@ class SignUpPayload(BaseModel):
     token: str
     app_url: str
     # locale:str future?
+
+
+@payload_schema.register(event_name=UserEvents.UPDATED_USER_PASSWORD)
+class UserPasswordChange(BaseModel):
+    username: str
+    email: str
+    modified_by: str
 
 
 @payload_schema.register(event_name=UserEvents.STRANGE_LOCATION)
@@ -212,6 +219,22 @@ class APIEventsHandler(EmailService):
             return True
         return False
 
+    async def password_change(self, event_payload: UserPasswordChange):
+        html = f"""<p>Hey {event_payload.username},
+            your password was changed by: {event_payload.modified_by}.
+            If this wasn't you, go to our site and reset your password.</p> """
+        subject = "Your password was changed"
+        email_req = EmailRequestSchema(
+            subject=subject,
+            recipients=[event_payload.email],
+            body={"message": html},
+        )
+        is_sent = await self.send_without_template(email_req)
+        if is_sent:
+            self.config.logger.info(f"Email sent to :{email_req.recipients}")
+            return True
+        return False
+
 
 class APIEvents(BaseEventHandler):
     def __init__(self, cfg: ApiConfig):
@@ -231,5 +254,7 @@ class APIEvents(BaseEventHandler):
                 await self.event_handler.client_enquiry(payload)
             case UserEvents.RESET_PASSWORD:
                 await self.event_handler.reset_user_password(payload)
+            case UserEvents.UPDATED_USER_PASSWORD:
+                await self.event_handler.password_change(payload)
             case _:
                 self.cfg.logger.warning(payload)

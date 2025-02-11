@@ -33,10 +33,8 @@ class UserQueries(AsyncDatabaseSession):
         return users
 
     async def activate_new_user_account(self, userid: str):
-        stmt = self.select(User).where(User.id == userid)
         try:
-            users = await self.async_session.execute(stmt)
-            user = users.scalars().first()
+            user = await self.async_session.get(User, userid)
             user.modified_at = time_now_utc()
             user.enabled = True
             user.modified_by = user.username
@@ -45,6 +43,24 @@ class UserQueries(AsyncDatabaseSession):
             await self.async_session.rollback()
             self.logger.error(f"Failed to activate user:{e}")
             raise
+
+    async def update_user_password_query(
+        self, userid: str, modified_by: str, hashed_password: bytes
+    ) -> bool:
+        result = False
+        try:
+            user = await self.async_session.get(User, userid)
+            user.password = hashed_password
+            user.modified_at = time_now_utc()
+            user.modified_by = modified_by
+            await self.async_session.commit()
+            result = True
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error(f"Failed to update user password:{e}")
+            raise
+        finally:
+            return result
 
     async def delete_user_query(self, userid: str) -> bool:
         stmt = self.delete(User).where(User.id == userid)

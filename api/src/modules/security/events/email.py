@@ -48,6 +48,20 @@ class EmailService:
             self.config.logger.error("Couldn't not send email", e)
             return False
 
+    async def send_without_template(self, req: EmailRequestSchema) -> bool:
+        message = MessageSchema(
+            subject=req.subject,
+            recipients=req.recipients,
+            body=req.body.get("message"),
+            subtype=MessageType.html,
+        )
+        try:
+            await self.fm.send_message(message)
+            return True
+        except ConnectionErrors as e:
+            self.config.logger.error("Couldn't not send email", e)
+            return False
+
     async def send_invoice(
         self, background_tasks: BackgroundTasks, req: EmailRequestSchema
     ) -> bool:

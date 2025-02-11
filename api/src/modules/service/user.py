@@ -37,8 +37,10 @@ from modules.security.events.base import (
     SignUpPayload,
     ClientEnquiry,
     ResetUserPassword,
+    UserPasswordChange,
 )
 from modules.repository.queries.user import UserQueries
+from pydantic import SecretStr
 
 
 TOKEN_INVALID = "invalid_token"
@@ -313,10 +315,6 @@ class UserHandler(UserQueries):
         )
         await self.create_user_location_query(user_loc)
 
-    async def change_user_password(self, user: User, password: str) -> None:
-        hashed_password = self.hash_password(password)
-        await self.update_user_query(user.id, dict(password=hashed_password))
-
     # RESET USER PASSWORD (user forgot password)
     async def _reset_user_password(
         self, req: ResetUserPasswordRequest, request: Request
@@ -353,30 +351,14 @@ class UserHandler(UserQueries):
             )
         return req.req_failure("User doesn't exist")
 
+    # Change user password
     async def _save_user_password(self, req: SaveUserPassswordRequest):
-        result = await self.validate_password_reset_token(req.data.token)
+        result = await self.validate_password_reset_token(
+            req.data.token, req.data.new_password
+        )
         if result == "valid":
             return req.req_success("Password reset successfully")
         return req.req_failure("invalid_token or expired token")
-
-    def check_if_valid_old_password(
-        self,
-        user: User,
-        old_password: str,
-    ) -> bool:
-        return bcrypt.checkpw(
-            old_password.encode(self.cf.encoding),
-            user.password.encode(self.cf.encoding),
-        )
-
-    # Change user password
-    async def _update_user_password(self, req: UpdateUserPasswordRequest):
-        user = await self.find_user_by_email(req.credentials.email)
-        if user is not None:
-            if self.check_if_valid_old_password(user, req.data.old_password):
-                await self.change_user_password(user, req.data.new_password)
-                return req.req_success("Password updated successfully")
-        return req.req_failure("Invalid old password or user does not exist")
 
     async def validate_password_reset_token(
         self,
@@ -392,9 +374,47 @@ class UserHandler(UserQueries):
         )
         if not valid:
             return TOKEN_EXPIRED
-        await self.change_user_password(pass_reset_token.owner, new_password)
+        user = pass_reset_token.owner
+        await self.change_user_password(user, user.username, new_password)
         return TOKEN_VALID
 
+    # Update user password
+    async def _update_user_password(self, req: UpdateUserPasswordRequest):
+        user = await self.find_user_by_email(req.credentials.email)
+        if user is not None:
+            if self.check_if_valid_old_password(user, req.data.old_password):
+                await self.change_user_password(
+                    user, req.credentials.username, req.data.new_password
+                )
+                return req.req_success("Password updated successfully")
+        return req.req_failure("Invalid old password or user does not exist")
+
+    def check_if_valid_old_password(
+        self,
+        user: User,
+        old_password: str,
+    ) -> bool:
+        return bcrypt.checkpw(
+            old_password.encode(self.cf.encoding),
+            user.password.encode(self.cf.encoding),
+        )
+
+    async def change_user_password(
+        self, user: User, modified_by: str, password: SecretStr
+    ) -> None:
+        hashed_password = self.hash_password(password.get_secret_value())
+        is_updated = await self.update_user_password_query(
+            user.id,
+            modified_by,
+            hashed_password,
+        )
+        if is_updated:
+            event_payload = UserPasswordChange(
+                username=user.username, email=user.email, modified_by=modified_by
+            )
+            dispatch(UserEvents.UPDATED_USER_PASSWORD, event_payload)
+
+    # USER ENQUIRY
     async def _create_enquiry(
         self,
         req: UserEnquiryRequest,
