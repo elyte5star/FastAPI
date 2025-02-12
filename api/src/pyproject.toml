@@ -27,7 +27,7 @@ classifiers = [
 debug = 1
 auth_type = ["MANUAL", "MSOFT","GOOGLE"]
 host_url = "http://localhost:8000/"
-log_type = "DEBUG"
+log_type = "INFO"
 log_file_path="../extreme_api.log"
 login_attempts=3
 lock_duration = 15
@@ -126,6 +126,9 @@ lines_between_types = 0
 profile = "black"
 use_parentheses = true
 
+[flake8]
+max-line-length = 85
+
 
 [tool.mypy]
 plugins = ['pydantic.mypy']
@@ -166,6 +169,7 @@ geoip2 = "^4.8.1"
 aiofiles = "^24.1.0"
 python-json-logger = "^3.2.1"
 jinja2 = "^3.1.5"
+httpagentparser = "^1.9.5"
 
 
 [build-system]

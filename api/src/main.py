@@ -18,13 +18,7 @@ from fastapi.responses import JSONResponse
 from fastapi import Request, status
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from modules.middleware.base import (
-    CustomHeaderMiddleware,
-    TokenBucket,
-    RateLimiterMiddleware,
-    drop,
-    forward,
-)
+from modules.middleware.base import CustomHeaderMiddleware
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 import time
@@ -104,17 +98,10 @@ app.add_middleware(
 
 # TRUSTED_HOSTS = ["*.elyte.com"]
 # TrustedHostMiddleware
-# app.add_middleware(TrustedHostMiddleware, allowed_hosts=TRUSTED_HOSTS)
+# app.add_middleware(TrustedHostMiddleware, allowebucket = TokenBucket(4, 1, log)d_hosts=TRUSTED_HOSTS)
 
 # HEADER middleware
 app.add_middleware(CustomHeaderMiddleware)
-
-
-bucket = TokenBucket(1, 1, forward, drop)
-
-# Request rate middleware
-app.add_middleware(RateLimiterMiddleware, bucket=bucket)
-
 
 # Static files
 app.mount("/static", StaticFiles(directory="./modules/static"), name="static")
@@ -167,4 +154,4 @@ async def root():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, port=7000)
+    uvicorn.run("main:app", port=8080, debug=True, reload=True)

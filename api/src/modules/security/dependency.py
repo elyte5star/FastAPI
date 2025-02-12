@@ -4,7 +4,7 @@ from jose import JWTError, jwt
 import time
 from pydantic import BaseModel, Field
 from modules.settings.configuration import ApiConfig
-from typing import Annotated
+from typing import Annotated, Callable
 
 cfg = ApiConfig().from_toml_file().from_env_file()
 
@@ -98,3 +98,43 @@ class RoleChecker:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="InsufficientPermissions. Requires the 'admin' role.",
         )
+
+
+class TokenBucket:
+    def __init__(self, tokens, refill_rate, logger):
+        self.tokens = tokens
+        self.refill_rate = refill_rate
+        self.bucket = tokens
+        self.last_refill = time.time()
+        self.logger = logger
+
+    def handle(self):
+        current = time.time()
+        time_passed = current - self.last_refill
+        self.last_refill = current
+        self.bucket = self.bucket + time_passed * (self.tokens / self.refill_rate)
+        if self.bucket > self.tokens:
+            self.bucket = self.tokens
+        if self.bucket < 1:
+            self.logger.warning("Packet Dropped")
+            return False
+        self.bucket = self.bucket - 1
+        self.logger.debug("Packet Forwarded")
+        return True
+
+
+class RateLimiter:
+    def __init__(self):
+        self.bucket = TokenBucket(4, 1, cfg.logger)
+
+    async def __call__(self, request: Request, call_next: Callable):
+        if self.bucket.handle():
+            return await call_next(request)
+
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too Many Requests",
+        )
+
+
+request_limiter = RateLimiter()

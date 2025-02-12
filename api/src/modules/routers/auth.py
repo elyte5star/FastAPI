@@ -7,7 +7,7 @@ from modules.repository.request_models.auth import (
     RefreshTokenRequest,
     Grant,
 )
-from modules.security.dependency import security, JWTPrincipal
+from modules.security.dependency import security, JWTPrincipal, request_limiter
 from typing import Annotated
 
 
@@ -18,6 +18,7 @@ class AuthRouter(AuthenticationHandler):
         self.router: APIRouter = APIRouter(
             prefix="/auth",
             tags=["Authentication"],
+            # dependencies=[Depends(request_limiter)],
         )
         self.router.add_api_route(
             path="/form-login",
