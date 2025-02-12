@@ -5,6 +5,7 @@ from modules.utils.misc import get_indent, time_now_utc
 from fastapi_events.dispatcher import dispatch
 from modules.security.events.base import UserEvents, NewDeviceLogin
 from modules.repository.schema.users import User
+import httpagentparser
 
 
 class DeviceMetaDataChecker(AuthQueries):
@@ -47,7 +48,8 @@ class DeviceMetaDataChecker(AuthQueries):
         device_details = dict(request.scope["headers"]).get(b"user-agent", b"").decode()
         if device_details is None:
             return "UNKNOWN"
-        return device_details
+        device, browser = httpagentparser.simple_detect(device_details)
+        return f"Device: {device}, Browser: {browser}"
 
     async def find_existing_device(
         self, userid: str, device_details: str, location: str

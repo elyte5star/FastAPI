@@ -18,7 +18,13 @@ from fastapi.responses import JSONResponse
 from fastapi import Request, status
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from modules.middleware.base import CustomHeaderMiddleware
+from modules.middleware.base import (
+    CustomHeaderMiddleware,
+    TokenBucket,
+    RateLimiterMiddleware,
+    drop,
+    forward,
+)
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 import time
@@ -102,6 +108,12 @@ app.add_middleware(
 
 # HEADER middleware
 app.add_middleware(CustomHeaderMiddleware)
+
+
+bucket = TokenBucket(1, 1, forward, drop)
+
+# Request rate middleware
+app.add_middleware(RateLimiterMiddleware, bucket=bucket)
 
 
 # Static files

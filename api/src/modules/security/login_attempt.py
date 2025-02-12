@@ -64,11 +64,9 @@ class LoginAttemptChecker(DifferentLocationChecker):
         await self.update_user_query(user.id, dict(failed_attempts=0))
 
     async def lock_user_account(self, user: User) -> None:
-        userid = user.id
-        user.is_locked = True
         changes = dict(lock_time=time_now_utc(), is_locked=True)
-        await self.update_user_query(userid, changes)
-        self.logger.warning(f"User with id: {userid} is locked")
+        await self.update_user_query(user.id, changes)
+        self.logger.warning(f"User with id: {user.id} is locked")
 
     async def increase_user_failed_attempts(self, user: User) -> None:
         user_failed_attempts = user.failed_attempts

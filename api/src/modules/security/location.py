@@ -43,7 +43,6 @@ class DifferentLocationChecker(DeviceMetaDataChecker):
         if user_loc is None:
             return await self.create_new_location_token(user, country)
         elif not user_loc.enabled:
-            print(" NOT EMPTY::::::::", user_loc)
             return user_loc.new_location
         return None
 
