@@ -4,7 +4,7 @@ from jose import JWTError, jwt
 import time
 from pydantic import BaseModel, Field
 from modules.settings.configuration import ApiConfig
-from typing import Annotated, Callable
+from typing import Annotated
 
 cfg = ApiConfig().from_toml_file().from_env_file()
 
@@ -96,19 +96,18 @@ class RoleChecker:
             return current_user
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="InsufficientPermissions. Requires the 'admin' role.",
+            detail="You don't have enough permissions",
         )
 
 
 class TokenBucket:
-    def __init__(self, tokens, refill_rate, logger):
+    def __init__(self, tokens, refill_rate) -> None:
         self.tokens = tokens
         self.refill_rate = refill_rate
         self.bucket = tokens
         self.last_refill = time.time()
-        self.logger = logger
 
-    def handle(self):
+    def __call__(self) -> bool:
         current = time.time()
         time_passed = current - self.last_refill
         self.last_refill = current
@@ -116,25 +115,23 @@ class TokenBucket:
         if self.bucket > self.tokens:
             self.bucket = self.tokens
         if self.bucket < 1:
-            self.logger.warning("Packet Dropped")
+            print("Packet Dropped")
             return False
         self.bucket = self.bucket - 1
-        self.logger.debug("Packet Forwarded")
+        print("Packet Forwarded")
         return True
 
 
+bucket = TokenBucket(4, 1)
+
+
 class RateLimiter:
-    def __init__(self):
-        self.bucket = TokenBucket(4, 1, cfg.logger)
-
-    async def __call__(self, request: Request, call_next: Callable):
-        if self.bucket.handle():
-            return await call_next(request)
-
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too Many Requests",
-        )
+    async def __call__(self, bucket: Annotated[bool, Depends(bucket)]):
+        if not bucket:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too Many Requests",
+            )
 
 
 request_limiter = RateLimiter()

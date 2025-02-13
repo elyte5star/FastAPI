@@ -2,8 +2,6 @@ import handler
 import logging
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-
-# from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.staticfiles import StaticFiles
 from modules.middleware.log import (
     info_file_handler,
@@ -18,7 +16,7 @@ from fastapi.responses import JSONResponse
 from fastapi import Request, status
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from modules.middleware.base import CustomHeaderMiddleware
+from modules.middleware.base import CustomHeaderMiddleware, ASGIMiddleware
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 import time
@@ -96,12 +94,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# TRUSTED_HOSTS = ["*.elyte.com"]
-# TrustedHostMiddleware
-# app.add_middleware(TrustedHostMiddleware, allowebucket = TokenBucket(4, 1, log)d_hosts=TRUSTED_HOSTS)
 
 # HEADER middleware
 app.add_middleware(CustomHeaderMiddleware)
+
+
+#
+app.add_middleware(ASGIMiddleware)
 
 # Static files
 app.mount("/static", StaticFiles(directory="./modules/static"), name="static")
