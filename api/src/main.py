@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from fastapi import Request, status
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from modules.middleware.base import CustomHeaderMiddleware, ASGIMiddleware
+from modules.middleware.base import CustomHeaderMiddleware
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 import time
@@ -27,10 +27,6 @@ cfg = handler.cfg
 
 log = handler.logger
 
-# # Set up logging
-# logging.config.dictConfig(log_config(cfg.log_type))
-
-
 # Set up logging
 logging.basicConfig(
     handlers=[
@@ -40,7 +36,7 @@ logging.basicConfig(
         error_file_handler(),
     ],
     encoding=cfg.encoding,
-    level=cfg.log_type,
+    level=cfg.log_level,
 )
 
 
@@ -98,9 +94,6 @@ app.add_middleware(
 # HEADER middleware
 app.add_middleware(CustomHeaderMiddleware)
 
-
-#
-app.add_middleware(ASGIMiddleware)
 
 # Static files
 app.mount("/static", StaticFiles(directory="./modules/static"), name="static")

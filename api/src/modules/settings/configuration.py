@@ -91,7 +91,7 @@ class ApiConfig:
         self.sql_port = config.database.port
         self.sql_db = config.database.db
         self.db_url = f"postgresql+asyncpg://{self.sql_username}:{self.sql_password}@{self.sql_host}:{self.sql_port}/{self.sql_db}"
-        self.log_type = config.api.log_type
+        self.log_level = config.api.log_level
         self.log_file_path = config.api.log_file_path
         self.host_url = config.api.host_url
         self.debug = config.api.debug
@@ -165,6 +165,7 @@ class ApiConfig:
             self.log_file_path = str(getenv("LOG_PATH"))
         self.origins = json.loads(getenv("API_CORS_ORIGINS", '["*"]'))
         self.client_url = str(getenv("CLIENT_URL", self.client_url))
+        self.log_level = getenv("LOG_LEVEL", self.log_level)
         self.refresh_token_expire_min = int(
             getenv(
                 "API_JWT_REFRESH_TOKEN_EXPIRE_MINUTES",

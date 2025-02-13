@@ -2,8 +2,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import time
 from typing import Callable
 from starlette.requests import Request
-from starlette.types import ASGIApp, Message, Scope, Receive, Send
-from starlette.exceptions import HTTPException
 
 
 class CustomHeaderMiddleware(BaseHTTPMiddleware):
@@ -16,17 +14,26 @@ class CustomHeaderMiddleware(BaseHTTPMiddleware):
         return response
 
 
-class ASGIMiddleware:
-    def __init__(self, app: ASGIApp) -> None:
-        self.app = app
+class TokenBucket:
+    def __init__(self, tokens, refill_rate) -> None:
+        self.tokens = tokens
+        self.refill_rate = refill_rate
+        self.bucket = tokens
+        self.last_refill = time.time()
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http":
-            return await self.app(scope, receive, send)
+    def __call__(self) -> bool:
+        current = time.time()
+        time_passed = current - self.last_refill
+        self.last_refill = current
+        self.bucket = self.bucket + time_passed * (self.tokens / self.refill_rate)
+        if self.bucket > self.tokens:
+            self.bucket = self.tokens
+        if self.bucket < 1:
+            print("Packet Dropped")
+            return False
+        self.bucket = self.bucket - 1
+        print("Packet Forwarded")
+        return True
 
-        async def send_wrapper(message: Message) -> None:
-            # ... Do something
-            print("Things are happening")
-            await send(message)
 
-        await self.app(scope, receive, send_wrapper)
+bucket = TokenBucket(4, 1)
