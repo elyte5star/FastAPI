@@ -77,7 +77,7 @@ class AsyncDatabaseSession:
 
     @event.listens_for(Engine, "connect")
     def my_on_connect(dbapi_con, connection_record):
-        print("New DBAPI connection:", dbapi_con.cursor())
+        # print("New DBAPI connection:", dbapi_con.cursor())
         pass
 
     async def create_tables(self):

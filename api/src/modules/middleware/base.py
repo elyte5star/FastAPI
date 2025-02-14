@@ -2,6 +2,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import time
 from typing import Callable
 from starlette.requests import Request
+from starlette.exceptions import HTTPException
+from starlette.responses import Response
+from fastapi import status
 
 
 class CustomHeaderMiddleware(BaseHTTPMiddleware):
@@ -21,7 +24,7 @@ class TokenBucket:
         self.bucket = tokens
         self.last_refill = time.time()
 
-    def __call__(self) -> bool:
+    def check(self) -> bool:
         current = time.time()
         time_passed = current - self.last_refill
         self.last_refill = current
@@ -36,4 +39,18 @@ class TokenBucket:
         return True
 
 
-bucket = TokenBucket(4, 1)
+# The request per second
+bucket = TokenBucket(3, 1)
+
+
+class RateLimiter(BaseHTTPMiddleware):
+    def __init__(self, app):
+        super().__init__(app)
+        self.bucket = bucket
+
+    async def default_callback(self, request: Request, response: Response):
+
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too Many Requests",
+        )
