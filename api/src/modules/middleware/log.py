@@ -31,7 +31,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
             message_dict,
         )
         # Add fields here
-        log_record["asctime"] = time_now_utc().strftime("%d-%m-%Y, %H:%M:%S")
+        log_record["asctime"] = time_now_utc().strftime("%d-%m-%Y, %H:%M:%S.%f UTC")
         if log_record.get("level"):
             log_record["level"] = log_record["levelname"].lower()
         else:

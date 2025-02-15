@@ -39,7 +39,7 @@ class TokenBucket:
         return True
 
 
-# The request per second
+# 3 request per second
 bucket = TokenBucket(3, 1)
 
 
