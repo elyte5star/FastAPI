@@ -221,6 +221,15 @@ class UserQueries(AsyncDatabaseSession):
             self.logger.error("Failed to delete new location:", e)
             raise
 
+    async def del_user_location_query(self, id: str) -> None:
+        stmt = self.delete(UserLocation).where(UserLocation.id == id)
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except PostgresError:
+            await self.async_session.rollback()
+            raise
+
     async def update_user_loc_query(self, id: str, data: dict) -> None:
         stmt = (
             self.sqlalchemy_update(UserLocation)
