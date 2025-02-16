@@ -2,9 +2,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import time
 from typing import Callable
 from starlette.requests import Request
-from starlette.exceptions import HTTPException
-from starlette.responses import Response
-from fastapi import status
+from starlette.responses import JSONResponse
+from fastapi import status, FastAPI
+from modules.settings.configuration import ApiConfig
 
 
 class CustomHeaderMiddleware(BaseHTTPMiddleware):
@@ -32,25 +32,30 @@ class TokenBucket:
         if self.bucket > self.tokens:
             self.bucket = self.tokens
         if self.bucket < 1:
-            print("Packet Dropped")
             return False
         self.bucket = self.bucket - 1
-        print("Packet Forwarded")
         return True
 
 
-# 3 request per second
-bucket = TokenBucket(3, 1)
+# 1 request per 2 second
+bucket = TokenBucket(1, 2)
 
 
-class RateLimiter(BaseHTTPMiddleware):
-    def __init__(self, app):
+class RateLimiterMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app: FastAPI, config: ApiConfig):
         super().__init__(app)
         self.bucket = bucket
+        self.config = config
 
-    async def default_callback(self, request: Request, response: Response):
-
-        raise HTTPException(
+    async def dispatch(self, request, call_next):
+        if self.bucket.check():
+            response = await call_next(request)
+            return response
+        self.config.logger.warning("Request packet dropped")
+        return JSONResponse(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too Many Requests",
+            content={
+                "message": "Too many Requests",
+                "success": False,
+            },
         )
