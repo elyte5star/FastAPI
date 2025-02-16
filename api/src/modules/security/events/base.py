@@ -156,7 +156,7 @@ class APIEventsHandler(EmailService):
             "ip": event_payload.ip,
             "time": time_now_utc().strftime("%d-%m-%Y, %H:%M:%S"),
             "enableLocationLink": event_payload.app_url
-            + "/user/enable-new-location?token="
+            + "/auth/enable-new-location?token="
             + event_payload.token,
             "changePassUri": event_payload.app_url + "/user/update-password",
 
