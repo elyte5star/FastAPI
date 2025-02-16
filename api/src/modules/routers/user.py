@@ -15,7 +15,6 @@ from modules.repository.request_models.user import (
     DeleteUserRequest,
     OtpRequest,
     NewOtpRequest,
-    EnableLocationRequest,
     VerifyRegistrationOtpRequest,
     CreateUser,
     UserEnquiryRequest,
@@ -87,13 +86,7 @@ class UserRouter(UserHandler):
             dependencies=[Depends(RoleChecker(["ADMIN"]))],
             description="Get Users, Admin right required",
         )
-        self.router.add_api_route(
-            path="/enable-new-location/{token}",
-            endpoint=self.enable_new_location,
-            response_model=BaseResponse,
-            methods=["GET"],
-            description="Verify new location Login",
-        )
+
         self.router.add_api_route(
             path="/signup/verify-otp/{token}",
             endpoint=self.verify_registration_otp,
@@ -189,9 +182,6 @@ class UserRouter(UserHandler):
             NewOtpRequest(token=token),
             request,
         )
-
-    async def enable_new_location(self, token: str) -> BaseResponse:
-        return await self._enable_new_loc(EnableLocationRequest(token=token))
 
     async def verify_registration_otp(self, token: str) -> BaseResponse:
         return await self.confirm_user_registration(

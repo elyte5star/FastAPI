@@ -19,9 +19,8 @@ class UserQueries(AsyncDatabaseSession):
         try:
             await self.async_session.commit()
             result = user
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error("Failed to create user: ", e)
             raise
         finally:
             return result
@@ -39,9 +38,8 @@ class UserQueries(AsyncDatabaseSession):
             user.enabled = True
             user.modified_by = user.username
             await self.async_session.commit()
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error(f"Failed to activate user:{e}")
             raise
 
     async def update_user_password_query(
@@ -55,9 +53,8 @@ class UserQueries(AsyncDatabaseSession):
             user.modified_by = modified_by
             await self.async_session.commit()
             result = True
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error(f"Failed to update user password:{e}")
             raise
         finally:
             return result
@@ -69,9 +66,8 @@ class UserQueries(AsyncDatabaseSession):
             await self.async_session.execute(stmt)
             await self.async_session.commit()
             result = True
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error("Failed to delete user:", e)
             raise
         finally:
             return result
@@ -100,9 +96,8 @@ class UserQueries(AsyncDatabaseSession):
         try:
             await self.async_session.commit()
             result = otp
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error("Failed to create user otp: ", e)
             raise
         finally:
             return result
@@ -114,9 +109,8 @@ class UserQueries(AsyncDatabaseSession):
             await self.async_session.execute(stmt)
             await self.async_session.commit()
             result = True
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error("Failed to delete user:", e)
             raise
         finally:
             return result
@@ -141,9 +135,8 @@ class UserQueries(AsyncDatabaseSession):
         try:
             await self.async_session.execute(stmt)
             await self.async_session.commit()
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error("Failed to delete otp:", e)
             raise
 
     async def del_all_expired_otps_since(self, now: datetime) -> None:
@@ -151,9 +144,8 @@ class UserQueries(AsyncDatabaseSession):
         try:
             await self.async_session.execute(stmt)
             await self.async_session.commit()
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error("Failed to delete otp:", e)
             raise
 
     async def find_all_otps_expiry_less(self, now: datetime) -> list[Otp]:
@@ -179,14 +171,6 @@ class UserQueries(AsyncDatabaseSession):
             self.logger.error("Failed to update otp:", e)
             raise
 
-    # NEW LOCATION
-    async def find_new_location_by_token_query(
-        self, token: str
-    ) -> NewLocationToken | None:
-        stmt = self.select(NewLocationToken).where(NewLocationToken.token == token)
-        new_locs = await self.async_session.execute(stmt)
-        return new_locs.scalars().first()
-
     async def find_new_location_by_user_location_query(
         self, user_loc: UserLocation
     ) -> NewLocationToken | None:
@@ -206,43 +190,8 @@ class UserQueries(AsyncDatabaseSession):
         try:
             await self.async_session.execute(stmt)
             await self.async_session.commit()
-        except PostgresError as e:
-            await self.async_session.rollback()
-            self.logger.error("Failed to update otp:", e)
-            raise
-
-    async def del_new_location_query(self, id: str) -> None:
-        stmt = self.delete(NewLocationToken).where(NewLocationToken.id == id)
-        try:
-            await self.async_session.execute(stmt)
-            await self.async_session.commit()
-        except PostgresError as e:
-            await self.async_session.rollback()
-            self.logger.error("Failed to delete new location:", e)
-            raise
-
-    async def del_user_location_query(self, id: str) -> None:
-        stmt = self.delete(UserLocation).where(UserLocation.id == id)
-        try:
-            await self.async_session.execute(stmt)
-            await self.async_session.commit()
         except PostgresError:
             await self.async_session.rollback()
-            raise
-
-    async def update_user_loc_query(self, id: str, data: dict) -> None:
-        stmt = (
-            self.sqlalchemy_update(UserLocation)
-            .where(UserLocation.id == id)
-            .values(data)
-            .execution_options(synchronize_session="fetch")
-        )
-        try:
-            await self.async_session.execute(stmt)
-            await self.async_session.commit()
-        except PostgresError as e:
-            await self.async_session.rollback()
-            self.logger.error("Failed to update otp:", e)
             raise
 
     # PASSWORD RESET
@@ -252,9 +201,8 @@ class UserQueries(AsyncDatabaseSession):
         try:
             await self.async_session.commit()
             result = token.id
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error(f"Failed to create usr reset password: {e}")
             raise
         finally:
             return result
@@ -271,9 +219,8 @@ class UserQueries(AsyncDatabaseSession):
             result = await self.async_session.execute(stmt)
             result = result.last_updated_params()
             return result
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error("Failed to update otp:", e)
             raise
 
     async def find_passw_token_by_token_query(
@@ -300,9 +247,8 @@ class UserQueries(AsyncDatabaseSession):
         try:
             await self.async_session.execute(stmt)
             await self.async_session.commit()
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error("Failed to delete password reset token:", e)
             raise
 
     async def delete_passw_reset_token_by_id_query(self, id: str) -> bool:
@@ -312,9 +258,8 @@ class UserQueries(AsyncDatabaseSession):
             await self.async_session.execute(stmt)
             await self.async_session.commit()
             result = True
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error("Failed to delete password-reset_token:", e)
             raise
         finally:
             return result
@@ -325,9 +270,8 @@ class UserQueries(AsyncDatabaseSession):
         try:
             await self.async_session.commit()
             result = enquiry.id
-        except PostgresError as e:
+        except PostgresError:
             await self.async_session.rollback()
-            self.logger.error(f"Failed to create user enquiry: {e}")
             raise
         finally:
             return result

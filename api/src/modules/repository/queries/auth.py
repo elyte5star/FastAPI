@@ -53,20 +53,7 @@ class AuthQueries(AsyncDatabaseSession):
         finally:
             return result
 
-    # USER LOCATION
-    async def find_user_location_by_country_and_user_query(
-        self, country: str, user: User
-    ) -> UserLocation | None:
-        stmt = (
-            self.select(UserLocation)
-            .where(
-                self.and_(UserLocation.country == country, UserLocation.owner == user)
-            )
-            .limit(1)
-        )
-        result = await self.async_session.execute(stmt)
-        return result.scalars().first()
-
+    # LOCATION TOKEN
     async def create_new_location_token_query(
         self, new_loc_token: NewLocationToken
     ) -> NewLocationToken | None:
@@ -81,3 +68,55 @@ class AuthQueries(AsyncDatabaseSession):
             raise
         finally:
             return result
+
+    async def find_new_location_by_token_query(
+        self, token: str
+    ) -> NewLocationToken | None:
+        stmt = self.select(NewLocationToken).where(NewLocationToken.token == token)
+        new_locs = await self.async_session.execute(stmt)
+        return new_locs.scalars().first()
+
+    async def del_new_location_query(self, id: str) -> None:
+        stmt = self.delete(NewLocationToken).where(NewLocationToken.id == id)
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except PostgresError:
+            await self.async_session.rollback()
+            raise
+
+    # USER LOCATION
+    async def del_user_location_query(self, id: str) -> None:
+        stmt = self.delete(UserLocation).where(UserLocation.id == id)
+        try:
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except PostgresError:
+            await self.async_session.rollback()
+            raise
+
+    async def find_user_location_by_country_and_user_query(
+        self, country: str, user: User
+    ) -> UserLocation | None:
+        stmt = (
+            self.select(UserLocation)
+            .where(
+                self.and_(UserLocation.country == country, UserLocation.owner == user)
+            )
+            .limit(1)
+        )
+        result = await self.async_session.execute(stmt)
+        return result.scalars().first()
+
+    async def update_user_loc_query(self, id: str, data: dict) -> None:
+        update_stmt = (
+            self.sqlalchemy_update(UserLocation)
+            .where(UserLocation.id == id)
+            .values(data)
+        )
+        try:
+            await self.async_session.execute(update_stmt)
+            await self.async_session.commit()
+        except PostgresError:
+            await self.async_session.rollback()
+            raise

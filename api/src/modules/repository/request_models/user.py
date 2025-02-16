@@ -70,11 +70,6 @@ class NewOtpRequest(BaseReq):
     result: BaseResponse = BaseResponse()
 
 
-class EnableLocationRequest(BaseReq):
-    token: str
-    result: BaseResponse = BaseResponse()
-
-
 class VerifyRegistrationOtpRequest(BaseReq):
     token: str
     result: BaseResponse = BaseResponse()

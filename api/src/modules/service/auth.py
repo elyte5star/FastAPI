@@ -1,5 +1,10 @@
 from modules.repository.response_models.auth import TokenResponse
-from modules.repository.request_models.auth import LoginRequest, RefreshTokenRequest
+from modules.repository.request_models.auth import (
+    LoginRequest,
+    EnableLocationRequest,
+    RefreshTokenRequest,
+    BaseResponse,
+)
 import bcrypt
 from modules.repository.validators.base import is_valid_email
 from typing import Optional
@@ -123,7 +128,29 @@ class AuthenticationHandler(LoginAttemptChecker):
         )
         return jwt_encode
 
-    async def validate_create_token(
+    # LOGIN LOCATION
+    async def _enable_new_loc(
+        self,
+        req: EnableLocationRequest,
+    ) -> BaseResponse:
+        country = await self.is_valid_new_location_token(req.token)
+        if country is not None:
+            return req.req_success(f"{country} enabled.")
+        return req.req_failure("Invalid Login Location!")
+
+    async def is_valid_new_location_token(self, token: str) -> str | None:
+        new_loc_token = await self.find_new_location_by_token_query(token)
+        if new_loc_token is not None:
+            user_loc = new_loc_token.location
+            await self.update_user_loc_query(
+                user_loc.id,
+                dict(enabled=True),
+            )
+            await self.del_new_location_query(new_loc_token.id)
+            return user_loc.country
+        return None
+
+    async def validate_refresh_token(
         self,
         req: RefreshTokenRequest,
     ) -> TokenResponse:

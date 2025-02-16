@@ -5,7 +5,6 @@ from modules.repository.request_models.user import (
     OtpRequest,
     DeleteUserRequest,
     NewOtpRequest,
-    EnableLocationRequest,
     VerifyRegistrationOtpRequest,
     UserEnquiryRequest,
     ResetUserPasswordRequest,
@@ -284,26 +283,6 @@ class UserHandler(UserQueries):
         return req.req_success(f"User with id::{req.userid} deleted")
 
     # LOCATION
-    async def _enable_new_loc(
-        self,
-        req: EnableLocationRequest,
-    ) -> BaseResponse:
-        country = await self.is_valid_new_location_token(req.token)
-        if country is not None:
-            return req.req_success(f"{country} enabled.")
-        return req.req_failure("Invalid Login Location!")
-
-    async def is_valid_new_location_token(self, token: str) -> str | None:
-        new_loc_token = await self.find_new_location_by_token_query(token)
-        if new_loc_token is not None:
-            user_loc = new_loc_token.location
-            await self.update_user_loc_query(
-                user_loc.id,
-                dict(enabled=True),
-            )
-            await self.del_new_location_query(new_loc_token.id)
-            return user_loc.country
-        return None
 
     async def add_user_location(self, user: User, ip: str):
         if not self.is_geo_ip_enabled():
@@ -382,9 +361,7 @@ class UserHandler(UserQueries):
     async def _update_user_password(self, req: UpdateUserPasswordRequest):
         user = await self.find_user_by_email(req.credentials.email)
         if user is not None:
-            if self.check_if_valid_old_password(
-                user.password, req.data.old_password
-            ):
+            if self.check_if_valid_old_password(user.password, req.data.old_password):
                 await self.change_user_password(
                     user, req.credentials.username, req.data.new_password
                 )
