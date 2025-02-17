@@ -53,19 +53,19 @@ class UserHandler(UserQueries):
         self, req: CreateUserRequest, request: Request
     ) -> CreateUserResponse:
         user_exist = await self.check_if_user_exist(
-            req.email, req.username, req.telephone
+            req.new_user.email, req.new_user.username, req.new_user.telephone
         )
         if user_exist is None:
-            new_user_password = req.password.get_secret_value()
+            new_user_password = req.new_user.password.get_secret_value()
             hashed_password = self.hash_password(new_user_password)
             new_user = User(
                 id=get_indent(),
-                email=req.email,
-                username=req.username,
+                email=req.new_user.email,
+                username=req.new_user.username,
                 password=hashed_password,
-                telephone=req.telephone,
+                telephone=req.new_user.telephone,
                 discount=0.0,
-                created_by=req.username,
+                created_by=req.new_user.username,
                 active=True,
             )
             user = await self.create_user_query(new_user)
@@ -288,7 +288,7 @@ class UserHandler(UserQueries):
         if not self.is_geo_ip_enabled():
             self.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
-        country = await self.get_country_from_ip(ip)
+        country, _ = await self.get_location_from_ip(ip)
         user_loc = UserLocation(
             id=get_indent(), country=country, owner=user, enabled=True
         )

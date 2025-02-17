@@ -6,7 +6,7 @@
         <table border="0" style="max-width: 600px;">
           <tr>
             <td style="padding: 36px 24px 0; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; border-top: 3px solid #d4dadf;">
-              <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 48px;">Welcome {{username }} !</h1>
+              <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 48px;">Hey {{username }},</h1>
               <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 48px;">Confirm Your Identity.</h1>
             </td>
           </tr>
@@ -18,11 +18,11 @@
         <table border="0" style="max-width:600px;">
           <tr>
             <td style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;">
-              <p style="width: 70em;color: #1a82e2">{{ message }}</p>
-              <p style="width:70em;color: #1a82e2"><a href="{{ confirmationUrl}}" style="color: #1a82e2;"><span>{{ confirmationUrl}}</a></p>
-              <p style="width: 70em;color: #1a82e2"">OTP CODE : <code style="color: #1a82e2;">{{ otp }}</code></p>
+              <pstyle="width: 70em;color: #1a82e2">You registered successfully.</p>
+              <p style="width: 70em;color: #1a82e2">Your ID is: <code style="color:blackdarkcyan;padding: 10px;font-weight: 10em;font-style: italic;">{{ message }}</code></p>
+              <p style="width: 70em;color: #1a82e2"">OTP Code: <code style="color: black;padding: 5px;font-weight: bolder;">{{ otp }}</code></p>
               <p style="width: 70em;color: red;">{{ expiry }}</p>
-              <p style="margin: 0;width: auto;">If you didn't create an account with <a href="{{ home }}" style="color: #1a82e2;">E-COMMERCE</a>, you can safely delete this email.</p>
+              <p style="width: 70em;color: #1a82e2">To confirm your registration, please click on the below link</p>
             </td>
           </tr>
           <!-- end copy -->
@@ -33,10 +33,11 @@
               <table border="0">
                 <tr>
                   <td style="padding: 12px;">
-                    <table border="0">
+                      <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:separate" align="center" border="0"> 
                       <tr>
-                        <td><input  type="hidden" type="text" value="{{ token }}" id="myInput"></td>
-                
+                        <td style="border:none;border-radius:3px;color:white;padding:15px 19px" align="center" valign="middle" bgcolor="#5865f2"><a href="{{ confirmationUrl}}" style="text-decoration:none;line-height:100%;background:#5865f2;color:white;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:15px;font-weight:normal;text-transform:none;margin:0px">
+                          Confirm Your Account
+                        </a></td>
                       </tr>
                     </table>
                   </td>
