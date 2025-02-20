@@ -37,8 +37,8 @@ class TokenBucket:
         return True
 
 
-# 1 request per 2 second
-bucket = TokenBucket(1, 2)
+# 2 request per 2 second
+bucket = TokenBucket(2, 2)
 
 
 class RateLimiterMiddleware(BaseHTTPMiddleware):

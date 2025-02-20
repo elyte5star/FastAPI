@@ -40,6 +40,10 @@ class Product(Audit):
         back_populates="product", cascade="all, delete-orphan"
     )
 
+    __mapper_args__ = {
+        "polymorphic_identity": "product",
+    }
+
 
 class Review(Base):
     id = Column(String(60), primary_key=True, index=True)

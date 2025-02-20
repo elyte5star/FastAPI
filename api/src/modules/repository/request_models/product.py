@@ -36,8 +36,8 @@ class CreateProductReview(BaseModel):
 
 
 class CreateProductReviewrequest(BaseReq):
-    review = CreateProductReview = None
-    result = CreateProductReviewResponse = CreateProductReviewResponse()
+    review: CreateProductReview = None
+    result: CreateProductReviewResponse = CreateProductReviewResponse()
 
 
 class CreateProductRequest(BaseReq):
