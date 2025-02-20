@@ -1,10 +1,10 @@
-from modules.repository.schema.users import DeviceMetaData
+from modules.repository.schema.user import DeviceMetaData
 from modules.repository.queries.auth import AuthQueries
 from fastapi import Request
 from modules.utils.misc import get_indent, time_now_utc
 from fastapi_events.dispatcher import dispatch
 from modules.security.events.base import UserEvents, NewDeviceLogin
-from modules.repository.schema.users import User
+from modules.repository.schema.user import User
 import httpagentparser
 
 

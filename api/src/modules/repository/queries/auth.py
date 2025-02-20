@@ -1,5 +1,5 @@
 from modules.database.base import AsyncDatabaseSession
-from modules.repository.schema.users import (
+from modules.repository.schema.user import (
     DeviceMetaData,
     UserLocation,
     User,

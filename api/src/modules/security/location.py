@@ -1,6 +1,6 @@
 from modules.security.device import DeviceMetaDataChecker
 from fastapi import Request
-from modules.repository.schema.users import NewLocationToken, UserLocation, User
+from modules.repository.schema.user import NewLocationToken, UserLocation, User
 from modules.utils.misc import get_indent
 from fastapi_events.dispatcher import dispatch
 from modules.security.events.base import UserEvents, StrangeLocation

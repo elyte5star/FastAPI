@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from modules.repository.schema.base import Base
 from modules.utils.misc import get_indent
-from modules.repository.schema.users import (
+from modules.repository.schema.user import (
     User,  # noqa: F401
     UserLocation,  # noqa: F401
     UserAddress,  # noqa: F401
@@ -18,6 +18,11 @@ from modules.repository.schema.users import (
     NewLocationToken,  # noqa: F401
     Enquiry,  # noqa: F401
 )
+from modules.repository.schema.product import (
+    Product,  # noqa: F401
+    Review,  # noqa: F401
+    SpecialDeals,  # noqa: F401
+)  # noqa: F401
 from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
 from asyncpg.exceptions import PostgresError

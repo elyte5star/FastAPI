@@ -1,4 +1,4 @@
-from modules.repository.schema.users import (
+from modules.repository.schema.user import (
     User,
     Otp,
     NewLocationToken,

@@ -24,7 +24,7 @@ class UserFilter(logging.Filter):
 
 
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
-    def add_fields(self, log_record, record, message_dict):
+    def add_fields(self, log_record, record, message_dict) -> None:
         super(CustomJsonFormatter, self).add_fields(
             log_record,
             record,
@@ -32,10 +32,6 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         )
         # Add fields here
         log_record["asctime"] = time_now_utc().strftime("%d-%m-%Y, %H:%M:%S.%f UTC")
-        if log_record.get("level"):
-            log_record["level"] = log_record["levelname"].lower()
-        else:
-            log_record["level"] = record.levelname
 
 
 FORMATTER = logging.Formatter(fmt)

@@ -16,7 +16,10 @@ class CreateUserResponse(BaseResponse):
 class UserDetails(BaseModel):
     id: str = Field(default="", alias="userid")
     created_at: datetime = Field(default=None, alias="createdAt")
-    modified_at: Optional[datetime] = Field(default=None, alias="lastModifiedAt")
+    modified_at: Optional[datetime] = Field(
+        default=None,
+        alias="lastModifiedAt",
+    )
     modified_by: Optional[str] = Field(default="", alias="lastModifiedBy")
     created_by: str = Field(default="", alias="createdBy")
     password: Optional[SecretStr] = None

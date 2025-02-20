@@ -20,7 +20,7 @@ from modules.repository.response_models.user import (
     CreatedUserData,
     ClientEnquiryResponse,
 )
-from modules.repository.schema.users import (
+from modules.repository.schema.user import (
     User,
     Otp,
     PasswordResetToken,
