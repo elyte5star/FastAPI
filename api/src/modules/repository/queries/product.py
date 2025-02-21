@@ -4,12 +4,12 @@ from asyncpg.exceptions import PostgresError
 
 
 class ProductQueries(AsyncDatabaseSession):
-    async def create_product_query(self, product: Product) -> str | None:
+    async def create_product_query(self, product: Product) -> None:
         result = ""
+        self.async_session.add(product)
         try:
-            self.async_session.add(product)
             await self.async_session.commit()
-            result = product.pid
+            result = "1234354456456"
         except PostgresError:
             await self.async_session.rollback()
             raise

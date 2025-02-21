@@ -13,14 +13,14 @@ from sqlalchemy.sql import func
 
 
 class Product(Audit):
-    pid = Column(
+    id = Column(
         String(60),
         ForeignKey("audit.id"),
         primary_key=True,
         index=True,
     )
-    description = Column(String(100))
-    details = Column(String(600))
+    description = Column(String(100), nullable=False)
+    details = Column(String(600), nullable=False)
     image = Column(String(100), nullable=False)
     name = Column(String(100), nullable=False)
     price = Column(Float, nullable=False, index=True)
@@ -44,6 +44,21 @@ class Product(Audit):
         "polymorphic_identity": "product",
     }
 
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__}("
+            f" id: {self.id}, "
+            f" description: {self.description}, "
+            f" details: {self.details},"
+            f" image: {self.image},"
+            f" name: {self.name},"
+            f" created_at:{self.created_at},"
+            f" created_by:{self.created_by},"
+            f" modified_at:{self.modified_at},"
+            f" modified_by:{self.modified_by}"
+            f")>"
+        )
+
 
 class Review(Base):
     id = Column(String(60), primary_key=True, index=True)
@@ -58,7 +73,7 @@ class Review(Base):
     )
     product_id = Column(
         String(60),
-        ForeignKey("product.pid", onupdate="CASCADE", ondelete="CASCADE"),
+        ForeignKey("product.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
     product = relationship("Product", back_populates="reviews")
@@ -69,7 +84,7 @@ class SpecialDeals(Base):
     new_price = Column(Float, nullable=False, index=True)
     product_id = Column(
         String(60),
-        ForeignKey("product.pid", onupdate="CASCADE", ondelete="CASCADE"),
+        ForeignKey("product.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
     discount = Column(Float, nullable=False, index=True)

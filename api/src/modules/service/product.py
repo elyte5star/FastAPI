@@ -19,10 +19,10 @@ class ProductHandler(ProductQueries):
         product_exist = await self.find_product_by_name(req.new_product.name)
         if product_exist is None:
             new_product = Product(
-                pid=get_indent(),
-                created_by=req.credentials.username,
+                id=get_indent(),
+                created_by=req.credentials.userid,
                 description=req.new_product.description,
-                details=req.new_product.description,
+                details=req.new_product.details,
                 image=req.new_product.image,
                 price=req.new_product.price,
                 category=req.new_product.category,
