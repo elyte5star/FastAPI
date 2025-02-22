@@ -20,7 +20,13 @@ class CreateProduct(BaseModel):
     category: str
     stock_quantity: Annotated[
         int,
-        Field(default=1, strict=True, gt=0, validation_alias="stockQuantity"),
+        Field(
+            examples=[1, 3, 4],
+            default=1,
+            strict=True,
+            gt=0,
+            validation_alias="stockQuantity",
+        ),
     ]
 
 

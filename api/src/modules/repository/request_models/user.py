@@ -27,7 +27,7 @@ class CreateUser(BaseModel):
     telephone: ValidateTelephone
 
     @model_validator(mode="after")
-    def verify_square(self) -> Self:
+    def verify_password(self) -> Self:
         if self.password != self.confirm_password:
             raise RequestValidationError("password and confirm password do not match")
         return self
