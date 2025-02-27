@@ -68,15 +68,14 @@ class UserHandler(UserQueries):
                 created_by=req.new_user.username,
                 active=True,
             )
-            user = await self.create_user_query(new_user)
-            if user is not None:
-                response_data = CreatedUserData(
-                    userid=user.id, createdAt=user.created_at
-                )
-                req.result.data = response_data
-                await self.on_successfull_registration(user, request)
-                return req.req_success("New user created!")
-            return req.req_failure("Couldn't create account ,try later.")
+            await self.create_user_query(new_user)
+            response_data = CreatedUserData(
+                userid=new_user.id, createdAt=new_user.created_at
+            )
+            req.result.data = response_data
+            await self.on_successfull_registration(new_user, request)
+            return req.req_success("New user created!")
+
         return req.req_failure("User exist")
 
     async def on_successfull_registration(

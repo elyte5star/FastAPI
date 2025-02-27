@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import as_declarative, declared_attr
 from sqlalchemy.ext.asyncio import AsyncAttrs
+from typing import Optional
 
 
 @as_declarative()
@@ -10,7 +11,7 @@ class Base(AsyncAttrs):
     # Generate __tablename__ automatically
 
     @declared_attr
-    def __tablename__(cls) -> str:
+    def __tablename__(cls) -> Optional[str]:
         return cls.__name__.lower()
 
 

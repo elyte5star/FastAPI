@@ -18,11 +18,13 @@ from modules.repository.schema.user import (
     DeviceMetaData,  # noqa: F401,
     NewLocationToken,  # noqa: F401
     Enquiry,  # noqa: F401
+    Address,  # noqa: F401
 )
 from modules.repository.schema.product import (
     Product,  # noqa: F401
     Review,  # noqa: F401
     SpecialDeals,  # noqa: F401
+    Order,  # noqa: F401
 )  # noqa: F401
 from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
@@ -216,7 +218,7 @@ class AsyncDatabaseSession:
         xf_header = request.headers.get("X-Forwarded-For")
         if xf_header is not None:
             return xf_header.split(",")[0]
-        #return "128.101.101.101"  # for testing Richfield,United States
+        # return "128.101.101.101"  # for testing Richfield,United States
         # return "41.238.0.198"  # for testing Giza, Egypt
         return request.client.host
 

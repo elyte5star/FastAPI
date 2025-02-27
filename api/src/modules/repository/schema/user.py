@@ -9,7 +9,7 @@ from sqlalchemy import (
 )
 from modules.repository.schema.base import Audit, Base
 from sqlalchemy.orm import relationship, Mapped
-from typing import Set
+from typing import Set, List
 
 
 class User(Audit):
@@ -38,9 +38,17 @@ class User(Audit):
     locations: Mapped[Set["UserLocation"]] = relationship(
         back_populates="owner", cascade="all, delete-orphan"
     )
+    addresses: Mapped[List["Address"]] = relationship(
+        cascade="all, delete", lazy="selectin"
+    )
     __mapper_args__ = {
         "polymorphic_identity": "user",
     }
+    bookings: Mapped[Set["Order"]] = relationship(  # noqa: F821
+        back_populates="customer",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
 
     def __repr__(self):
         return (
@@ -58,6 +66,20 @@ class User(Audit):
         )
 
 
+class Address(Base):
+    id = Column(String(60), primary_key=True, index=True)
+    userid = Column(
+        String(60),
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
+    )
+    fullname = Column(String(30), unique=True, index=True)
+    street_address = Column(String(60), unique=True, index=True)
+    country = Column(String(30), index=True)
+    city = Column(String(30), index=True)
+    zip_code = Column(String(30), index=True)
+    owner = relationship("User", back_populates="addresses")
+
+
 class UserLocation(Base):
     id = Column(String(60), primary_key=True, index=True)
     country = Column(String(30), index=True)
@@ -65,7 +87,6 @@ class UserLocation(Base):
     userid = Column(
         String(60),
         ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
     )
     owner = relationship("User", back_populates="locations")
     new_location = relationship(

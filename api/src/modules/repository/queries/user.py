@@ -14,16 +14,13 @@ from modules.utils.misc import time_now_utc
 
 class UserQueries(AsyncDatabaseSession):
     async def create_user_query(self, user: User) -> User | None:
-        self.async_session.add(user)
-        result = None
         try:
-            await self.async_session.commit()
-            result = user
+            self.async_session.add(user)
         except PostgresError:
             await self.async_session.rollback()
             raise
-        finally:
-            return result
+        else:
+            await self.async_session.commit()
 
     async def get_users_query(self) -> list[User]:
         stmt = self.select(User).order_by(User.created_at)
@@ -207,7 +204,11 @@ class UserQueries(AsyncDatabaseSession):
         finally:
             return result
 
-    async def update_pass_token_query(self, id: str, data: dict) -> dict | None:
+    async def update_pass_token_query(
+        self,
+        id: str,
+        data: dict,
+    ) -> dict | None:
         result = None
         stmt = (
             self.sqlalchemy_update(PasswordResetToken)
@@ -230,7 +231,10 @@ class UserQueries(AsyncDatabaseSession):
         result = await self.async_session.execute(stmt)
         return result.scalars().first()
 
-    async def find_passw_token_by_user_query(self, user: User) -> PasswordResetToken:
+    async def find_passw_token_by_user_query(
+        self,
+        user: User,
+    ) -> PasswordResetToken:
         stmt = self.select(PasswordResetToken).where(PasswordResetToken.owner == user)
         result = await self.async_session.execute(stmt)
         return result.scalars().first()
@@ -242,7 +246,10 @@ class UserQueries(AsyncDatabaseSession):
         result = await self.async_session.execute(stmt)
         return result.scalars().all()
 
-    async def del_all_expired_passw_reset_token_since(self, now: datetime) -> None:
+    async def del_all_expired_passw_reset_token_since(
+        self,
+        now: datetime,
+    ) -> None:
         stmt = self.delete(PasswordResetToken).where(PasswordResetToken.expiry <= now)
         try:
             await self.async_session.execute(stmt)
