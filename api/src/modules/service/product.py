@@ -6,6 +6,7 @@ from modules.repository.request_models.product import (
     GetProductResponse,
     GetProductsRequest,
     GetProductsResponse,
+    ProductDisplay
 )
 from modules.repository.schema.product import Product
 from modules.utils.misc import get_indent
@@ -20,19 +21,20 @@ class ProductHandler(ProductQueries):
         if product_exist is None:
             new_product = Product(
                 id=get_indent(),
-                created_by=req.credentials.userid,
+                created_by=req.credentials.username,
                 description=req.new_product.description,
+                name=req.new_product.name,
                 details=req.new_product.details,
                 image=req.new_product.image,
                 price=req.new_product.price,
                 category=req.new_product.category,
                 stock_quantity=req.new_product.stock_quantity,
             )
-            product_id = await self.create_product_query(new_product)
-            if product_id:
-                req.result.pid = product_id
-                return req.req_success("New product created!")
-            return req.req_failure("Couldn't create a product ,try later.")
+            await self.create_product_query(new_product)
+            req.result.pid = new_product.id
+            return req.req_success(
+                f"Product with id: {new_product.id} created",
+            )
         return req.req_failure("Product already exist")
 
     async def _get_product(self, req: GetProductRequest) -> GetProductResponse:

@@ -13,7 +13,7 @@ from modules.utils.misc import time_now_utc
 
 
 class UserQueries(AsyncDatabaseSession):
-    async def create_user_query(self, user: User) -> User | None:
+    async def create_user_query(self, user: User) -> None:
         try:
             self.async_session.add(user)
         except PostgresError:

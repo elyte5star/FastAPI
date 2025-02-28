@@ -75,7 +75,6 @@ class UserHandler(UserQueries):
             req.result.data = response_data
             await self.on_successfull_registration(new_user, request)
             return req.req_success("New user created!")
-
         return req.req_failure("User exist")
 
     async def on_successfull_registration(

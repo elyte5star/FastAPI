@@ -28,7 +28,7 @@ class ProductDeals(BaseModel):
     discount: float
 
 
-class Product(BaseModel):
+class ProductDisplay(BaseModel):
     pid: str = Field(alias="userid")
     created_at: datetime = Field(alias="createdAt")
     modified_at: Optional[datetime] = Field(
@@ -48,11 +48,11 @@ class Product(BaseModel):
 
 
 class GetProductResponse(BaseResponse):
-    product: Product = None
+    product: ProductDisplay = None
 
 
 class GetProductsResponse(BaseResponse):
-    products: list[Product] = []
+    products: list[ProductDisplay] = []
 
 
 class GetProductReviewsResponse(BaseResponse):

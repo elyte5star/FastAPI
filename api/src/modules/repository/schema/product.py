@@ -7,7 +7,7 @@ from sqlalchemy import (
     ForeignKey,
 )
 from modules.repository.schema.base import Audit, Base
-from sqlalchemy.orm import relationship, Mapped, backref
+from sqlalchemy.orm import relationship, Mapped
 from typing import Set
 from sqlalchemy.sql import func
 
@@ -26,7 +26,6 @@ class Product(Audit):
     price = Column(Float, nullable=False, index=True)
     category = Column(String(60), nullable=False, index=True)
     stock_quantity = Column(
-        "stockQuantity",
         Integer,
         nullable=False,
         index=True,
