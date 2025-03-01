@@ -3,6 +3,7 @@ from typing_extensions import Annotated
 from modules.repository.request_models.base import BaseReq
 from modules.repository.response_models.product import (
     CreateProductResponse,
+    CreateProductsResponse,
     GetProductResponse,
     GetProductsResponse,
     CreateProductReviewResponse,
@@ -41,9 +42,14 @@ class CreateProductReview(BaseModel):
     ]
 
 
-class CreateProductReviewrequest(BaseReq):
+class CreateProductReviewRequest(BaseReq):
     review: CreateProductReview = None
     result: CreateProductReviewResponse = CreateProductReviewResponse()
+
+
+class CreateProductsRequest(BaseReq):
+    new_products: list[CreateProduct] = []
+    result: CreateProductsResponse = CreateProductsResponse()
 
 
 class CreateProductRequest(BaseReq):

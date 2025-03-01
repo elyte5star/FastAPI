@@ -1,15 +1,19 @@
 from modules.repository.request_models.base import BaseResponse
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
-from typing import Optional
+from typing import Any
 
 
 class CreateProductResponse(BaseResponse):
     pid: str = ""
 
 
+class CreateProductsResponse(BaseResponse):
+    pids: list[str] = []
+
+
 class CreateProductReviewResponse(BaseResponse):
-    id: str = ""
+    rid: str = ""
 
 
 class ProductReview(BaseModel):
@@ -28,31 +32,12 @@ class ProductDeals(BaseModel):
     discount: float
 
 
-class ProductDisplay(BaseModel):
-    pid: str = Field(alias="userid")
-    created_at: datetime = Field(alias="createdAt")
-    modified_at: Optional[datetime] = Field(
-        default=None,
-        alias="lastModifiedAt",
-    )
-    modified_by: Optional[str] = Field(default="", alias="lastModifiedBy")
-    created_by: str = Field(alias="createdBy")
-    name: str
-    description: str
-    details: str
-    image: str
-    price: float
-    category: str
-    reviews: list[ProductReview] = []
-    promotion: ProductDeals = None
-
-
 class GetProductResponse(BaseResponse):
-    product: ProductDisplay = None
+    product: Any = {}
 
 
 class GetProductsResponse(BaseResponse):
-    products: list[ProductDisplay] = []
+    products: list[Any] = []
 
 
 class GetProductReviewsResponse(BaseResponse):

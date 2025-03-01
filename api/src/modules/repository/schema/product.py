@@ -36,7 +36,7 @@ class Product(Audit):
         back_populates="product",
     )
     reviews: Mapped[Set["Review"]] = relationship(
-        back_populates="product", cascade="all, delete-orphan"
+        back_populates="product", cascade="all, delete-orphan", lazy="selectin"
     )
 
     __mapper_args__ = {

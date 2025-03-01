@@ -1,5 +1,5 @@
 from modules.database.base import AsyncDatabaseSession
-from modules.repository.schema.product import Product
+from modules.repository.schema.product import Product, Review
 from asyncpg.exceptions import PostgresError
 
 
@@ -13,11 +13,20 @@ class ProductQueries(AsyncDatabaseSession):
         else:
             await self.async_session.commit()
 
+    async def create_products_query(self, products: list[Product]) -> None:
+        try:
+            self.async_session.add_all(products)
+        except PostgresError:
+            await self.async_session.rollback()
+            raise
+        else:
+            await self.async_session.commit()
+
     async def get_products_query(self) -> list[Product]:
-        result = await self.async_session.scalars(
-            self.select((Product).order_by(Product.created_at))
-        )
-        return result
+        stmt = self.select(Product).order_by(Product.created_at)
+        result = await self.async_session.execute(stmt)
+        products = result.scalars().all()
+        return products
 
     async def find_product_by_id(self, pid: str) -> Product | None:
         return await self.async_session.get(Product, pid)
@@ -29,3 +38,12 @@ class ProductQueries(AsyncDatabaseSession):
             .execution_options(populate_existing=True)
         )
         return result.first()
+
+    async def create_product_review_query(self, review: Review) -> None:
+        try:
+            self.async_session.add(review)
+        except PostgresError:
+            await self.async_session.rollback()
+            raise
+        else:
+            await self.async_session.commit()

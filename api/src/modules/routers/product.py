@@ -10,6 +10,11 @@ from modules.repository.request_models.product import (
     GetProductsRequest,
     GetProductsResponse,
     CreateProduct,
+    CreateProductsResponse,
+    CreateProductsRequest,
+    CreateProductReviewRequest,
+    CreateProductReview,
+    CreateProductReviewResponse,
 )
 
 
@@ -28,6 +33,22 @@ class ProductRouter(ProductHandler):
             methods=["POST"],
             dependencies=[Depends(RoleChecker(["ADMIN"]))],
             description="Create a product",
+        )
+        self.router.add_api_route(
+            path="/create-many",
+            status_code=status.HTTP_201_CREATED,
+            endpoint=self.create_products,
+            response_model=CreateProductsResponse,
+            methods=["POST"],
+            description="Create a products",
+        )
+        self.router.add_api_route(
+            path="/review",
+            status_code=status.HTTP_201_CREATED,
+            endpoint=self.create_product_review,
+            response_model=CreateProductReviewResponse,
+            methods=["POST"],
+            description="Create a product review",
         )
         self.router.add_api_route(
             path="/{pid}",
@@ -53,6 +74,25 @@ class ProductRouter(ProductHandler):
         return await self._create_product(
             CreateProductRequest(
                 new_product=new_product,
+                credentials=current_user,
+            ),
+        )
+
+    async def create_product_review(
+        self, review: CreateProductReview
+    ) -> CreateProductReviewResponse:
+        return await self._create_review(
+            CreateProductReviewRequest(review=review),
+        )
+
+    async def create_products(
+        self,
+        new_products: list[CreateProduct],
+        current_user: Annotated[JWTPrincipal, Depends(RoleChecker(["ADMIN"]))],
+    ) -> CreateProductResponse:
+        return await self._create_many_products(
+            CreateProductsRequest(
+                new_products=new_products,
                 credentials=current_user,
             ),
         )
