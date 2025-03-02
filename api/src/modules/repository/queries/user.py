@@ -56,18 +56,15 @@ class UserQueries(AsyncDatabaseSession):
         finally:
             return result
 
-    async def delete_user_query(self, userid: str) -> bool:
-        stmt = self.delete(User).where(User.id == userid)
-        result = False
+    async def delete_user_query(self, userid: str) -> None:
         try:
+            stmt = self.delete(User).where(User.id == userid)
             await self.async_session.execute(stmt)
-            await self.async_session.commit()
-            result = True
         except PostgresError:
             await self.async_session.rollback()
             raise
-        finally:
-            return result
+        else:
+            await self.async_session.commit()
 
     async def check_if_user_exist(
         self, email: str, username: str, telephone: str

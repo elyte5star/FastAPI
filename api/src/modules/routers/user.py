@@ -33,7 +33,7 @@ from pydantic import EmailStr
 class UserRouter(UserHandler):
     def __init__(self, config):
         super().__init__(config)
-        self.router: APIRouter = APIRouter(prefix="/user", tags=["Users"])
+        self.router: APIRouter = APIRouter(prefix="/user", tags=["User"])
         self.router.add_api_route(
             path="/signup",
             status_code=status.HTTP_201_CREATED,

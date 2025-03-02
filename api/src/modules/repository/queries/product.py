@@ -31,6 +31,19 @@ class ProductQueries(AsyncDatabaseSession):
     async def find_product_by_id(self, pid: str) -> Product | None:
         return await self.async_session.get(Product, pid)
 
+    async def delete_product_query(self, pid: str) -> None:
+        try:
+            stmt = self.delete(Product).where(Product.id == pid)
+            await self.async_session.execute(stmt)
+        except PostgresError:
+            await self.async_session.rollback()
+            raise
+        else:
+            await self.async_session.commit()
+
+    async def find_product_review_by_id(self, rid: str) -> Review | None:
+        return await self.async_session.get(Review, rid)
+
     async def find_product_by_name(self, name: str) -> Product | None:
         result = await self.async_session.scalars(
             self.select(Product)

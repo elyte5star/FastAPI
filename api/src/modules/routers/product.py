@@ -1,5 +1,5 @@
 from modules.service.product import ProductHandler
-from fastapi import APIRouter, Depends, status, Request
+from fastapi import APIRouter, Depends, status
 from typing import Annotated
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
 from modules.repository.request_models.product import (
@@ -15,6 +15,10 @@ from modules.repository.request_models.product import (
     CreateProductReviewRequest,
     CreateProductReview,
     CreateProductReviewResponse,
+    GetProductReviewRequest,
+    GetProductReviewResponse,
+    DeleteProductRequest,
+    BaseResponse,
 )
 
 
@@ -23,7 +27,7 @@ class ProductRouter(ProductHandler):
         super().__init__(config)
         self.router: APIRouter = APIRouter(
             prefix="/product",
-            tags=["Products"],
+            tags=["Product"],
         )
         self.router.add_api_route(
             path="/create",
@@ -43,19 +47,18 @@ class ProductRouter(ProductHandler):
             description="Create a products",
         )
         self.router.add_api_route(
-            path="/review",
-            status_code=status.HTTP_201_CREATED,
-            endpoint=self.create_product_review,
-            response_model=CreateProductReviewResponse,
-            methods=["POST"],
-            description="Create a product review",
-        )
-        self.router.add_api_route(
             path="/{pid}",
             endpoint=self.get_product,
             response_model=GetProductResponse,
             methods=["GET"],
             description="Get Product",
+        )
+        self.router.add_api_route(
+            path="/{pid}",
+            endpoint=self.delete_product,
+            response_model=BaseResponse,
+            methods=["DELETE"],
+            description="Delete a product",
         )
 
         self.router.add_api_route(
@@ -64,6 +67,22 @@ class ProductRouter(ProductHandler):
             response_model=GetProductsResponse,
             methods=["GET"],
             description="Get product",
+        )
+
+        self.router.add_api_route(
+            path="/review",
+            status_code=status.HTTP_201_CREATED,
+            endpoint=self.create_product_review,
+            response_model=CreateProductReviewResponse,
+            methods=["POST"],
+            description="Create a product review",
+        )
+        self.router.add_api_route(
+            path="/review/{rid}",
+            endpoint=self.get_product_review,
+            response_model=GetProductReviewResponse,
+            methods=["GET"],
+            description="Get a product revew",
         )
 
     async def create_product(
@@ -107,3 +126,21 @@ class ProductRouter(ProductHandler):
         pid: str,
     ) -> GetProductResponse:
         return await self._get_product(GetProductRequest(pid=pid))
+
+    async def get_product_review(
+        self,
+        rid: str,
+    ) -> GetProductReviewResponse:
+        return await self._get_product_review(GetProductReviewRequest(rid=rid))
+
+    async def delete_product(
+        self,
+        pid: str,
+        current_user: Annotated[
+            JWTPrincipal,
+            Depends(security),
+        ],
+    ) -> BaseResponse:
+        return await self._delete_product(
+            DeleteProductRequest(credentials=current_user, pid=pid)
+        )

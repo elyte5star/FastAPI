@@ -8,6 +8,8 @@ from modules.repository.response_models.product import (
     GetProductsResponse,
     CreateProductReviewResponse,
     GetProductReviewsResponse,
+    GetProductReviewResponse,
+    BaseResponse,
 )
 from modules.repository.validators.base import VerifyEmail, ValidateUUID
 
@@ -42,6 +44,11 @@ class CreateProductReview(BaseModel):
     ]
 
 
+class DeleteProductRequest(BaseReq):
+    pid: ValidateUUID
+    result: BaseResponse = BaseResponse()
+
+
 class CreateProductReviewRequest(BaseReq):
     review: CreateProductReview = None
     result: CreateProductReviewResponse = CreateProductReviewResponse()
@@ -60,6 +67,11 @@ class CreateProductRequest(BaseReq):
 class GetProductRequest(BaseReq):
     pid: ValidateUUID
     result: GetProductResponse = GetProductResponse()
+
+
+class GetProductReviewRequest(BaseReq):
+    rid: ValidateUUID
+    result: GetProductReviewResponse = GetProductReviewResponse()
 
 
 class GetProductsRequest(BaseReq):

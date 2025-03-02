@@ -77,6 +77,19 @@ class Review(Base):
     )
     product = relationship("Product", back_populates="reviews")
 
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__}("
+            f" id: {self.id}, "
+            f" date: {self.date}, "
+            f" rating: {self.rating},"
+            f" product_id: {self.product_id},"
+            f" reviewer_name: {self.reviewer_name},"
+            f" email: {self.email},"
+            f" comment: {self.comment},"
+            f")>"
+        )
+
 
 class SpecialDeals(Base):
     id = Column(String(60), primary_key=True, index=True)

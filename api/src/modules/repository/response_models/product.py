@@ -17,13 +17,13 @@ class CreateProductReviewResponse(BaseResponse):
 
 
 class ProductReview(BaseModel):
-    id: str
+    rid: str
     rating: int
     comment: str
-    date: datetime = Field(alias="createdAt")
-    product_id: str
+    date: datetime = Field(serialization_alias="createdAt")
+    pid: str
     email: EmailStr
-    reviewer_name: str = Field(alias="reviewerName")
+    reviewer_name: str = Field(serialization_alias="reviewerName")
 
 
 class ProductDeals(BaseModel):
@@ -34,6 +34,10 @@ class ProductDeals(BaseModel):
 
 class GetProductResponse(BaseResponse):
     product: Any = {}
+
+
+class GetProductReviewResponse(BaseResponse):
+    review: ProductReview = None
 
 
 class GetProductsResponse(BaseResponse):

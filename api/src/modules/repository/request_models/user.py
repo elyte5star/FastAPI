@@ -122,7 +122,7 @@ class ChangePassword(BaseModel):
     token: str
 
     @model_validator(mode="after")
-    def verify_square(self) -> Self:
+    def verify_password(self) -> Self:
         if self.new_password != self.confirm_password:
             raise RequestValidationError(
                 "new password and confirm password do not match"

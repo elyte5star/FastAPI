@@ -10,7 +10,12 @@ from modules.repository.request_models.product import (
     CreateProductsRequest,
     CreateProductReviewRequest,
     CreateProductReviewResponse,
+    GetProductReviewRequest,
+    GetProductReviewResponse,
+    DeleteProductRequest,
+    BaseResponse,
 )
+from modules.repository.response_models.product import ProductReview
 from modules.repository.schema.product import Product, Review
 from modules.utils.misc import get_indent, obj_as_json, time_now
 
@@ -98,6 +103,24 @@ class ProductHandler(ProductQueries):
             return req.req_success(f"Product with pid {req.pid} found")
         return req.req_failure(f"Product with pid {req.pid} not found")
 
+    async def _get_product_review(
+        self, req: GetProductReviewRequest
+    ) -> GetProductReviewResponse:
+        review = await self.find_product_review_by_id(req.rid)
+        if review is not None:
+            result = ProductReview(
+                rid=review.id,
+                rating=review.rating,
+                comment=review.comment,
+                date=review.date,
+                pid=review.product_id,
+                email=review.email,
+                reviewer_name=review.reviewer_name,
+            )
+            req.result.review = result
+            return req.req_success(f"Product review with rid {req.rid} found")
+        return req.req_failure(f"Product with review rid {req.rid} not found")
+
     async def _get_products(
         self,
         req: GetProductsRequest,
@@ -111,6 +134,13 @@ class ProductHandler(ProductQueries):
             result.append(self.remove_fields(product_dict))
         req.result.products = result
         return req.req_success(f"Total number of products: {len(result)}")
+
+    async def _delete_product(self, req: DeleteProductRequest) -> BaseResponse:
+        product = await self.find_product_by_id(req.pid)
+        if product is not None:
+            await self.delete_product_query(req.pid)
+            return req.req_success(f"Product with id: {req.pid} deleted")
+        return req.req_failure(f"Product with pid {req.pid} not found")
 
     def remove_fields(self, product: dict) -> dict:
         fields = ["modified_by", "modified_at", "created_at", "created_by"]
