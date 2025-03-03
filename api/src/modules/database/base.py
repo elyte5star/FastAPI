@@ -1,8 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.future import select
-from sqlalchemy import inspect, event, __version__, delete, or_, and_
+from sqlalchemy import inspect, __version__, delete, or_, and_
 from sqlalchemy import update as sqlalchemy_update
-from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     AsyncEngine,
@@ -82,11 +81,6 @@ class AsyncDatabaseSession:
             tables = await conn.run_sync(self.use_inspector)
         self.logger.info(tables)
         return tables
-
-    @event.listens_for(Engine, "connect")
-    def my_on_connect(dbapi_con, connection_record):
-        # print("New DBAPI connection:", dbapi_con.cursor())
-        pass
 
     async def create_tables(self):
         async with self._engine.begin() as conn:

@@ -359,7 +359,10 @@ class UserHandler(UserQueries):
     async def _update_user_password(self, req: UpdateUserPasswordRequest):
         user = await self.find_user_by_email(req.credentials.email)
         if user is not None:
-            if self.check_if_valid_old_password(user.password, req.data.old_password):
+            if self.check_if_valid_old_password(
+                user.password,
+                req.data.old_password,
+            ):
                 await self.change_user_password(
                     user, req.credentials.username, req.data.new_password
                 )

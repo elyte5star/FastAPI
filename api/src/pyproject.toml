@@ -31,7 +31,7 @@ log_level = "INFO"
 log_file_path="../extreme_api.log"
 login_attempts=3
 lock_duration = 15
-enabled_geoip=true
+enabled_geoip=false
 otp_expiry=30
 
 [api.doc]
