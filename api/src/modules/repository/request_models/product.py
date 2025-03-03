@@ -12,6 +12,7 @@ from modules.repository.response_models.product import (
     BaseResponse,
 )
 from modules.repository.validators.base import VerifyEmail, ValidateUUID
+from decimal import Decimal
 
 
 class CreateProduct(BaseModel):
@@ -19,7 +20,7 @@ class CreateProduct(BaseModel):
     description: str
     details: str
     image: str
-    price: float
+    price: Decimal = Field(max_digits=5, decimal_places=2)
     category: str
     stock_quantity: Annotated[
         int,
@@ -34,7 +35,7 @@ class CreateProduct(BaseModel):
 
 
 class CreateProductReview(BaseModel):
-    rating: int
+    rating: int = Field(ge=0, le=5)
     comment: str = Field(min_length=3, max_length=500)
     email: VerifyEmail
     pid: ValidateUUID

@@ -139,6 +139,9 @@ class ProductHandler(ProductQueries):
         product = await self.find_product_by_id(req.pid)
         if product is not None:
             await self.delete_product_query(req.pid)
+            self.cf.logger.warning(
+                f"Product with id: {req.pid} was deleted by :{req.credentials.userid}"
+            )
             return req.req_success(f"Product with id: {req.pid} deleted")
         return req.req_failure(f"Product with pid {req.pid} not found")
 
