@@ -16,7 +16,10 @@ from fastapi.responses import JSONResponse
 from fastapi import Request, status
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from modules.middleware.base import CustomHeaderMiddleware, RateLimiterMiddleware
+from modules.middleware.base import (
+    CustomHeaderMiddleware,
+    RateLimiterMiddleware,
+)
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 import time

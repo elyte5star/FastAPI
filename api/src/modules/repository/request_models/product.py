@@ -20,7 +20,7 @@ class CreateProduct(BaseModel):
     description: str
     details: str
     image: str
-    price: Decimal = Field(max_digits=5, decimal_places=2)
+    price: Decimal = Field(max_digits=7, decimal_places=2)
     category: str
     stock_quantity: Annotated[
         int,

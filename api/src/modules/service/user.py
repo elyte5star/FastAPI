@@ -14,7 +14,6 @@ from modules.repository.request_models.user import (
 from modules.repository.response_models.user import (
     CreateUserResponse,
     GetUserResponse,
-    UserDetails,
     GetUsersResponse,
     BaseResponse,
     CreatedUserData,
@@ -223,11 +222,21 @@ class UserHandler(UserQueries):
         user = await self.find_user_by_id(req.userid)
         if user is not None:
             user_info_dict = obj_as_json(user)
-            user_info_dict["userid"] = user_info_dict.pop("id")
-            user_info_dict["password"] = "********"
-            req.result.user = user_info_dict
+            req.result.user = self.filter_user_fields(user_info_dict)
             return req.req_success(f"User with userid {req.userid} found")
         return req.req_failure(f"User with userid {req.userid} not found")
+
+    def filter_user_fields(self, user_dict: dict) -> dict:
+        if user_dict:
+            user_dict["userid"] = user_dict.pop("id")
+            user_dict["password"] = "***********"
+            user_dict["lastModifiedAt"] = user_dict.pop("modified_at")
+            user_dict["createdAt"] = user_dict.pop("created_at")
+            user_dict["createdBy"] = user_dict.pop("created_by")
+            user_dict["IsUsing2FA"] = user_dict.pop("is_using_mfa")
+            user_dict["accountNonLocked"] = not user_dict.pop("is_locked")
+            user_dict["lockTime"] = user_dict.pop("lock_time")
+        return user_dict
 
     # ADMIN RIGHTS ONLY
     async def _get_users(self, req: GetUsersRequest) -> GetUsersResponse:
