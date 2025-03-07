@@ -1,7 +1,7 @@
 from modules.repository.request_models.base import BaseResponse
 from pydantic import BaseModel, Field, SecretStr
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 
 
 class CreatedUserData(BaseModel):
@@ -37,11 +37,11 @@ class UserDetails(BaseModel):
 
 
 class GetUserResponse(BaseResponse):
-    user: UserDetails = UserDetails()
+    user: Any = {}
 
 
 class GetUsersResponse(BaseResponse):
-    users: list[UserDetails] = []
+    users: list[dict] = []
 
 
 class ClientEnquiryResponse(BaseResponse):

@@ -30,7 +30,14 @@ from modules.repository.schema.user import (
 import bcrypt
 from fastapi import Request
 from fastapi_events.dispatcher import dispatch
-from modules.utils.misc import get_indent, time_delta, time_now, time_now_utc, datetime
+from modules.utils.misc import (
+    get_indent,
+    time_delta,
+    time_now,
+    time_now_utc,
+    datetime,
+    obj_as_json,
+)
 from modules.security.events.base import (
     UserEvents,
     SignUpPayload,
@@ -215,53 +222,22 @@ class UserHandler(UserQueries):
         # include RBAC
         user = await self.find_user_by_id(req.userid)
         if user is not None:
-            user_info = UserDetails(
-                userid=user.id,
-                createdAt=user.created_at,
-                lastModifiedAt=user.modified_at,
-                lastModifiedBy=user.modified_by,
-                createdBy=user.created_by,
-                email=user.email,
-                password="********",
-                username=user.username,
-                active=user.active,
-                admin=user.admin,
-                enabled=user.enabled,
-                telephone=user.telephone,
-                failedAttempt=user.failed_attempts,
-                discount=user.discount,
-                lockTime=user.lock_time,
-                IsUsing2FA=user.is_using_mfa,
-            )
-
-            req.result.user = user_info
+            user_info_dict = obj_as_json(user)
+            user_info_dict["userid"] = user_info_dict.pop("id")
+            user_info_dict["password"] = "********"
+            req.result.user = user_info_dict
             return req.req_success(f"User with userid {req.userid} found")
         return req.req_failure(f"User with userid {req.userid} not found")
 
     # ADMIN RIGHTS ONLY
     async def _get_users(self, req: GetUsersRequest) -> GetUsersResponse:
         users = await self.get_users_query()
-        result: list[UserDetails] = [
-            UserDetails(
-                userid=user.id,
-                createdAt=user.created_at,
-                lastModifiedAt=user.modified_at,
-                lastModifiedBy=user.modified_by,
-                createdBy=user.created_by,
-                email=user.email,
-                password="********",
-                username=user.username,
-                active=user.active,
-                admin=user.admin,
-                enabled=user.enabled,
-                telephone=user.telephone,
-                failedAttempt=user.failed_attempts,
-                discount=user.discount,
-                lockTime=user.lock_time,
-                IsUsing2FA=user.is_using_mfa,
-            )
-            for user in users
-        ]
+        result = []
+        for user in users:
+            user_info_dict = obj_as_json(user)
+            user_info_dict["userid"] = user_info_dict.pop("id")
+            user_info_dict["password"] = "********"
+        result.append(user_info_dict)
         req.result.users = result
         return req.req_success(f"Total number of users: {len(users)}")
 

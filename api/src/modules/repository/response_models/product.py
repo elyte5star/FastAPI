@@ -41,7 +41,7 @@ class GetProductReviewResponse(BaseResponse):
 
 
 class GetProductsResponse(BaseResponse):
-    products: list[Any] = []
+    products: list[dict] = []
 
 
 class GetProductReviewsResponse(BaseResponse):
