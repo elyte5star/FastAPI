@@ -99,7 +99,7 @@ class ProductHandler(ProductQueries):
             product_dict = obj_as_json(product)
             product_dict["pid"] = product_dict.pop("id")
             product_dict["stockQuantity"] = product_dict.pop("stock_quantity")
-            req.result.product = self.remove_fields(product_dict)
+            req.result.product = self.filter_product_fields(product_dict)
             return req.req_success(f"Product with pid {req.pid} found")
         return req.req_failure(f"Product with pid {req.pid} not found")
 
@@ -131,7 +131,7 @@ class ProductHandler(ProductQueries):
             product_dict = obj_as_json(product)
             product_dict["pid"] = product_dict.pop("id")
             product_dict["stockQuantity"] = product_dict.pop("stock_quantity")
-            result.append(self.remove_fields(product_dict))
+            result.append(self.filter_product_fields(product_dict))
         req.result.products = result
         return req.req_success(f"Total number of products: {len(result)}")
 
@@ -145,8 +145,14 @@ class ProductHandler(ProductQueries):
             return req.req_success(f"Product with id: {req.pid} deleted")
         return req.req_failure(f"Product with pid {req.pid} not found")
 
-    def remove_fields(self, product: dict) -> dict:
-        fields = ["modified_by", "modified_at", "created_at", "created_by"]
+    def filter_product_fields(self, product: dict) -> dict:
+        fields = [
+            "modified_by",
+            "modified_at",
+            "created_at",
+            "created_by",
+            "type",
+        ]
         for field in fields:
             if field in product.keys():
                 del product[field]

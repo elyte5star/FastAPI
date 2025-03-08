@@ -235,7 +235,9 @@ class UserHandler(UserQueries):
             user_dict["createdBy"] = user_dict.pop("created_by")
             user_dict["IsUsing2FA"] = user_dict.pop("is_using_mfa")
             user_dict["accountNonLocked"] = not user_dict.pop("is_locked")
+            user_dict["failedAttempts"] = user_dict.pop("failed_attempts")
             user_dict["lockTime"] = user_dict.pop("lock_time")
+            del user_dict["type"]
         return user_dict
 
     # ADMIN RIGHTS ONLY
@@ -244,9 +246,7 @@ class UserHandler(UserQueries):
         result = []
         for user in users:
             user_info_dict = obj_as_json(user)
-            user_info_dict["userid"] = user_info_dict.pop("id")
-            user_info_dict["password"] = "********"
-        result.append(user_info_dict)
+        result.append(self.filter_user_fields(user_info_dict))
         req.result.users = result
         return req.req_success(f"Total number of users: {len(users)}")
 
