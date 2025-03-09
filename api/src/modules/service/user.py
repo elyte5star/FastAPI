@@ -228,7 +228,7 @@ class UserHandler(UserQueries):
 
     def filter_user_fields(self, user_dict: dict) -> dict:
         if user_dict:
-            user_dict["userid"] = user_dict.pop("id")
+            user_dict["userId"] = user_dict.pop("id")
             user_dict["password"] = "***********"
             user_dict["lastModifiedAt"] = user_dict.pop("modified_at")
             user_dict["createdAt"] = user_dict.pop("created_at")

@@ -40,7 +40,7 @@ class AuthenticationHandler(LoginAttemptChecker):
                     return req.req_failure("Login attempt from different location")
                 role = "USER" if not user.admin else "ADMIN"
                 data = {
-                    "userid": user.id,
+                    "userId": user.id,
                     "sub": user.username,
                     "email": user.email,
                     "admin": user.admin,
@@ -88,7 +88,7 @@ class AuthenticationHandler(LoginAttemptChecker):
             expires_delta=access_token_expiry,
         )
         return dict(
-            userid=user.id,
+            userId=user.id,
             username=user.username,
             email=user.email,
             enabled=user.enabled,
@@ -165,7 +165,7 @@ class AuthenticationHandler(LoginAttemptChecker):
                 active = True
                 role = "USER" if not user.admin else "ADMIN"
                 data = {
-                    "userid": user.id,
+                    "userId": user.id,
                     "sub": user.username,
                     "email": user.email,
                     "admin": user.admin,

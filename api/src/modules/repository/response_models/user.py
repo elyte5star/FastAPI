@@ -5,7 +5,7 @@ from typing import Optional, Any
 
 
 class CreatedUserData(BaseModel):
-    userid: str = ""
+    userid: str = Field(default="", alias="userId")
     created_at: datetime = Field(default=None, alias="createdAt")
 
 

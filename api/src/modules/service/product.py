@@ -146,6 +146,7 @@ class ProductHandler(ProductQueries):
         return req.req_failure(f"Product with pid {req.pid} not found")
 
     def filter_product_fields(self, product: dict) -> dict:
+
         fields = [
             "modified_by",
             "modified_at",
@@ -153,7 +154,8 @@ class ProductHandler(ProductQueries):
             "created_by",
             "type",
         ]
-        for field in fields:
-            if field in product.keys():
-                del product[field]
+        if product:
+            for field in fields:
+                if field in product.keys():
+                    del product[field]
         return product

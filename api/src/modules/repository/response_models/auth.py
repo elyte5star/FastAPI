@@ -3,7 +3,7 @@ from modules.repository.request_models.base import BaseResponse
 
 
 class TokenData(BaseModel):
-    userid: str = ""
+    userid: str = Field(default="", alias="userId")
     username: str = ""
     email: str = ""
     enabled: bool = False
