@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 from modules.repository.schema.base import Base
-from modules.utils.misc import get_indent
+from modules.utils.misc import get_indent, time_now_utc
 from modules.repository.schema.user import (
     User,  # noqa: F401
     UserLocation,  # noqa: F401
@@ -241,3 +241,8 @@ class AsyncDatabaseSession:
         except geoip2.errors.AddressNotFoundError as e:
             self.logger.error(e)
             return location
+
+    async def lock_user_account(self, user: User) -> None:
+        changes = dict(lock_time=time_now_utc(), is_locked=True)
+        await self.update_user_query(user.id, changes)
+        self.logger.warning(f"User with id: {user.id} is locked")
