@@ -5,8 +5,11 @@ import time
 from pydantic import BaseModel, Field
 from modules.settings.configuration import ApiConfig
 from typing import Annotated
+from modules.database.base import AsyncDatabaseSession
 
 cfg = ApiConfig().from_toml_file().from_env_file()
+
+db = AsyncDatabaseSession(cfg)
 
 
 class JWTPrincipal(BaseModel):
@@ -27,11 +30,9 @@ class JWTPrincipal(BaseModel):
 class JWTBearer(HTTPBearer):
     def __init__(
         self,
-        config: ApiConfig,
         auto_error: bool = True,
     ):
         super(JWTBearer, self).__init__(auto_error=auto_error)
-        self.cf = config
 
     async def __call__(self, request: Request) -> JWTPrincipal:
         credentials: HTTPAuthorizationCredentials = await super(
@@ -48,9 +49,23 @@ class JWTBearer(HTTPBearer):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token or expired token.",
+                    headers={"WWW-Authenticate": "Bearer"},
                 )
+            db_user = await db.find_user_by_id(self.payload["userId"])
+            if db_user is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found",
+                )
+
+            if db_user.is_locked:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="User account locked",
+                )
+
             current_user = JWTPrincipal(
-                userid=self.payload["userid"],
+                userid=self.payload["userId"],
                 email=self.payload["email"],
                 username=self.payload["sub"],
                 active=self.payload["active"],
@@ -62,6 +77,7 @@ class JWTBearer(HTTPBearer):
                 tokenId=self.payload["jti"],
                 is_locked=not self.payload["accountNonLocked"],
             )
+
             return current_user
         else:
             raise HTTPException(
@@ -73,15 +89,13 @@ class JWTBearer(HTTPBearer):
         if token is None:
             return None
         try:
-            self.payload = jwt.decode(
-                token, self.cf.secret_key, algorithms=[self.cf.algorithm]
-            )
+            self.payload = jwt.decode(token, cfg.secret_key, algorithms=[cfg.algorithm])
             return self.payload if self.payload["exp"] >= time.time() else None
         except JWTError:
             return None
 
 
-security = JWTBearer(cfg)
+security = JWTBearer()
 
 
 class RoleChecker:

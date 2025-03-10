@@ -246,7 +246,7 @@ class UserHandler(UserQueries):
         result = []
         for user in users:
             user_info_dict = obj_as_json(user)
-        result.append(self.filter_user_fields(user_info_dict))
+            result.append(self.filter_user_fields(user_info_dict))
         req.result.users = result
         return req.req_success(f"Total number of users: {len(users)}")
 
