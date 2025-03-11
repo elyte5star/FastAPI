@@ -10,6 +10,7 @@ from modules.repository.request_models.user import (
     ResetUserPasswordRequest,
     UpdateUserPasswordRequest,
     SaveUserPassswordRequest,
+    LockUserAccountRequest,
 )
 from modules.repository.response_models.user import (
     CreateUserResponse,
@@ -263,7 +264,17 @@ class UserHandler(UserQueries):
                 password_reset_token.id,
             )
         await self.delete_user_query(user.id)
-        return req.req_success(f"User with id::{req.userid} deleted")
+        return req.req_success(f"User with id: {req.userid} deleted")
+
+    async def _lock_user(
+        self,
+        req: LockUserAccountRequest,
+    ) -> BaseResponse:
+        user = await self.find_user_by_id(req.userid)
+        if user is None:
+            return req.req_failure(f"No user with id: {req.userid}")
+        await self.lock_user_account_query(user)
+        return req.req_success(f"User with id:{req.userid} locked")
 
     # LOCATION
 

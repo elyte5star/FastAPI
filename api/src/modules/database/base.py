@@ -242,7 +242,7 @@ class AsyncDatabaseSession:
             self.logger.error(e)
             return location
 
-    async def lock_user_account(self, user: User) -> None:
+    async def lock_user_account_query(self, user: User) -> None:
         changes = dict(lock_time=time_now_utc(), is_locked=True)
         await self.update_user_query(user.id, changes)
         self.logger.warning(f"User with id: {user.id} is locked")

@@ -66,7 +66,7 @@ class LoginAttemptChecker(DifferentLocationChecker):
     async def increase_user_failed_attempts(self, user: User) -> None:
         user_failed_attempts = user.failed_attempts
         if user_failed_attempts >= self.cf.max_login_attempt:
-            await self.lock_user_account(user)
+            await self.lock_user_account_query(user)
         else:
             userid = user.id
             changes = dict(failed_attempts=user_failed_attempts + 1)

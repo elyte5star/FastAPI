@@ -38,6 +38,11 @@ class CreateUserRequest(BaseReq):
     result: CreateUserResponse = CreateUserResponse()
 
 
+class LockUserAccountRequest(BaseReq):
+    userid: ValidateUUID
+    result: BaseResponse = BaseResponse()
+
+
 class GetUserRequest(BaseReq):
     userid: ValidateUUID
     result: GetUserResponse = GetUserResponse()

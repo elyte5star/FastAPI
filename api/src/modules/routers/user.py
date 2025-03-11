@@ -25,6 +25,7 @@ from modules.repository.request_models.user import (
     UpdateUserPasswordRequest,
     SaveUserPassswordRequest,
     ChangePassword,
+    LockUserAccountRequest,
 )
 from modules.security.dependency import security, JWTPrincipal, RoleChecker
 from pydantic import EmailStr
@@ -77,6 +78,14 @@ class UserRouter(UserHandler):
             methods=["DELETE"],
             dependencies=[Depends(RoleChecker(config.roles))],
             description="Delete User",
+        )
+        self.router.add_api_route(
+            path="/lock-account/{userid}",
+            endpoint=self.lock_user_account,
+            response_model=BaseResponse,
+            methods=["GET"],
+            dependencies=[Depends(RoleChecker(["ADMIN"]))],
+            description="Lock User Account",
         )
         self.router.add_api_route(
             path="",
@@ -139,28 +148,40 @@ class UserRouter(UserHandler):
     ) -> GetUsersResponse:
         return await self._get_users(GetUsersRequest(credentials=current_user))
 
+    async def lock_user_account(
+        self,
+        userId: str,
+        current_user: Annotated[JWTPrincipal, Depends(security)],
+    ) -> BaseResponse:
+        return await self._lock_user(
+            LockUserAccountRequest(
+                credentials=current_user,
+                userid=userId,
+            )
+        )
+
     async def get_user(
         self,
-        userid: str,
+        userId: str,
         current_user: Annotated[
             JWTPrincipal,
             Depends(security),
         ],
     ) -> GetUserResponse:
         return await self._get_user(
-            GetUserRequest(credentials=current_user, userid=userid)
+            GetUserRequest(credentials=current_user, userid=userId)
         )
 
     async def delete_user(
         self,
-        userid: str,
+        userId: str,
         current_user: Annotated[
             JWTPrincipal,
             Depends(security),
         ],
     ) -> BaseResponse:
         return await self._delete_user(
-            DeleteUserRequest(credentials=current_user, userid=userid)
+            DeleteUserRequest(credentials=current_user, userid=userId)
         )
 
     async def create_verification_otp(
