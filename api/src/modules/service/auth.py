@@ -37,7 +37,9 @@ class AuthenticationHandler(LoginAttemptChecker):
             ):
                 strange_loc = await self.on_login_success(user, request)
                 if strange_loc:
-                    return req.req_failure("Login attempt from different location")
+                    return req.req_failure(
+                        "Login attempt from different location",
+                    )
                 role = "USER" if not user.admin else "ADMIN"
                 data = {
                     "userId": user.id,

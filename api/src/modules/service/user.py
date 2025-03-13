@@ -221,11 +221,11 @@ class UserHandler(UserQueries):
     async def _get_user(self, req: GetUserRequest) -> GetUserResponse:
         # include RBAC
         user = await self.find_user_by_id(req.userid)
-        if user is not None:
-            user_info_dict = obj_as_json(user)
-            req.result.user = self.filter_user_fields(user_info_dict)
-            return req.req_success(f"User with userid {req.userid} found")
-        return req.req_failure(f"User with userid {req.userid} not found")
+        if user is None:
+            return req.req_failure(f"User with userid {req.userid} not found")
+        user_info_dict = obj_as_json(user)
+        req.result.user = self.filter_user_fields(user_info_dict)
+        return req.req_success(f"User with userid {req.userid} found")
 
     def filter_user_fields(self, user_dict: dict) -> dict:
         if user_dict:
@@ -255,10 +255,12 @@ class UserHandler(UserQueries):
         user = await self.find_user_by_id(req.userid)
         if user is None:
             return req.req_failure(f"No user with id: {req.userid}")
-        otp: Otp = await self.get_otp_by_user_query(user)
+        otp = await self.get_otp_by_user_query(user)
         if otp is not None:
             await self.delete_otp_by_id_query(otp.id)
-        password_reset_token = await self.find_passw_reset_token_by_user_query(user)
+        password_reset_token = await self.find_passw_reset_token_by_user_query(
+            user,
+        )
         if password_reset_token is not None:
             await self.delete_passw_reset_token_by_id_query(
                 password_reset_token.id,
@@ -273,7 +275,13 @@ class UserHandler(UserQueries):
         user = await self.find_user_by_id(req.userid)
         if user is None:
             return req.req_failure(f"No user with id: {req.userid}")
+        if req.credentials.userid == req.userid:
+            return req.req_failure("You cant lock your own account")
         await self.lock_user_account_query(user)
+        self.logger.warning(
+            f"""account with id: {req.userid} was locked by
+            admin with userId: {req.credentials.userid}"""
+        )
         return req.req_success(f"User with id:{req.userid} locked")
 
     # LOCATION
