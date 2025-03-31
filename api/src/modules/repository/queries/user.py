@@ -168,9 +168,7 @@ class UserQueries(AsyncDatabaseSession):
     async def find_new_location_by_user_location_query(
         self, user_loc: UserLocation
     ) -> NewLocationToken | None:
-        stmt = self.select(NewLocationToken).where(
-            NewLocationToken.location == user_loc
-        )
+        stmt = self.select(NewLocationToken).where(NewLocationToken.location == user_loc)
         new_locs = await self.async_session.execute(stmt)
         return new_locs.scalars().first()
 

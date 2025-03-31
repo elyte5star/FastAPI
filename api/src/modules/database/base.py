@@ -203,9 +203,7 @@ class AsyncDatabaseSession:
             return result
 
     def create_timed_token(self, email: str) -> str:
-        serializer = URLSafeTimedSerializer(
-            self.cf.secret_key, salt=str(self.cf.rounds)
-        )
+        serializer = URLSafeTimedSerializer(self.cf.secret_key, salt=str(self.cf.rounds))
         return serializer.dumps(email)
 
     def get_client_ip_address(self, request: Request) -> str:

@@ -48,7 +48,7 @@ class User(Audit):
         back_populates="customer",
         cascade="save-update, merge, delete",
         passive_deletes=True,
-        lazy="selectin"
+        lazy="selectin",
     )
 
     def __repr__(self):

@@ -29,17 +29,13 @@ class DifferentLocationChecker(DeviceMetaDataChecker):
             return True
         return False
 
-    async def is_new_login_location(
-        self, user: User, ip: str
-    ) -> NewLocationToken | None:
+    async def is_new_login_location(self, user: User, ip: str) -> NewLocationToken | None:
         if not self.is_geo_ip_enabled():
             self.logger.warning("GEO IP DISABALED BY ADMIN")
             return None
         country, city = await self.get_location_from_ip(ip)
         self.logger.debug(f"country: {country}, city: {city}")
-        user_loc = await self.find_user_location_by_country_and_user_query(
-            country, user
-        )
+        user_loc = await self.find_user_location_by_country_and_user_query(country, user)
         if user_loc is None:
             return await self.create_new_location_token(user, country)
         elif not user_loc.enabled:
@@ -53,9 +49,7 @@ class DifferentLocationChecker(DeviceMetaDataChecker):
         user_loc = UserLocation(id=get_indent(), country=country, owner=user)
         user_loc = await self.create_user_location_query(user_loc)
         token = self.create_timed_token(user.email)
-        new_loc_token = NewLocationToken(
-            id=get_indent(), token=token, location=user_loc
-        )
+        new_loc_token = NewLocationToken(id=get_indent(), token=token, location=user_loc)
         new_loc_token = await self.create_new_location_token_query(
             new_loc_token,
         )

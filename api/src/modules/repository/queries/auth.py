@@ -100,9 +100,7 @@ class AuthQueries(AsyncDatabaseSession):
     ) -> UserLocation | None:
         stmt = (
             self.select(UserLocation)
-            .where(
-                self.and_(UserLocation.country == country, UserLocation.owner == user)
-            )
+            .where(self.and_(UserLocation.country == country, UserLocation.owner == user))
             .limit(1)
         )
         result = await self.async_session.execute(stmt)
@@ -110,9 +108,7 @@ class AuthQueries(AsyncDatabaseSession):
 
     async def update_user_loc_query(self, id: str, data: dict) -> None:
         update_stmt = (
-            self.sqlalchemy_update(UserLocation)
-            .where(UserLocation.id == id)
-            .values(data)
+            self.sqlalchemy_update(UserLocation).where(UserLocation.id == id).values(data)
         )
         try:
             await self.async_session.execute(update_stmt)

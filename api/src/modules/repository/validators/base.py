@@ -57,14 +57,10 @@ def validate_password(v: SecretStr) -> SecretStr:
         raise RequestValidationError("Password should have at least one numeral")
 
     if includes_uppercase and not any(char.isupper() for char in v.get_secret_value()):
-        raise RequestValidationError(
-            "Password should have at least one uppercase letter"
-        )
+        raise RequestValidationError("Password should have at least one uppercase letter")
 
     if includes_lowercase and not any(char.islower() for char in v.get_secret_value()):
-        raise RequestValidationError(
-            "Password should have at least one lowercase letter"
-        )
+        raise RequestValidationError("Password should have at least one lowercase letter")
 
     if includes_special_chars and not any(
         char in special_chars for char in v.get_secret_value()
@@ -161,9 +157,7 @@ VerifyEmail = Annotated[str, AfterValidator(email_validator)]
 
 
 async def default_checker():
-    checker = (
-        DefaultChecker()
-    )  # you can pass source argument for your own email domains
+    checker = DefaultChecker()  # you can pass source argument for your own email domains
     await checker.fetch_temp_email_domains()  # require to fetch temporary email domains
     return checker
 

@@ -24,7 +24,7 @@ from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 import time
 
-# from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 cfg = handler.cfg
 
@@ -78,7 +78,7 @@ app.add_middleware(EventHandlerASGIMiddleware, handlers=[APIEvents(cfg)])
 
 
 # Include Session
-# app.add_middleware(SessionMiddleware, secret_key=cfg.secret_key, max_age=1500)
+app.add_middleware(SessionMiddleware, secret_key=cfg.secret_key, max_age=1500)
 
 
 ALLOWED_HOSTS = [str(origin) for origin in cfg.origins]
@@ -136,7 +136,11 @@ async def validation_exception_handler(
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=jsonable_encoder(
-            {"message": str(exc.errors()), "body": exc.body, "success": False}
+            {
+                "message": str(exc.errors()),
+                "body": exc.body,
+                "success": False,
+            }
         ),
     )
 

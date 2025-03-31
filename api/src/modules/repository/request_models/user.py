@@ -115,9 +115,7 @@ class UpdateUserPassword(BaseModel):
                 "old password cannot be the same as new password."
             )
         if self.new_password != self.confirm_password:
-            raise RequestValidationError(
-                "new password and confirm password do not match"
-            )
+            raise RequestValidationError("new password and confirm password do not match")
         return self
 
 
@@ -129,9 +127,7 @@ class ChangePassword(BaseModel):
     @model_validator(mode="after")
     def verify_password(self) -> Self:
         if self.new_password != self.confirm_password:
-            raise RequestValidationError(
-                "new password and confirm password do not match"
-            )
+            raise RequestValidationError("new password and confirm password do not match")
         return self
 
 
