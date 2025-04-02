@@ -191,10 +191,14 @@ class AuthenticationHandler(LoginAttemptChecker):
         return req.req_failure("Could not validate credentials")
 
     def create_cookie(self, token: str, response: Response) -> None:
+        max_age = self.cf.refresh_token_expire_min * 24 * 60 * 60
         response.set_cookie(
             key="refresh-token",
             value=token,
             httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=max_age,
         )
 
 

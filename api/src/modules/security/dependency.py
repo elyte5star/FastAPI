@@ -126,7 +126,7 @@ class RefreshTokenChecker:
         if "refresh-token" not in cookie:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Invalid cookie",
+                detail="Refresh token missing.",
             )
         if self.verify_jwt(cookie.get("refresh-token")) is None:
             raise HTTPException(
