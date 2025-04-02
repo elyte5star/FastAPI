@@ -35,9 +35,9 @@ class JWTBearer(HTTPBearer):
         super(JWTBearer, self).__init__(auto_error=auto_error)
 
     async def __call__(self, request: Request) -> JWTPrincipal:
-        credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(
-            request
-        )
+        credentials: HTTPAuthorizationCredentials = await super(
+            JWTBearer, self
+        ).__call__(request)
         if credentials:
             if credentials.scheme != "Bearer":
                 raise HTTPException(
@@ -55,7 +55,7 @@ class JWTBearer(HTTPBearer):
             if db_user is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="User not found",
+                    detail="User session not found",
                 )
 
             if db_user.is_locked:
@@ -112,3 +112,47 @@ class RoleChecker:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have enough permissions",
         )
+
+
+class RefreshTokenChecker:
+
+    def __call__(self, request: Request) -> JWTPrincipal:
+        cookie = request.cookies
+        if not cookie:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No cookie found",
+            )
+        if "refresh-token" not in cookie:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invalid cookie",
+            )
+        if self.verify_jwt(cookie.get("refresh-token")) is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token or expired token.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return JWTPrincipal(
+            userid=self.payload["userId"],
+            email=self.payload["email"],
+            username=self.payload["sub"],
+            active=self.payload["active"],
+            enabled=self.payload["enabled"],
+            expires=self.payload["exp"],
+            admin=self.payload["admin"],
+            role=self.payload["role"],
+            discount=self.payload["discount"],
+            tokenId=self.payload["jti"],
+            is_locked=not self.payload["accountNonLocked"],
+        )
+
+    def verify_jwt(self, token: str):
+        if token is None:
+            return None
+        try:
+            self.payload = jwt.decode(token, cfg.secret_key, algorithms=[cfg.algorithm])
+            return self.payload if self.payload["exp"] >= time.time() else None
+        except JWTError:
+            return None

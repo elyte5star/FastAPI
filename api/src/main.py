@@ -24,7 +24,7 @@ from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 import time
 
-from starlette.middleware.sessions import SessionMiddleware
+# from starlette.middleware.sessions import SessionMiddleware
 
 cfg = handler.cfg
 
@@ -78,7 +78,7 @@ app.add_middleware(EventHandlerASGIMiddleware, handlers=[APIEvents(cfg)])
 
 
 # Include Session
-app.add_middleware(SessionMiddleware, secret_key=cfg.secret_key, max_age=1500)
+# app.add_middleware(SessionMiddleware, secret_key=cfg.secret_key, max_age=None)
 
 
 ALLOWED_HOSTS = [str(origin) for origin in cfg.origins]
@@ -150,7 +150,7 @@ def favicon():
     return StaticFiles(directory="./modules/static")
 
 
-@app.get("/")
+@app.get("/", summary="Home page", include_in_schema=False)
 async def root():
     return {"message": "Hello Bigger Applications!"}
 

@@ -15,7 +15,6 @@ class Grant(BaseModel):
 
 
 class RefreshTokenRequest(BaseReq):
-    data: Grant
     result: TokenResponse = TokenResponse()
 
 

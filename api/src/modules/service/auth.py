@@ -15,10 +15,13 @@ from modules.repository.schema.user import User
 from fastapi import Request, Response
 from modules.security.login_attempt import LoginAttemptChecker
 
+# from starlette.config import Config
+# from authlib.integrations.starlette_client import OAuth, OAuthError
+
 
 class AuthenticationHandler(LoginAttemptChecker):
     async def authenticate_user(
-        self, req: LoginRequest, request: Request
+        self, req: LoginRequest, request: Request, response: Response
     ) -> TokenResponse:
         is_email, email = is_valid_email(req.username)
         user = None
@@ -40,7 +43,6 @@ class AuthenticationHandler(LoginAttemptChecker):
                     return req.req_failure(
                         "Login attempt from different location",
                     )
-                role = "USER" if not user.admin else "ADMIN"
                 data = {
                     "userId": user.id,
                     "sub": user.username,
@@ -48,19 +50,21 @@ class AuthenticationHandler(LoginAttemptChecker):
                     "admin": user.admin,
                     "enabled": user.enabled,
                     "active": user.active,
-                    "role": role,
+                    "role": "USER" if not user.admin else "ADMIN",
                     "jti": get_indent(),
                     "discount": user.discount,
                     "accountNonLocked": not user.is_locked,
                 }
                 token_data = await self.create_token_response(user, data)
+                self.create_cookie(token_data.pop("refreshToken"), response)
                 req.result.data = token_data
                 return req.req_success(
                     f"User with username/email : {req.username} is authorized"
                 )
         await self.on_login_failure(user, request)
         return req.req_failure(
-            f"User {req.username} is not authorized.Incorrect username or password"
+            f"""User {req.username} is not authorized.
+            Incorrect username or password"""
         )
 
     async def on_login_success(self, user: User, request: Request) -> bool:
@@ -152,51 +156,51 @@ class AuthenticationHandler(LoginAttemptChecker):
             return user_loc.country
         return None
 
-    async def validate_refresh_token(
+    async def _refresh_access_token(
         self,
         req: RefreshTokenRequest,
     ) -> TokenResponse:
-        if (
-            req.data.grant_type == self.cf.grant_type
-            and req.credentials.token_id == req.data.token_id
-        ):
-            user = await self.find_user_by_id(req.credentials.userid)
-            if user is not None:
-                if not user.enabled or user.is_locked:
-                    return req.req_failure(" Account Not Verified/Locked ")
-                active = True
-                role = "USER" if not user.admin else "ADMIN"
-                data = {
-                    "userId": user.id,
-                    "sub": user.username,
-                    "email": user.email,
-                    "admin": user.admin,
-                    "enabled": user.enabled,
-                    "active": active,
-                    "role": role,
-                    "jti": get_indent(),
-                    "discount": user.discount,
-                    "accountNonLocked": not user.is_locked,
-                }
-                token_data = self.create_token_response(user, data)
-                req.result.data = token_data
-                return req.req_success(
-                    f"User with username/email : {user.username} is authorized"
-                )
-
+        user = await self.find_user_by_id(req.credentials.userid)
+        if user is not None:
+            if not user.enabled or user.is_locked:
+                return req.req_failure(" Account Not Verified/Locked ")
+            active = True
+            data = {
+                "userId": user.id,
+                "sub": user.username,
+                "email": user.email,
+                "admin": user.admin,
+                "enabled": user.enabled,
+                "active": active,
+                "role": "USER" if not user.admin else "ADMIN",
+                "jti": get_indent(),
+                "discount": user.discount,
+                "accountNonLocked": not user.is_locked,
+            }
+            access_token_expiry = time_delta(self.cf.token_expire_min)
+            access_token = self.create_token(
+                data=data,
+                expires_delta=access_token_expiry,
+            )
+            req.result.data = dict(
+                accessToken=access_token,
+            )
+            return req.req_success(
+                f"User with username/email : {user.username} is authorized"
+            )
         return req.req_failure("Could not validate credentials")
 
-    async def check_cookie(self, request: Request):
-        cookie = request.cookies
-        if not cookie:
-            return None
-        if cookie.get("refresh-Token"):
-            return cookie.get("refresh-Token")
-
-    async def create_cookie(self, token: str, response: Response):
+    def create_cookie(self, token: str, response: Response) -> None:
         response.set_cookie(
-            key="refresh-Token",
-            value=f"Bearer {token}",
+            key="refresh-token",
+            value=token,
             httponly=True,
         )
-        return {"message": "Come to the dark side, we have cookies"}
+
+
+class GoogleAuthenticationHandler(LoginAttemptChecker):
+    pass
+
+
+class MSOFTAuthenticationHandler(LoginAttemptChecker):
+    pass
