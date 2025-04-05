@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Response, Cookie
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from modules.repository.response_models.auth import TokenResponse, BaseResponse
 from modules.service.auth import AuthenticationHandler

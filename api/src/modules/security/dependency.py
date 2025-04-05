@@ -116,7 +116,7 @@ class RoleChecker:
 
 class RefreshTokenChecker:
 
-    def __call__(self, request: Request) -> JWTPrincipal:
+    async def __call__(self, request: Request) -> JWTPrincipal:
         cookie = request.cookies
         if not cookie:
             raise HTTPException(
@@ -133,6 +133,18 @@ class RefreshTokenChecker:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token or expired token.",
                 headers={"WWW-Authenticate": "Bearer"},
+            )
+        db_user = await db.find_user_by_id(self.payload["userId"])
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User session not found",
+            )
+
+        if not db_user.enabled or db_user.is_locked:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User account Not Verified/Locked",
             )
         return JWTPrincipal(
             userid=self.payload["userId"],

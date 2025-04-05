@@ -160,22 +160,19 @@ class AuthenticationHandler(LoginAttemptChecker):
         self,
         req: RefreshTokenRequest,
     ) -> TokenResponse:
-        user = await self.find_user_by_id(req.credentials.userid)
-        if user is not None:
-            if not user.enabled or user.is_locked:
-                return req.req_failure(" Account Not Verified/Locked ")
-            active = True
+        current_user = req.credentials
+        if current_user is not None:
             data = {
-                "userId": user.id,
-                "sub": user.username,
-                "email": user.email,
-                "admin": user.admin,
-                "enabled": user.enabled,
-                "active": active,
-                "role": "USER" if not user.admin else "ADMIN",
+                "userId": current_user.userid,
+                "sub": current_user.username,
+                "email": current_user.email,
+                "admin": current_user.admin,
+                "enabled": current_user.enabled,
+                "active": current_user.active,
+                "role": current_user.role,
                 "jti": get_indent(),
-                "discount": user.discount,
-                "accountNonLocked": not user.is_locked,
+                "discount": current_user.discount,
+                "accountNonLocked": not current_user.is_locked,
             }
             access_token_expiry = time_delta(self.cf.token_expire_min)
             access_token = self.create_token(
@@ -184,9 +181,12 @@ class AuthenticationHandler(LoginAttemptChecker):
             )
             req.result.data = dict(
                 accessToken=access_token,
+                userId=current_user.userid,
+                username=current_user.username,
+                email=current_user.email,
             )
             return req.req_success(
-                f"User with username/email : {user.username} is authorized"
+                f"User with username/email : {data["sub"]} is authorized"
             )
         return req.req_failure("Could not validate credentials")
 
