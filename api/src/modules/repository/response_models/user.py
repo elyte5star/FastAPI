@@ -5,8 +5,8 @@ from typing import Optional, Any
 
 
 class CreatedUserData(BaseModel):
-    userid: str = Field(default="", alias="userId")
-    created_at: datetime = Field(default=None, alias="createdAt")
+    userid: str = Field(default="", serialization_alias="userId")
+    created_at: datetime = Field(default=None, serialization_alias="createdAt")
 
 
 class CreateUserResponse(BaseResponse):

@@ -77,7 +77,7 @@ class UserHandler(UserQueries):
             )
             await self.create_user_query(new_user)
             response_data = CreatedUserData(
-                userid=new_user.id, createdAt=new_user.created_at
+                userid=new_user.id, created_at=new_user.created_at
             )
             req.result.data = response_data
             await self.on_successfull_registration(new_user, request)
@@ -219,7 +219,11 @@ class UserHandler(UserQueries):
         return hashed_password
 
     async def _get_user(self, req: GetUserRequest) -> GetUserResponse:
-        # include RBAC
+        if req.credentials.userid != req.userid:
+            self.logger.warning(
+                f"illegal operation by {req.credentials.userid}",
+            )
+            return req.req_failure("Illegal operation")
         user = await self.find_user_by_id(req.userid)
         if user is None:
             return req.req_failure(f"User with userid {req.userid} not found")
@@ -252,6 +256,11 @@ class UserHandler(UserQueries):
         return req.req_success(f"Total number of users: {len(users)}")
 
     async def _delete_user(self, req: DeleteUserRequest) -> BaseResponse:
+        if req.credentials.userid != req.userid:
+            self.logger.warning(
+                f"illegal operation by {req.credentials.userid}",
+            )
+            return req.req_failure("Illegal operation")
         user = await self.find_user_by_id(req.userid)
         if user is None:
             return req.req_failure(f"No user with id: {req.userid}")
