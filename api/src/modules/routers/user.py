@@ -120,11 +120,11 @@ class UserRouter(UserHandler):
         )
 
         self.router.add_api_route(
-            path="/update-password",
+            path="/update-password/{userId}",
             endpoint=self.update_user_password,
             response_model=BaseResponse,
             summary="Update user password",
-            methods=["POST"],
+            methods=["PUT"],
         )
 
         self.router.add_api_route(
@@ -229,12 +229,14 @@ class UserRouter(UserHandler):
 
     async def update_user_password(
         self,
+        userId: str,
         data: UpdateUserPassword,
         current_user: Annotated[JWTPrincipal, Depends(security)],
     ) -> BaseResponse:
         return await self._update_user_password(
             UpdateUserPasswordRequest(
                 credentials=current_user,
+                userid=userId,
                 data=data,
             )
         )

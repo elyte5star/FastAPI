@@ -223,7 +223,7 @@ class UserHandler(UserQueries):
             self.logger.warning(
                 f"illegal operation by {req.credentials.userid}",
             )
-            return req.req_failure("Illegal operation")
+            return req.req_failure("Forbidden: Access is denied")
         user = await self.find_user_by_id(req.userid)
         if user is None:
             return req.req_failure(f"User with userid {req.userid} not found")
@@ -258,9 +258,9 @@ class UserHandler(UserQueries):
     async def _delete_user(self, req: DeleteUserRequest) -> BaseResponse:
         if req.credentials.userid != req.userid:
             self.logger.warning(
-                f"illegal operation by {req.credentials.userid}",
+                f"illegal operation by {req.credentials.username}",
             )
-            return req.req_failure("Illegal operation")
+            return req.req_failure("Forbidden: Access is denied")
         user = await self.find_user_by_id(req.userid)
         if user is None:
             return req.req_failure(f"No user with id: {req.userid}")
@@ -370,6 +370,11 @@ class UserHandler(UserQueries):
 
     # Update user password
     async def _update_user_password(self, req: UpdateUserPasswordRequest):
+        if req.credentials.userid != req.userid:
+            self.logger.warning(
+                f"illegal operation by {req.credentials.username}",
+            )
+            return req.req_failure("Forbidden: Access is denied")
         user = await self.find_user_by_email(req.credentials.email)
         if user is not None:
             if self.check_if_valid_old_password(

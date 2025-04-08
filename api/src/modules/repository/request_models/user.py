@@ -137,6 +137,7 @@ class ChangePassword(BaseModel):
 
 class UpdateUserPasswordRequest(BaseReq):
     data: UpdateUserPassword = None
+    userid: ValidateUUID
     result: BaseResponse = BaseResponse()
 
 
