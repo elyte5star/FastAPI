@@ -45,7 +45,7 @@ async def on_api_shuttdown():
 @event.listens_for(Engine, "first_connect")
 def receive_connect(dbapi_con, connection_record):
     "listen for the 'first_connect' event"
-    logger.info(f"New DBAPI connection: {dbapi_con.cursor()}")
+    logger.info("New DBAPI connection")
 
 
 @event.listens_for(Engine, "close")

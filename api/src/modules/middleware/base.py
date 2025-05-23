@@ -22,10 +22,10 @@ class TokenBucket:
         self.tokens = tokens
         self.refill_rate = refill_rate
         self.bucket = tokens
-        self.last_refill = time.time()
+        self.last_refill = time.perf_counter()
 
     def check(self) -> bool:
-        current = time.time()
+        current = time.perf_counter()
         time_passed = current - self.last_refill
         self.last_refill = current
         self.bucket = self.bucket + time_passed * (self.tokens / self.refill_rate)
@@ -37,14 +37,10 @@ class TokenBucket:
         return True
 
 
-# 2 request per 2 second
-bucket = TokenBucket(2, 2)
-
-
 class RateLimiterMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: FastAPI, config: ApiConfig):
         super().__init__(app)
-        self.bucket = bucket
+        self.bucket = TokenBucket(2, 2) # 2 request per 2 second
         self.config = config
 
     async def dispatch(self, request, call_next):
