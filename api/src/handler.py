@@ -3,6 +3,7 @@ from fastapi.logger import logger
 from modules.routers.auth import AuthRouter
 from modules.routers.user import UserRouter
 from modules.routers.product import ProductRouter
+from modules.routers.booking import BookingRouter
 from modules.routers.system import SystemInfoRouter
 from fastapi import APIRouter
 from modules.database.base import AsyncDatabaseSession
@@ -21,6 +22,8 @@ user_router = UserRouter(cfg)
 
 product_router = ProductRouter(cfg)
 
+booking_router = BookingRouter(cfg)
+
 
 system_router = SystemInfoRouter(cfg)
 
@@ -28,6 +31,7 @@ routes: tuple[APIRouter, ...] = (
     auth_router.router,
     user_router.router,
     product_router.router,
+    booking_router.router,
     system_router.router,
 )
 

@@ -128,7 +128,7 @@ use_parentheses = true
 
 [flake8]
 max-line-length = 85
-exclude = tests/*
+exclude = ["tests/*"]
 max-complexity = 10
 
 
