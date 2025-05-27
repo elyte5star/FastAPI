@@ -81,6 +81,14 @@ class ApiConfig:
         self.rabbit_pass: str = ""
         self.rabbit_connect_string: str = ""
 
+        # Visa Payment API
+        self.visa_userid: str = ""
+        self.visa_password: str = ""
+        self.visa_cert: str = ""
+        self.visa_key: str = ""
+        self.visa_url: str = ""
+        self.visa_shared_secret: str = ""
+
         # CLIENT
         self.client_url: str = ""
 
@@ -141,6 +149,15 @@ class ApiConfig:
         self.token_expire_min = config.encryption.token_expire_min
         self.refresh_token_expire_min = config.encryption.refresh_token_expire_min
         self.grant_type = config.encryption.grant_type
+
+        # Visa Payment API
+        self.visa_userid = config.VDP.userId
+        self.visa_password = config.VDP.password
+        self.visa_cert = config.VDP.cert
+        self.visa_key = config.VDP.key
+        self.visa_url = config.VDP.visaUrl
+        self.visa_shared_secret = config.VDP.sharedSecret
+
         return self
 
     def from_env_file(self) -> Self:

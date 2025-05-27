@@ -23,4 +23,4 @@ class BookingRouter(BookingHandler):
     
 
     async def create_booking(self,data: CreateBooking,current_user: Annotated[JWTPrincipal, Depends(security)])->CreateBookingResponse:
-        return await self.__create_booking(CreateBookingRequest(new_order =data,credentials=current_user))
+        return await self.__create_booking(CreateBookingRequest(new_order=data,credentials=current_user))

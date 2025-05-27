@@ -174,6 +174,46 @@ jinja2 = "^3.1.5"
 httpagentparser = "^1.9.5"
 
 
+[VDP]
+apiKey = '' #put your api key here
+cert = '' #put the path to the certificate file here
+checkoutCallId = '' #{put your visa checkout callId here}
+key = '' #put the path to the private key here
+mlcClientMessageID = '' #{put your enrollments api client message id here}
+mlcDeviceId = '' #{put your enrollments api device id here}
+mlcIssuerId = '' #{put your enrollments api issuer id here}
+mlcMessageId = '' #{put your locations api message id here}
+mlcPrimaryAccountNumber = '' #{put your enrollments api primary account number here}    
+password = '' #put your password here
+sharedSecret = '' #put your shared secret here
+tnsCardNumbers = '' #{put your visa travel notification service card account numbers here}
+tnsPartnerBid = '' #put your visa travel notification service partner bid here'''
+userId = '' #put your user id here
+vctcTestPan = '' #{put your pan number from test data under consumer rules api -> register a card here}
+visaUrl = '' #put your visa endpoint here
+vtaCommunityCode = '' #{put your vta community code here}
+vtaCreateCustomerAddress = '' #{put your adress from the create customer call here}
+vtaCreateCustomerCardExpiryDate = '' #{put your vta create customer card expiry date here}
+vtaCreateCustomerCardNumber = '' # {put your vta create customer card number here}
+vtaCreateCustomerCardSecurityCode = '' #{put your vta create customer card security code here}
+vtaCreateCustomerIsActive = '' #{put your vta create customer isActive here}
+vtaCreateCustomerLastFour = '' #{put your vta create customer last four here}
+vtaCreateCustomerPreferedCountryCode = '' #{put your vta create customer prefered  country code here}
+vtaCreateCustomerPreferedCurrencyCode = '' #{put your vta create customer prefered  currency code here}
+vtaCreateCustomerPreferedLanguage = '' # {put your vta create customer prefered  language here}
+vtaCreateCustomerPreferedTimeZone = '' #{put your vta create customer prefered  time zone here}
+vtaCustomerId = '' #{put your vta customer id here}
+vtaNotificationContactType = '' #{put your vta notification contact type here}
+vtaPortfolioNumber = '' #{put your portfolio number here}
+vtaPreferredLanguageCode = '' #{put your vta notification preferred language here}
+vtaReplaceCardExpiryDate = '' #{put your vta replace card expiry date here}
+vtaReplaceCardLastFour = '' #{put your vta replace card last 4 digits here}
+vtaReplaceCardNewAddress = '' #{put your vta replace card address here}
+vtaReplaceCardNumber = '' #{put your vta replace card number here}
+vtaReplaceCardSecurityCode = '' #{put your vta replace card security code here}
+vtaServiceId = '' #{put your vta service id here}
+
+
 [build-system]
 requires = ["poetry-core>=1.8"]
 build-backend = "poetry.core.masonry.api"
