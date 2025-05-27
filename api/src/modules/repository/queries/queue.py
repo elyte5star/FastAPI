@@ -1,5 +1,6 @@
-from modules.database.base import AsyncDatabaseSession
+from modules.repository.queries.product import ProductQueries
 
 
-class JobTaskQueries(AsyncDatabaseSession):
+class JobTaskQueries(ProductQueries):
+
     pass

@@ -29,17 +29,16 @@ class CartItem(BaseModel):
             repr=True,
         ),
     ]
-    discount: Decimal = (
-        Field(
-            default=0.0,
-            max_digits=7,
-            decimal_places=2,
-            examples=[0.1, 0.3, 0.4],
-            strict=True,
-            repr=True,
-            gt=0,
-        ),
+    discount: Decimal = Field(
+        default=0.0,
+        max_digits=7,
+        decimal_places=2,
+        examples=[0.1, 0.3, 0.4],
+        strict=True,
+        repr=True,
+        gt=0,
     )
+
     quantity: Annotated[
         int,
         Field(
