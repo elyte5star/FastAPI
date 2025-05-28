@@ -1,8 +1,34 @@
-from sqlalchemy import Column, String, DateTime
+from sqlalchemy import String, DateTime
 from sqlalchemy.sql import func
-from sqlalchemy.orm import as_declarative, declared_attr
+from sqlalchemy.orm import as_declarative, declared_attr, mapped_column, Mapped
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from typing import Optional
+from pydantic import BaseModel, TypeAdapter
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.types import JSON, TypeDecorator
+from typing_extensions import Annotated
+import datetime
+
+str_60 = Annotated[str, 60]
+
+str_30 = Annotated[str, 30]
+
+str_100 = Annotated[str, 100]
+
+str_500 = Annotated[str, 500]
+
+required_30 = Annotated[str, mapped_column(String(30), nullable=False)]
+
+required_60 = Annotated[str, mapped_column(String(60), nullable=False)]
+
+required_500 = Annotated[str, mapped_column(String(500), nullable=False)]
+
+timestamp = Annotated[
+    datetime.datetime,
+    mapped_column(nullable=False, server_default=func.CURRENT_TIMESTAMP()),
+]
+
+str_pk_60 = Annotated[str, mapped_column(String(60), primary_key=True, index=True)]
 
 
 @as_declarative()
@@ -16,12 +42,12 @@ class Base(AsyncAttrs):
 
 
 class Audit(Base):
-    id = Column(String(60), primary_key=True, index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    modified_at = Column(DateTime(timezone=True))
-    modified_by = Column(String(10))
-    created_by = Column(String(10), nullable=False)
-    type = Column(String)
+    id: Mapped[str_pk_60]
+    created_at: Mapped[timestamp] = mapped_column(server_default=func.UTC_TIMESTAMP())
+    modified_at: Mapped[Optional[timestamp]]
+    modified_by: Mapped[Optional[str_60]]
+    created_by: Mapped[required_30]
+    type: Mapped[str]
 
     __mapper_args__ = {
         "polymorphic_identity": "audit",
@@ -30,3 +56,42 @@ class Audit(Base):
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.created_at!r})"
+
+
+class PydanticColumn(TypeDecorator):
+    """
+    PydanticColumn type.
+    * for custom column type implementation check https://docs.sqlalchemy.org/en/20/core/custom_types.html
+    * Uses sqlalchemy.dialects.postgresql.JSONB if dialects == postgresql else generic sqlalchemy.types.JSON
+    * Save:
+        - Accepts the pydantic model and converts it to a dict on save.
+        - SQLAlchemy engine JSON-encodes the dict to a string.
+    * Load:
+        - Pulls the string from the database.
+        - SQLAlchemy engine JSON-decodes the string to a dict.
+        - Uses the dict to create a pydantic model.
+    """
+
+    impl = JSON
+    cache_ok = True
+
+    def __init__(self, pydantic_type):
+        super().__init__()
+        if not issubclass(pydantic_type, BaseModel):
+            raise ValueError("Column Type Should be Pydantic Class")
+        self.pydantic_type = pydantic_type
+
+    def load_dialect_impl(self, dialect):
+        # Use JSONB for PostgreSQL and JSON for other databases.
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(JSONB())
+        else:
+            return dialect.type_descriptor(JSON())
+
+    def process_bind_param(self, value, dialect):
+        # return value.dict() if value else None   # pydantic <2.0.0
+        return value.model_dump() if value else None
+
+    def process_result_value(self, value, dialect):
+        # return parse_obj_as(self.pydantic_type, value) if value else None # pydantic < 2.0.0
+        return TypeAdapter(self.pydantic_type).validate_python(value)

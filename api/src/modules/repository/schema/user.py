@@ -10,6 +10,7 @@ from sqlalchemy import (
 from modules.repository.schema.base import Audit, Base
 from sqlalchemy.orm import relationship, Mapped
 from typing import Set, List
+from modules.repository.schema.booking import Order
 
 
 class User(Audit):
@@ -44,7 +45,7 @@ class User(Audit):
     __mapper_args__ = {
         "polymorphic_identity": "user",
     }
-    bookings: Mapped[Set["Order"]] = relationship(  # noqa: F821
+    bookings: Mapped[Set["Order"]] = relationship(
         back_populates="customer",
         cascade="save-update, merge, delete",
         passive_deletes=True,

@@ -55,7 +55,7 @@ class CartItem(BaseModel):
     def calculated_price(self) -> Decimal:
         discount = self.price * self.discount
         sale_price = self.price - discount
-        return sale_price
+        return sale_price * self.quantity
 
     model_config = ConfigDict(extra="forbid")
 
@@ -91,6 +91,7 @@ class CreateBooking(BaseModel):
     shipping_details: Annotated[
         ShippingDetails, Field(validation_alias="shippingDetails", repr=True)
     ]
+    userid: ValidateUUID = Field(validation_alias="userId", repr=True)
     model_config = ConfigDict(extra="forbid")
 
 

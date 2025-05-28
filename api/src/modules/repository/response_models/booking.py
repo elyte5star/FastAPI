@@ -4,7 +4,8 @@ from pydantic import ConfigDict
 
 
 class CreateBookingResponse(BaseResponse):
-    oid: str = ""
+    items: list = []
+    oId: str = ""
 
 
 class GetBookingsResponse(BaseResponse):

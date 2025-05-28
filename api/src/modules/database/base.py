@@ -23,8 +23,8 @@ from modules.repository.schema.product import (
     Product,  # noqa: F401
     Review,  # noqa: F401
     SpecialDeals,  # noqa: F401
-    Order,  # noqa: F401
 )  # noqa: F401
+from modules.repository.schema.booking import Order
 from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
 from asyncpg.exceptions import PostgresError
@@ -203,7 +203,9 @@ class AsyncDatabaseSession:
             return result
 
     def create_timed_token(self, email: str) -> str:
-        serializer = URLSafeTimedSerializer(self.cf.secret_key, salt=str(self.cf.rounds))
+        serializer = URLSafeTimedSerializer(
+            self.cf.secret_key, salt=str(self.cf.rounds)
+        )
         return serializer.dumps(email)
 
     def get_client_ip_address(self, request: Request) -> str:

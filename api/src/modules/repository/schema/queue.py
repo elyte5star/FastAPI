@@ -1,104 +1,78 @@
 from typing import Optional, Any
-from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from enum import Enum
 from modules.utils.misc import time_now_utc
 from typing_extensions import Annotated
 from modules.repository.request_models.booking import BookingModel
+from sqlalchemy import (
+    Integer,
+    ForeignKey,
+    Enum,
+    JSON,
+)
+from modules.repository.schema.base import (
+    Audit,
+    PydanticColumn,
+    Base,
+    str_60,
+    str_pk_60,
+    required_60,
+    timestamp,
+)
+from sqlalchemy.orm import relationship, Mapped
+from modules.queue.base import JobType, JobStatus, ResultType, ResultState
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
 
 
-class JobType(str, Enum):
-    Noop = "0"
-    CreateSearch = "10"
-    CreateBooking = "30"
-
-
-class JobState(str, Enum):
-    NotSet = "0"
-    Received = "10"
-    Pending = "20"
-    Finished = "30"
-    Timeout = "666"
-    NoTasks = "999"
-
-
-class ResultSate(str, Enum):
-    NotSet = "0"
-    Present = "10"
-    Archived = "30"
-    Removed = "30"
-
-
-class ResultType(str, Enum):
-    Noop = "0"
-    Database = "10"
-    File = "30"
-
-
-class JobStatus(BaseModel):
-    state: JobState = JobState.NotSet
-    success: bool = False
-    is_finished: bool = Field(default=False, serialization_alias="isFinished")
-    model_config = ConfigDict(serialize_by_alias=True)
-
-
-class Job(BaseModel):
-    userid: str = Field(default="", serialization_alias="userId")
-    created_at: datetime = Field(
-        default=time_now_utc(), serialization_alias="createdAt"
+class Job(Audit):
+    # add ForeignKey to mapped_column(String, primary_key=True)
+    id: Mapped[str_pk_60] = mapped_column(ForeignKey("audit.id"))
+    userid: Mapped[str_60] = mapped_column(
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
     )
-    job_type: JobType = Field(default=JobType.Noop, serialization_alias="jobType")
-    job_id: str = Field(default="", serialization_alias="jobId")
-    task_ids: list = Field(default=[], serialization_alias="taskIds")
-    job_status: Annotated[
-        JobStatus, Field(default=JobStatus(), serialization_alias="jobStatus")
-    ]
-    number_of_tasks: int = Field(default=0, serialization_alias="numberOfTasks")
-    booking_request: Optional[
-        Annotated[
-            BookingModel, Field(default=None, serialization_alias="bookingRequest")
-        ]
-    ]
-    search_request: Optional[
-        Annotated[Any, Field(default=None, serialization_alias="searchRequest")]
-    ]
-
-    model_config = ConfigDict(serialize_by_alias=True)
+    job_type: Mapped[JobType] = mapped_column(Enum(JobType), nullable=False)
+    task_ids: Mapped[list[str]] = mapped_column(default=[])
+    job_status: Mapped[JobStatus] = mapped_column(
+        PydanticColumn(JobStatus), nullable=False
+    )
+    number_of_tasks: Mapped[int] = mapped_column(Integer, nullable=False)
+    booking_request: Mapped[Optional[BookingModel]] = mapped_column(
+        PydanticColumn(BookingModel), nullable=True
+    )
+    # pep-484 type will be Optional, but column will be
+    # NOT NULL
+    search_request: Mapped[Optional[JSON]]
 
 
-class Task(BaseModel):
-    task_id: str = Field(default="", serialization_alias="taskId")
-    job_id: str = Field(default="", serialization_alias="jobId")
+class Task(Base):
+    id: Mapped[str_pk_60]
+    job_id: Mapped[str_60] = mapped_column(
+        ForeignKey("job.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    result_id: Mapped[str_60] = mapped_column(
+        ForeignKey("result.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
     status: JobStatus = JobStatus()
-    created_at: Optional[
-        Annotated[datetime, Field(default=None, serialization_alias="createdAt")]
-    ]
-    started: Optional[datetime] = None
-    finished: Optional[datetime] = None
-
-    model_config = ConfigDict(serialize_by_alias=True)
+    created_at: Mapped[timestamp]
+    started: Mapped[Optional[timestamp]]
+    finished: Mapped[Optional[timestamp]]
 
 
-class Result(BaseModel):
-    result_id: str = Field(default="", serialization_alias="resultId")
-    result_type: ResultType = ResultType.Database
-    result_state: ResultSate = ResultSate.NotSet
-    task_id: str = Field(default="", serialization_alias="taskId")
-    data: dict = {}
-    data_checksum: Optional[str] = None
-
-
-class ResultLog(BaseModel):
-    result_id: str = ""
-    created_at: datetime = time_now_utc()
-    handled: bool = False
-    handled_date: Optional[
-        Annotated[datetime.date, Field(default=None, serialization_alias="handledDate")]
-    ]
-
-    model_config = ConfigDict(serialize_by_alias=True)
-
-
-class QueueItem(BaseModel):
-    job: Optional[Job] = None
-    task: Optional[Task] = None
+class Result(Base):
+    id: Mapped[str_pk_60]
+    result_type: Mapped[ResultType] = mapped_column(
+        Enum(ResultType), default=ResultType.Database
+    )
+    result_state: Mapped[ResultState] = mapped_column(
+        Enum(ResultState), default=ResultState.NotSet
+    )
+    task_id: Mapped[str_60] = mapped_column(
+        ForeignKey("task.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    data: Mapped[Optional[JSON]]
+    data_checksum: Mapped[Optional[JSON]]
