@@ -7,10 +7,17 @@ from sqlalchemy import (
     Integer,
     ForeignKey,
 )
-from modules.repository.schema.base import Audit, Base
-from sqlalchemy.orm import relationship, Mapped
+from modules.repository.schema.base import (
+    Audit,
+    Base,
+    str_pk_60,
+    timestamp,
+    PydanticColumn,
+)
 from typing import Set, List
-from modules.repository.schema.booking import Order
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from typing import Optional
+from modules.repository.request_models.booking import BookingModel
 
 
 class User(Audit):
@@ -42,15 +49,17 @@ class User(Audit):
     addresses: Mapped[List["Address"]] = relationship(
         cascade="all, delete", lazy="selectin"
     )
-    __mapper_args__ = {
-        "polymorphic_identity": "user",
-    }
-    bookings: Mapped[Set["Order"]] = relationship(
-        back_populates="customer",
+
+    bookings: Mapped[List["Order"]] = relationship(
+        back_populates="user",
         cascade="save-update, merge, delete",
         passive_deletes=True,
         lazy="selectin",
     )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "user",
+    }
 
     def __repr__(self):
         return (
@@ -66,6 +75,16 @@ class User(Audit):
             f" modified_by:{self.modified_by}"
             f")>"
         )
+
+
+class Order(Base):
+    id: Mapped[str_pk_60]
+    booking: Mapped[Optional[BookingModel]] = mapped_column(
+        PydanticColumn(BookingModel)
+    )
+    user_id = mapped_column(ForeignKey("user.id"))
+    user: Mapped["User"] = relationship(back_populates=" bookings")
+    created_at: Mapped[timestamp]
 
 
 class Address(Base):

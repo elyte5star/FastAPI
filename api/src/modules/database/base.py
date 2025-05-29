@@ -24,7 +24,11 @@ from modules.repository.schema.product import (
     Review,  # noqa: F401
     SpecialDeals,  # noqa: F401
 )  # noqa: F401
-from modules.repository.schema.booking import Order
+#from modules.repository.schema.booking import Order
+
+# noqa: F401
+
+# from modules.repository.schema.queue import Job, Task, Result  # noqa: F401
 from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
 from asyncpg.exceptions import PostgresError
@@ -176,11 +180,12 @@ class AsyncDatabaseSession:
     def get_app_url(self, request: Request) -> str:
         client_url = self.get_client_url()
         if client_url is None:
-            origin_url = dict(request.scope["headers"]).get(b"referer", b"").decode()
+            heading_dict = dict(request.scope["headers"])
+            origin_url = heading_dict.get(b"referer", b"").decode()
             return origin_url
         return client_url
 
-    def get_client_url(self) -> str:
+    def get_client_url(self) -> str | None:
         client_urls = self.cf.origins
         return next(iter(client_urls)) if client_urls else None
 
@@ -230,7 +235,7 @@ class AsyncDatabaseSession:
         except BadTimeSignature:
             return False
 
-    async def get_location_from_ip(self, ip: str) -> str:
+    async def get_location_from_ip(self, ip: str) -> tuple:
         location = ("UNKNOWN", "UNKNOWN")
         try:
             with geoip2.database.Reader(

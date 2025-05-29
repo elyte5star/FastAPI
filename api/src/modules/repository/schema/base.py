@@ -1,13 +1,15 @@
-from sqlalchemy import String, DateTime
+from sqlalchemy import String
 from sqlalchemy.sql import func
 from sqlalchemy.orm import as_declarative, declared_attr, mapped_column, Mapped
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from typing import Optional
 from pydantic import BaseModel, TypeAdapter
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.types import JSON, TypeDecorator
+from sqlalchemy.types import JSON, TypeDecorator, VARCHAR
 from typing_extensions import Annotated
 import datetime
+from sqlalchemy.dialects import postgresql
+import json
 
 str_60 = Annotated[str, 60]
 
@@ -28,7 +30,14 @@ timestamp = Annotated[
     mapped_column(nullable=False, server_default=func.CURRENT_TIMESTAMP()),
 ]
 
-str_pk_60 = Annotated[str, mapped_column(String(60), primary_key=True, index=True)]
+str_pk_60 = Annotated[
+    str,
+    mapped_column(String(60), primary_key=True, index=True),
+]
+
+json_scalar = float | str | bool
+
+json_list = list[int] | list[str]
 
 
 @as_declarative()
@@ -40,10 +49,15 @@ class Base(AsyncAttrs):
     def __tablename__(cls) -> Optional[str]:
         return cls.__name__.lower()
 
+    type_annotation_map = {
+        json_list: postgresql.JSONB,
+        json_scalar: JSON,
+    }
+
 
 class Audit(Base):
     id: Mapped[str_pk_60]
-    created_at: Mapped[timestamp] = mapped_column(server_default=func.UTC_TIMESTAMP())
+    created_at: Mapped[timestamp] = mapped_column(server_default=func.now())
     modified_at: Mapped[Optional[timestamp]]
     modified_by: Mapped[Optional[str_60]]
     created_by: Mapped[required_30]
@@ -95,3 +109,19 @@ class PydanticColumn(TypeDecorator):
     def process_result_value(self, value, dialect):
         # return parse_obj_as(self.pydantic_type, value) if value else None # pydantic < 2.0.0
         return TypeAdapter(self.pydantic_type).validate_python(value)
+
+
+class JSONEncodedDict(TypeDecorator):
+    "Represents an immutable structure as a json-encoded string."
+
+    impl = VARCHAR
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = json.loads(value)
+        return value

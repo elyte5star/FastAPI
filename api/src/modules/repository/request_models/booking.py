@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field, ConfigDict, SecretStr, computed_field
-from typing import Optional
 from modules.repository.validators.base import VerifyEmail, ValidateUUID
 from modules.repository.request_models.base import BaseReq
 from modules.repository.response_models.booking import (
@@ -13,7 +12,10 @@ import datetime
 
 class BillingAddress(BaseModel):
     b_full_name: Annotated[str, Field(validation_alias="bfullName", repr=True)]
-    b_email: Annotated[VerifyEmail, Field(validation_alias="bemail", repr=True)]
+    b_email: Annotated[
+        VerifyEmail,
+        Field(validation_alias="bemail", repr=True),
+    ]
     b_address: Annotated[str, Field(validation_alias="baddress", repr=True)]
     b_country: Annotated[str, Field(validation_alias="bcountry", repr=True)]
     b_zip: Annotated[str, Field(validation_alias="bzip", repr=True)]
@@ -29,15 +31,18 @@ class CartItem(BaseModel):
             repr=True,
         ),
     ]
-    discount: Decimal = Field(
-        default=0.0,
-        max_digits=7,
-        decimal_places=2,
-        examples=[0.1, 0.3, 0.4],
-        strict=True,
-        repr=True,
-        gt=0,
-    )
+    discount: Annotated[
+        Decimal,
+        Field(
+            default=0.0,
+            max_digits=7,
+            decimal_places=2,
+            examples=[0.1, 0.3, 0.4],
+            strict=True,
+            repr=True,
+            gt=0,
+        ),
+    ]
 
     quantity: Annotated[
         int,
@@ -65,7 +70,10 @@ class PaymentDetails(BaseModel):
     card_number: Annotated[SecretStr, Field(validation_alias="cardNumber")]
     expiry_date: Annotated[datetime.date, Field(validation_alias="expiryDate")]
     card_cvv: Annotated[SecretStr, Field(validation_alias="cardCvv")]
-    name_on_card: Annotated[str, Field(validation_alias="nameOnCard", repr=True)]
+    name_on_card: Annotated[
+        str,
+        Field(validation_alias="nameOnCard", repr=True),
+    ]
     currency: str = "NOK"
     billing_address: Annotated[
         BillingAddress, Field(validation_alias="billingAddress", repr=True)
@@ -75,7 +83,13 @@ class PaymentDetails(BaseModel):
 
 class ShippingDetails(BaseModel):
     full_name: Annotated[str, Field(validation_alias="fullName", repr=True)]
-    street_address: Annotated[str, Field(validation_alias="streetAddress", repr=True)]
+    street_address: Annotated[
+        str,
+        Field(
+            validation_alias="streetAddress",
+            repr=True,
+        ),
+    ]
     country: str
     state: str
     email: VerifyEmail
@@ -104,10 +118,19 @@ class BookingModel(BaseModel):
     cart: list[CartItem]
     total_price: Annotated[
         Decimal,
-        Field(max_digits=7, decimal_places=2, validation_alias="totalPrice", repr=True),
+        Field(
+            max_digits=7,
+            decimal_places=2,
+            validation_alias="totalPrice",
+            repr=True,
+        ),
     ]
     shipping_details: Annotated[
-        ShippingDetails, Field(serialization_alias="shippingDetails", repr=True)
+        ShippingDetails,
+        Field(
+            serialization_alias="shippingDetails",
+            repr=True,
+        ),
     ]
     userid: ValidateUUID = Field(serialization_alias="userId", repr=True)
 

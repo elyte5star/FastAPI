@@ -1,28 +1,24 @@
-from typing import Optional, Any
-from datetime import datetime
-from enum import Enum
-from modules.utils.misc import time_now_utc
-from typing_extensions import Annotated
+from typing import Optional
 from modules.repository.request_models.booking import BookingModel
-from sqlalchemy import (
-    Integer,
-    ForeignKey,
-    Enum,
-    JSON,
-)
+from sqlalchemy import Integer, ForeignKey, Enum, PickleType
 from modules.repository.schema.base import (
     Audit,
     PydanticColumn,
     Base,
     str_60,
     str_pk_60,
-    required_60,
     timestamp,
+    JSONEncodedDict,
 )
-from sqlalchemy.orm import relationship, Mapped
-from modules.queue.base import JobType, JobStatus, ResultType, ResultState
+from modules.queue.base import JobStatus
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
+from api.src.modules.queue.enums import (
+    JobType,
+    ResultState,
+    ResultType,
+)
+from sqlalchemy.ext.mutable import MutableList, MutableDict
 
 
 class Job(Audit):
@@ -33,17 +29,21 @@ class Job(Audit):
         nullable=False,
     )
     job_type: Mapped[JobType] = mapped_column(Enum(JobType), nullable=False)
-    task_ids: Mapped[list[str]] = mapped_column(default=[])
+    task_ids: Mapped[MutableList] = mapped_column(
+        MutableList.as_mutable(PickleType), default=[]
+    )
     job_status: Mapped[JobStatus] = mapped_column(
         PydanticColumn(JobStatus), nullable=False
     )
     number_of_tasks: Mapped[int] = mapped_column(Integer, nullable=False)
     booking_request: Mapped[Optional[BookingModel]] = mapped_column(
-        PydanticColumn(BookingModel), nullable=True
+        PydanticColumn(BookingModel)
     )
     # pep-484 type will be Optional, but column will be
     # NOT NULL
-    search_request: Mapped[Optional[JSON]]
+    search_request: Mapped[Optional[dict[str, str]]] = mapped_column(
+        MutableDict.as_mutable(JSONEncodedDict)
+    )
 
 
 class Task(Base):
@@ -56,7 +56,9 @@ class Task(Base):
         ForeignKey("result.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
-    status: JobStatus = JobStatus()
+    status: Mapped[JobStatus] = mapped_column(
+        PydanticColumn(JobStatus), default=JobStatus()
+    )
     created_at: Mapped[timestamp]
     started: Mapped[Optional[timestamp]]
     finished: Mapped[Optional[timestamp]]
@@ -74,5 +76,7 @@ class Result(Base):
         ForeignKey("task.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
-    data: Mapped[Optional[JSON]]
-    data_checksum: Mapped[Optional[JSON]]
+    data: Mapped[dict[str, str]] = mapped_column(
+        MutableDict.as_mutable(JSONEncodedDict)
+    )
+    data_checksum: Mapped[Optional[bytes]]

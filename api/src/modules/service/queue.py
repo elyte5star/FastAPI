@@ -1,13 +1,9 @@
 from modules.repository.queries.queue import JobTaskQueries
-from modules.repository.schema.queue import (
-    QueueItem,
-    Task,
-    JobStatus,
-    Job,
-    JobType,
-    JobState,
-)
+
 from modules.utils.misc import get_indent, time_now_utc
+from modules.queue.base import QueueItem
+from modules.queue.enums import JobState, JobType
+from modules.queue.base import Job, Task, JobStatus
 
 
 class QueueHandler(JobTaskQueries):
@@ -50,9 +46,9 @@ class QueueHandler(JobTaskQueries):
             status=JobStatus(state=JobState.Received),
             created_at=time_now_utc(),
         )
-        queue_items_list = [QueueItem(job, task)]
-        success, msg = self._add_job_tasks_to_db(
-            job, [task], queue_items_list, queue_name
+        queue_items_list = [QueueItem(job=job, task=task)]
+        success, msg = await self._add_job_tasks_to_db(
+            job, [task], queue_name, queue_items_list
         )
         if success:
             return True, msg
