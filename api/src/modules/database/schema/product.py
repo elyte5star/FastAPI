@@ -6,7 +6,7 @@ from sqlalchemy import (
     Integer,
     ForeignKey,
 )
-from modules.repository.schema.base import Audit, Base
+from modules.database.schema.base import Audit, Base
 from sqlalchemy.orm import relationship, Mapped
 from typing import Set
 from sqlalchemy.sql import func

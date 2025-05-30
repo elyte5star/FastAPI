@@ -16,7 +16,7 @@ from modules.repository.request_models.product import (
     BaseResponse,
 )
 from modules.repository.response_models.product import ProductReview
-from modules.repository.schema.product import Product, Review
+from modules.database.schema.product import Product, Review
 from modules.utils.misc import get_indent, obj_as_json, time_now
 
 

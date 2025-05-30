@@ -19,11 +19,17 @@ str_100 = Annotated[str, 100]
 
 str_500 = Annotated[str, 500]
 
-required_30 = Annotated[str, mapped_column(String(30), nullable=False)]
+required_30 = Annotated[
+    str, mapped_column(String(30), nullable=False, unique=True, index=True)
+]
 
-required_60 = Annotated[str, mapped_column(String(60), nullable=False)]
+required_60 = Annotated[
+    str, mapped_column(String(60), nullable=False, unique=True, index=True)
+]
 
-required_500 = Annotated[str, mapped_column(String(500), nullable=False)]
+required_500 = Annotated[
+    str, mapped_column(String(500), nullable=False, unique=True, index=True)
+]
 
 timestamp = Annotated[
     datetime.datetime,
@@ -35,10 +41,6 @@ str_pk_60 = Annotated[
     mapped_column(String(60), primary_key=True, index=True),
 ]
 
-json_scalar = float | str | bool
-
-json_list = list[int] | list[str]
-
 
 @as_declarative()
 class Base(AsyncAttrs):
@@ -48,11 +50,6 @@ class Base(AsyncAttrs):
     @declared_attr
     def __tablename__(cls) -> Optional[str]:
         return cls.__name__.lower()
-
-    type_annotation_map = {
-        json_list: postgresql.JSONB,
-        json_scalar: JSON,
-    }
 
 
 class Audit(Base):

@@ -1,7 +1,8 @@
-from typing import Optional
-from modules.repository.request_models.booking import BookingModel
+from typing import Optional, List
+
+# from modules.repository.request_models.booking import BookingModel
 from sqlalchemy import Integer, ForeignKey, Enum, PickleType
-from modules.repository.schema.base import (
+from modules.database.schema.base import (
     Audit,
     PydanticColumn,
     Base,
@@ -11,9 +12,8 @@ from modules.repository.schema.base import (
     JSONEncodedDict,
 )
 from modules.queue.base import JobStatus
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from api.src.modules.queue.enums import (
+from sqlalchemy.orm import mapped_column, Mapped, relationship
+from modules.queue.enums import (
     JobType,
     ResultState,
     ResultType,
@@ -22,6 +22,9 @@ from sqlalchemy.ext.mutable import MutableList, MutableDict
 
 
 class Job(Audit):
+    __mapper_args__ = {
+        "polymorphic_identity": "job",
+    }
     # add ForeignKey to mapped_column(String, primary_key=True)
     id: Mapped[str_pk_60] = mapped_column(ForeignKey("audit.id"))
     userid: Mapped[str_60] = mapped_column(
@@ -29,15 +32,13 @@ class Job(Audit):
         nullable=False,
     )
     job_type: Mapped[JobType] = mapped_column(Enum(JobType), nullable=False)
-    task_ids: Mapped[MutableList] = mapped_column(
-        MutableList.as_mutable(PickleType), default=[]
-    )
+    tasks: Mapped[List["Task"]] = relationship(cascade="all, delete", lazy="selectin")
     job_status: Mapped[JobStatus] = mapped_column(
         PydanticColumn(JobStatus), nullable=False
     )
     number_of_tasks: Mapped[int] = mapped_column(Integer, nullable=False)
-    booking_request: Mapped[Optional[BookingModel]] = mapped_column(
-        PydanticColumn(BookingModel)
+    booking_request: Mapped[Optional[dict[str, str]]] = mapped_column(
+        MutableDict.as_mutable(JSONEncodedDict)
     )
     # pep-484 type will be Optional, but column will be
     # NOT NULL
@@ -52,10 +53,7 @@ class Task(Base):
         ForeignKey("job.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
-    result_id: Mapped[str_60] = mapped_column(
-        ForeignKey("result.id", onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
-    )
+    result: Mapped["Result"] = relationship(back_populates="task")
     status: Mapped[JobStatus] = mapped_column(
         PydanticColumn(JobStatus), default=JobStatus()
     )
@@ -76,6 +74,7 @@ class Result(Base):
         ForeignKey("task.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
+    task: Mapped["Task"] = relationship(back_populates="result")
     data: Mapped[dict[str, str]] = mapped_column(
         MutableDict.as_mutable(JSONEncodedDict)
     )

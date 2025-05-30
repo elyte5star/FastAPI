@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
 )
-from modules.repository.schema.base import Base
+from modules.database.schema.base import Base
 from modules.utils.misc import get_indent, time_now_utc
-from modules.repository.schema.user import (
+from modules.database.schema.user import (
     User,  # noqa: F401
     UserLocation,  # noqa: F401
     UserAddress,  # noqa: F401
@@ -19,16 +19,16 @@ from modules.repository.schema.user import (
     Enquiry,  # noqa: F401
     Address,  # noqa: F401
 )
-from modules.repository.schema.product import (
+from modules.database.schema.product import (
     Product,  # noqa: F401
     Review,  # noqa: F401
     SpecialDeals,  # noqa: F401
 )  # noqa: F401
-#from modules.repository.schema.booking import Order
+
+# from modules.repository.schema.booking import Order
 
 # noqa: F401
-
-# from modules.repository.schema.queue import Job, Task, Result  # noqa: F401
+from modules.queue.schema import Job, Task, Result  # noqa: F401
 from multiprocessing import cpu_count
 from modules.settings.configuration import ApiConfig
 from asyncpg.exceptions import PostgresError

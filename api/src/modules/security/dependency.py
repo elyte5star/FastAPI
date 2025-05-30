@@ -5,7 +5,7 @@ import time
 from pydantic import BaseModel, Field
 from modules.settings.configuration import ApiConfig
 from typing import Annotated
-from modules.database.base import AsyncDatabaseSession
+from modules.database.connection import AsyncDatabaseSession
 
 cfg = ApiConfig().from_toml_file().from_env_file()
 

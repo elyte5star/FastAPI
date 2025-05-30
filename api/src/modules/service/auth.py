@@ -11,7 +11,7 @@ from typing import Optional
 from datetime import timedelta
 from jose import jwt
 from modules.utils.misc import time_delta, time_now_utc, get_indent
-from modules.repository.schema.user import User
+from modules.database.schema.user import User
 from fastapi import Request, Response
 from modules.security.login_attempt import LoginAttemptChecker
 

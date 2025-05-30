@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, ConfigDict, Json
 from datetime import datetime
 from modules.utils.misc import time_now_utc
 from typing_extensions import Annotated
-from modules.repository.request_models.booking import BookingModel
+#from modules.repository.request_models.booking import BookingModel
 from modules.queue.enums import (
     JobState,
     JobType,
@@ -37,15 +37,15 @@ class Job(BaseModel):
         default=0,
         serialization_alias="numberOfTasks",
     )
-    booking_request: Optional[
-        Annotated[
-            BookingModel,
-            Field(
-                default=None,
-                serialization_alias="bookingRequest",
-            ),
-        ]
-    ]
+    # booking_request: Optional[
+    #     Annotated[
+    #         BookingModel,
+    #         Field(
+    #             default=None,
+    #             serialization_alias="bookingRequest",
+    #         ),
+    #     ]
+    # ]
     search_request: Optional[
         Annotated[
             Any,

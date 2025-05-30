@@ -50,7 +50,7 @@ def smtp_log_handler(cfg: ApiConfig):
     smtp_handler = SMTPHandler(
         mailhost=[cfg.mail_server, cfg.mail_port],
         fromaddr=cfg.email,
-        toaddrs=["checkuti@gmail.com"],
+        toaddrs=["elyte5star@gmail.com"],
         subject="Exceptional Log",
         credentials=(cfg.mail_username, cfg.mail_password),
         secure=None,

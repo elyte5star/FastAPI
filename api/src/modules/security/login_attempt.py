@@ -1,4 +1,4 @@
-from modules.repository.schema.user import User
+from modules.database.schema.user import User
 from fastapi import Request
 from modules.settings.configuration import ApiConfig
 from modules.security.location import DifferentLocationChecker

@@ -6,7 +6,7 @@ from modules.routers.product import ProductRouter
 from modules.routers.booking import BookingRouter
 from modules.routers.system import SystemInfoRouter
 from fastapi import APIRouter
-from modules.database.base import AsyncDatabaseSession
+from modules.database.connection import AsyncDatabaseSession
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 

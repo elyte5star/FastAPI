@@ -6,27 +6,25 @@ from sqlalchemy import (
     Float,
     Integer,
     ForeignKey,
+    PickleType,
 )
-from modules.repository.schema.base import (
+from modules.database.schema.base import (
     Audit,
     Base,
     str_pk_60,
+    required_30,
     timestamp,
-    PydanticColumn,
 )
 from typing import Set, List
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from typing import Optional
-from modules.repository.request_models.booking import BookingModel
+from sqlalchemy.ext.mutable import MutableList
+
+# from modules.repository.request_models.booking import BookingModel
 
 
 class User(Audit):
-    id = Column(
-        String(60),
-        ForeignKey("audit.id"),
-        primary_key=True,
-        index=True,
-    )
+    # add ForeignKey to mapped_column(String, primary_key=True)
+    id: Mapped[str_pk_60] = mapped_column(ForeignKey("audit.id"))
     email = Column(String(20), unique=True, index=True)
     username = Column(String(20), unique=True, index=True)
     password = Column(String(100), nullable=False)
@@ -50,12 +48,12 @@ class User(Audit):
         cascade="all, delete", lazy="selectin"
     )
 
-    bookings: Mapped[List["Order"]] = relationship(
-        back_populates="user",
-        cascade="save-update, merge, delete",
-        passive_deletes=True,
-        lazy="selectin",
-    )
+    # bookings: Mapped[List["Booking"]] = relationship(
+    #     back_populates="user",
+    #     cascade="all, delete",
+    #     passive_deletes=True,
+    #     lazy="selectin",
+    # )
 
     __mapper_args__ = {
         "polymorphic_identity": "user",
@@ -77,14 +75,16 @@ class User(Audit):
         )
 
 
-class Order(Base):
-    id: Mapped[str_pk_60]
-    booking: Mapped[Optional[BookingModel]] = mapped_column(
-        PydanticColumn(BookingModel)
-    )
-    user_id = mapped_column(ForeignKey("user.id"))
-    user: Mapped["User"] = relationship(back_populates=" bookings")
-    created_at: Mapped[timestamp]
+# class Booking(Base):
+#     id: Mapped[str_pk_60]
+#     items: Mapped[MutableList] = mapped_column(
+#         MutableList.as_mutable(PickleType), default=[]
+#     )
+#     userid = mapped_column(
+#         ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
+#     )
+#     user: Mapped["User"] = relationship(back_populates=" bookings")
+#     created_at: Mapped[timestamp]
 
 
 class Address(Base):

@@ -1,5 +1,5 @@
-from modules.database.base import AsyncDatabaseSession
-from modules.repository.schema.product import Product, Review
+from modules.database.connection import AsyncDatabaseSession
+from modules.database.schema.product import Product, Review
 from asyncpg.exceptions import PostgresError
 
 

@@ -2,7 +2,7 @@ from modules.repository.request_models.base import (
     GetSystemInfoRequest,
     GetInfoResponse,
 )
-from modules.database.base import AsyncDatabaseSession
+from modules.database.connection import AsyncDatabaseSession
 
 
 class SystemHandler(AsyncDatabaseSession):
