@@ -140,7 +140,7 @@ class Result(BaseModel):
     result_state: ResultState = ResultState.NotSet
     task_id: str = Field(default="", serialization_alias="taskId")
     data: Json = None
-    data_checksum: Optional[str] = None
+    data_checksum: Optional[bytes] = None
 
 
 class ResultLog(BaseModel):
