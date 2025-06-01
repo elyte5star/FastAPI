@@ -1,0 +1,73 @@
+from modules.service.job import JobHandler
+from fastapi import APIRouter, Depends, status
+from modules.security.dependency import security, JWTPrincipal, RoleChecker
+from modules.repository.request_models.job import (
+    GetJobRequest,
+    GetJobsRequest,
+    CreateJobRequest,
+)
+from modules.repository.response_models.job import (
+    GetJobResponse,
+    GetJobsResponse,
+    CreateJobResponse,
+)
+from typing_extensions import Annotated
+from modules.queue.base import Job
+
+
+class JobRouter(JobHandler):
+    def __init__(self, config):
+        super().__init__(config)
+        self.router: APIRouter = APIRouter(prefix="/job", tags=["Job"])
+        self.router.add_api_route(
+            path="/create",
+            status_code=status.HTTP_201_CREATED,
+            endpoint=self.create_job,
+            response_model=CreateJobResponse,
+            methods=["POST"],
+            description="Create a Job",
+        )
+
+        self.router.add_api_route(
+            path="/{jobId}",
+            endpoint=self.get_job,
+            response_model=GetJobResponse,
+            methods=["GET"],
+            description="Get User",
+        )
+
+        self.router.add_api_route(
+            path="",
+            endpoint=self.get_users,
+            response_model=GetJobsResponse,
+            methods=["GET"],
+            dependencies=[Depends(RoleChecker(["ADMIN"]))],
+            description="Get Jobs, Admin right required",
+        )
+
+    async def get_jobs(
+        self, current_user: Annotated[JWTPrincipal, Depends(security)]
+    ) -> GetJobsResponse:
+        return await self._get_jobs(GetJobsRequest(credentials=current_user))
+
+    async def get_job(
+        self,
+        jobId: str,
+        current_user: Annotated[
+            JWTPrincipal,
+            Depends(security),
+        ],
+    ) -> GetJobResponse:
+        return await self._get_job(
+            GetJobRequest(credentials=current_user, job_id=jobId)
+        )
+
+    async def create_job(
+        self,
+        job: Job,
+        current_user: Annotated[
+            JWTPrincipal,
+            Depends(security),
+        ],
+    ):
+        return CreateJobRequest(new_job=job, credentials=current_user)

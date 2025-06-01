@@ -4,15 +4,18 @@ from modules.utils.misc import get_indent, time_now_utc
 from modules.queue.base import QueueItem
 from modules.queue.enums import JobState, JobType
 from modules.queue.base import Job, Task, JobStatus
+from modules.repository.request_models.job import GetJobRequest, GetJobsRequest
+from modules.repository.response_models.job import GetJobResponse, GetJobsResponse
 
 
-class QueueHandler(JobTaskQueries):
+class JobHandler(JobTaskQueries):
 
-    async def _get_job(self):
+    async def _get_job(self, req: GetJobRequest) -> GetJobResponse:
+        return GetJobResponse()
         pass
 
-    async def _get_jobs(self, data):
-        pass
+    async def _get_jobs(self, req: GetJobsRequest) -> GetJobsResponse:
+        return GetJobsResponse()
 
     async def _get_job_response(self):
         pass

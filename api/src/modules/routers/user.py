@@ -63,7 +63,7 @@ class UserRouter(UserHandler):
             description="Send a new user verification code",
         )
         self.router.add_api_route(
-            path="/{userid}",
+            path="/{userId}",
             endpoint=self.get_user,
             response_model=GetUserResponse,
             methods=["GET"],
@@ -72,7 +72,7 @@ class UserRouter(UserHandler):
         )
 
         self.router.add_api_route(
-            path="/{userid}",
+            path="/{userId}",
             endpoint=self.delete_user,
             response_model=BaseResponse,
             methods=["DELETE"],

@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class JobType(str, Enum):
-    Noop = "0"
+    Empty = "0"
     CreateSearch = "10"
     CreateBooking = "30"
 

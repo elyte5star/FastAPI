@@ -28,10 +28,11 @@ class BaseReq(BaseModel):
         self.req_process_time()
         return self.result
 
-    def is_cred_expired(self) -> bool:
-        if time.time() > self.credentials.expires:
-            return True
-        return False
+    # def is_cred_expired(self) -> bool:
+    #     if self.credentials:
+    #         if time.time() > self.credentials.expires:
+    #             return True
+    #     return False
 
     def req_failure(self, message="") -> BaseResponse:
         self.result.success = False

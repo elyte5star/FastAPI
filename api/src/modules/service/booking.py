@@ -1,4 +1,4 @@
-from modules.service.queue import QueueHandler
+from modules.service.job import JobHandler
 from modules.repository.request_models.booking import (
     CreateBookingRequest,
     PaymentDetails,
@@ -11,10 +11,10 @@ from modules.repository.response_models.booking import (
     GetBookingResponse,
 )
 from decimal import Decimal
-from modules.utils.misc import get_indent, obj_as_json
+from modules.utils.misc import obj_as_json
 
 
-class BookingHandler(QueueHandler):
+class BookingHandler(JobHandler):
 
     async def _create_booking(self, req: CreateBookingRequest) -> CreateBookingResponse:
         if req.credentials.userid != req.new_order.userid:
@@ -32,6 +32,7 @@ class BookingHandler(QueueHandler):
             return req.req_failure("Products out of stock")
         amount_to_pay = sum(item.calculated_price for item in cart)
         check_payment = self.make_payment(req.new_order.payment_details, amount_to_pay)
+        return 
 
     async def _get_bookings(self, req: CreateBookingRequest) -> GetBookingsResponse:
         pass

@@ -8,6 +8,7 @@ class BaseResponse(BaseModel):
         use_enum_values=True,
         str_strip_whitespace=True,
         extra="allow",
+        serialize_by_alias=True,
     )
     req_id: str = ""
     start_time: float = 0.0

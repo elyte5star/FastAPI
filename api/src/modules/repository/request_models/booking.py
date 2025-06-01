@@ -8,6 +8,7 @@ from modules.repository.response_models.booking import (
 from decimal import Decimal
 from typing_extensions import Annotated
 import datetime
+from modules.repository.response_models.job import JobResponse
 
 
 class BillingAddress(BaseModel):
@@ -110,8 +111,8 @@ class CreateBooking(BaseModel):
 
 
 class CreateBookingRequest(BaseReq):
-    new_order: CreateBooking = None
-    result: CreateBookingResponse = CreateBookingResponse()
+    new_order: CreateBooking | None = None
+    result: JobResponse = JobResponse()
 
 
 class BookingModel(BaseModel):
@@ -132,7 +133,7 @@ class BookingModel(BaseModel):
             repr=True,
         ),
     ]
-    userid: ValidateUUID = Field(serialization_alias="userId", repr=True)
+    userid: str = Field(serialization_alias="userId", repr=True)
 
     model_config = ConfigDict(serialize_by_alias=True)
 
