@@ -6,7 +6,7 @@ from pydantic import Field
 from modules.queue.schema import (
     JobStatus,
 )
-from modules.queue.base import Job
+from modules.queue.models import Job
 
 
 class GetJobResponse(BaseResponse):

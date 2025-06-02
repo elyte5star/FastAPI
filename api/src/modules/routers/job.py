@@ -12,7 +12,7 @@ from modules.repository.response_models.job import (
     CreateJobResponse,
 )
 from typing_extensions import Annotated
-from modules.queue.base import Job
+from modules.queue.models import Job
 
 
 class JobRouter(JobHandler):

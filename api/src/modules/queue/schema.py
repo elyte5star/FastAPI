@@ -11,7 +11,7 @@ from modules.database.schema.base import (
     timestamp,
     JSONEncodedDict,
 )
-from modules.queue.base import JobStatus
+from modules.queue.models import JobStatus
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from modules.queue.enums import (
     JobType,

@@ -4,7 +4,7 @@ from modules.repository.response_models.job import (
     GetJobsResponse,
     CreateJobResponse,
 )
-from modules.queue.base import Job
+from modules.queue.models import Job
 
 
 class GetJobRequest(BaseReq):

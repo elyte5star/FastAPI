@@ -10,6 +10,7 @@ from modules.database.connection import AsyncDatabaseSession
 from asyncpg.exceptions import PostgresError
 from datetime import datetime
 from modules.utils.misc import time_now_utc
+from collections.abc import Sequence
 
 
 class UserQueries(AsyncDatabaseSession):
@@ -22,7 +23,7 @@ class UserQueries(AsyncDatabaseSession):
         else:
             await self.async_session.commit()
 
-    async def get_users_query(self) -> list[User]:
+    async def get_users_query(self) -> Sequence[User]:
         stmt = self.select(User).order_by(User.created_at)
         result = await self.async_session.execute(stmt)
         users = result.scalars().all()
