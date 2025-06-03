@@ -26,7 +26,8 @@ class CartItem(BaseModel):
 
 
 class ShippingDetails(BaseModel):
-    full_name: Annotated[str, Field(serialization_alias="fullName", repr=True)]
+    first_name: Annotated[str, Field(serialization_alias="firstName", repr=True)]
+    last_name: Annotated[str, Field(serialization_alias="lastName", repr=True)]
     street_address: Annotated[
         str,
         Field(

@@ -22,7 +22,7 @@ user_router = UserRouter(cfg)
 
 product_router = ProductRouter(cfg)
 
-booking_router = BookingRouter(cfg)
+# booking_router = BookingRouter(cfg)
 
 
 system_router = SystemInfoRouter(cfg)
@@ -31,7 +31,7 @@ routes: tuple[APIRouter, ...] = (
     auth_router.router,
     user_router.router,
     product_router.router,
-    booking_router.router,
+    # booking_router.router,
     system_router.router,
 )
 

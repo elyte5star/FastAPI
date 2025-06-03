@@ -12,7 +12,8 @@ from modules.repository.response_models.job import JobResponse
 
 
 class BillingAddress(BaseModel):
-    b_full_name: Annotated[str, Field(validation_alias="bfullName", repr=True)]
+    b_first_name: Annotated[str, Field(validation_alias="bfirstName", repr=True)]
+    b_last_name: Annotated[str, Field(validation_alias="blastName", repr=True)]
     b_email: Annotated[
         VerifyEmail,
         Field(validation_alias="bemail", repr=True),
@@ -83,7 +84,8 @@ class PaymentDetails(BaseModel):
 
 
 class ShippingDetails(BaseModel):
-    full_name: Annotated[str, Field(validation_alias="fullName", repr=True)]
+    first_name: Annotated[str, Field(validation_alias="firstName", repr=True)]
+    last_name: Annotated[str, Field(validation_alias="lastName", repr=True)]
     street_address: Annotated[
         str,
         Field(

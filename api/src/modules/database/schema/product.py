@@ -1,37 +1,34 @@
 from sqlalchemy import (
-    Column,
-    String,
-    DateTime,
-    Float,
-    Integer,
     ForeignKey,
 )
-from modules.database.schema.base import Audit, Base
-from sqlalchemy.orm import relationship, Mapped
+from modules.database.schema.base import (
+    Audit,
+    Base,
+    str_pk_60,
+    required_30,
+    required_100,
+    deferred_500,
+    required_60,
+    timestamp,
+    required_600,
+)
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from typing import Set
 from sqlalchemy.sql import func
+from decimal import Decimal
 
 
 class Product(Audit):
-    id = Column(
-        String(60),
-        ForeignKey("audit.id"),
-        primary_key=True,
-        index=True,
-    )
-    description = Column(String(100), nullable=False)
-    details = Column(String(600), nullable=False)
-    image = Column(String(100), nullable=False)
-    name = Column(String(100), nullable=False)
-    price = Column(Float, nullable=False, index=True)
-    category = Column(String(60), nullable=False, index=True)
-    stock_quantity = Column(
-        Integer,
-        nullable=False,
-        index=True,
-    )
-    promotion = relationship(
-        "SpecialDeals",
+    # add ForeignKey to mapped_column(String, primary_key=True)
+    id: Mapped[str_pk_60] = mapped_column(ForeignKey("audit.id"))
+    description: Mapped[required_100]
+    details: Mapped[required_600]
+    image: Mapped[required_30]
+    name: Mapped[required_100]
+    price: Mapped[Decimal] = mapped_column(default=0.0)
+    category: Mapped[required_60]
+    stock_quantity: Mapped[int] = mapped_column(default=0)
+    promotion: Mapped["SpecialDeals"] = relationship(
         uselist=False,
         back_populates="product",
     )
@@ -60,20 +57,14 @@ class Product(Audit):
 
 
 class Review(Base):
-    id = Column(String(60), primary_key=True, index=True)
-    reviewer_name = Column(String(100), nullable=False)
-    email = Column(String(100), nullable=False)
-    rating = Column(Integer, nullable=False, index=True)
-    comment = Column(String(600))
-    date = Column(
-        "createdAt",
-        DateTime(timezone=True),
-        server_default=func.now(),
-    )
-    product_id = Column(
-        String(60),
-        ForeignKey("product.id", onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
+    id: Mapped[str_pk_60]
+    reviewer_name: Mapped[required_60]
+    email: Mapped[deferred_500]
+    rating: Mapped[int]
+    comment: Mapped[required_600]
+    date: Mapped[timestamp]
+    product_id: Mapped[required_60] = mapped_column(
+        ForeignKey("product.id", onupdate="CASCADE", ondelete="CASCADE")
     )
     product = relationship("Product", back_populates="reviews")
 
@@ -92,16 +83,13 @@ class Review(Base):
 
 
 class SpecialDeals(Base):
-    id = Column(String(60), primary_key=True, index=True)
-    new_price = Column(Float, nullable=False, index=True)
-    product_id = Column(
-        String(60),
-        ForeignKey("product.id", onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
+    id: Mapped[str_pk_60]
+    new_price: Mapped[Decimal] = mapped_column(default=0.0)
+    product_id: Mapped[required_60] = mapped_column(
+        ForeignKey("product.id", onupdate="CASCADE", ondelete="CASCADE")
     )
-    discount = Column(Float, nullable=False, index=True)
-    product = relationship(
-        "Product",
+    discount: Mapped[Decimal] = mapped_column(default=0.0)
+    product: Mapped["Product"] = relationship(
         back_populates="promotion",
         single_parent=True,
         lazy="selectin",

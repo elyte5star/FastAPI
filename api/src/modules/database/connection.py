@@ -12,12 +12,12 @@ from modules.utils.misc import get_indent, time_now_utc
 from modules.database.schema.user import (
     User,  # noqa: F401
     UserLocation,  # noqa: F401
-    UserAddress,  # noqa: F401
     Otp,  # noqa: F401
     DeviceMetaData,  # noqa: F401,
     NewLocationToken,  # noqa: F401
     Enquiry,  # noqa: F401
     Address,  # noqa: F401
+    Booking
 )
 from modules.database.schema.product import (
     Product,  # noqa: F401

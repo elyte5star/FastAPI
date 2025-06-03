@@ -1,10 +1,4 @@
 from sqlalchemy import (
-    Boolean,
-    Column,
-    String,
-    DateTime,
-    Float,
-    Integer,
     ForeignKey,
     PickleType,
 )
@@ -13,11 +7,18 @@ from modules.database.schema.base import (
     Base,
     str_pk_60,
     required_30,
+    required_100,
+    deferred_500,
+    required_60,
     timestamp,
+    bool_col,
+    required_600,
 )
-from typing import Set, List
+from typing import Set, List, Optional
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.ext.mutable import MutableList
+from decimal import Decimal
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # from modules.repository.request_models.booking import BookingModel
 
@@ -25,18 +26,18 @@ from sqlalchemy.ext.mutable import MutableList
 class User(Audit):
     # add ForeignKey to mapped_column(String, primary_key=True)
     id: Mapped[str_pk_60] = mapped_column(ForeignKey("audit.id"))
-    email = Column(String(20), unique=True, index=True)
-    username = Column(String(20), unique=True, index=True)
-    password = Column(String(100), nullable=False)
-    active = Column(Boolean, default=False)
-    enabled = Column(Boolean, default=False)
-    admin = Column(Boolean, default=False)
-    telephone = Column(String(20), index=True)
-    failed_attempts = Column(Integer, default=0)
-    discount = Column(Float, default=0.0)
-    lock_time = Column(DateTime(timezone=True))
-    is_using_mfa = Column(Boolean, default=False)
-    is_locked = Column(Boolean, default=False)
+    email: Mapped[required_30]
+    username: Mapped[required_30]
+    password: Mapped[deferred_500]
+    active: Mapped[bool_col]
+    enabled: Mapped[bool_col]
+    admin: Mapped[bool_col]
+    telephone: Mapped[required_30]
+    failed_attempts: Mapped[int] = mapped_column(default=0)
+    discount: Mapped[Decimal] = mapped_column(default=0.0)
+    lock_time: Mapped[Optional[timestamp]]
+    is_using_mfa: Mapped[bool_col]
+    is_locked: Mapped[bool_col]
     otp = relationship("Otp", uselist=False, back_populates="owner")
     password_reset = relationship(
         "PasswordResetToken", uselist=False, back_populates="owner"
@@ -48,12 +49,12 @@ class User(Audit):
         cascade="all, delete", lazy="selectin"
     )
 
-    # bookings: Mapped[List["Booking"]] = relationship(
-    #     back_populates="user",
-    #     cascade="all, delete",
-    #     passive_deletes=True,
-    #     lazy="selectin",
-    # )
+    bookings: Mapped[List["Booking"]] = relationship(
+        back_populates="user",
+        cascade="all, delete",
+        passive_deletes=True,
+        lazy="selectin",
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": "user",
@@ -75,39 +76,42 @@ class User(Audit):
         )
 
 
-# class Booking(Base):
-#     id: Mapped[str_pk_60]
-#     items: Mapped[MutableList] = mapped_column(
-#         MutableList.as_mutable(PickleType), default=[]
-#     )
-#     userid = mapped_column(
-#         ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
-#     )
-#     user: Mapped["User"] = relationship(back_populates=" bookings")
-#     created_at: Mapped[timestamp]
+class Booking(Base):
+    id: Mapped[str_pk_60]
+    user_id: Mapped[required_60] = mapped_column(
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
+    )
+    cart: Mapped[MutableList] = mapped_column(
+        MutableList.as_mutable(PickleType), default=[]
+    )
+    created_at: Mapped[timestamp]
+    user: Mapped["User"] = relationship(back_populates="bookings")
 
 
 class Address(Base):
-    id = Column(String(60), primary_key=True, index=True)
-    userid = Column(
-        String(60),
-        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
+    id: Mapped[str_pk_60]
+    user_id: Mapped[required_60] = mapped_column(
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
     )
-    fullname = Column(String(30), unique=True, index=True)
-    street_address = Column(String(60), unique=True, index=True)
-    country = Column(String(30), index=True)
-    city = Column(String(30), index=True)
-    zip_code = Column(String(30), index=True)
-    owner = relationship("User", back_populates="addresses")
+    first_name: Mapped[required_30]
+    last_name: Mapped[required_30]
+    street_address: Mapped[required_100]
+    country: Mapped[required_30]
+    city: Mapped[required_30]
+    zip_code: Mapped[required_30]
+    user = relationship("User", back_populates="addresses")
+
+    @hybrid_property
+    def full_name(self):
+        return self.first_name + " " + self.last_name
 
 
 class UserLocation(Base):
-    id = Column(String(60), primary_key=True, index=True)
-    country = Column(String(30), index=True)
-    enabled = Column(Boolean, default=False)
-    userid = Column(
-        String(60),
-        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
+    id: Mapped[str_pk_60]
+    country: Mapped[required_30]
+    enabled: Mapped[bool_col]
+    user_id: Mapped[required_60] = mapped_column(
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
     )
     owner = relationship("User", back_populates="locations")
     new_location = relationship(
@@ -123,18 +127,16 @@ class UserLocation(Base):
             f" id:{self.id}, "
             f" country:{self.country}, "
             f" enabled:{self.enabled},"
-            f" userid:{self.userid},"
+            f" userid:{self.user_id},"
             f")>"
         )
 
 
 class NewLocationToken(Base):
-    id = Column(String(60), primary_key=True, index=True)
-    token = Column(String(100), index=True)
-    user_loc_id = Column(
-        String(60),
-        ForeignKey("userlocation.id", onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
+    id: Mapped[str_pk_60]
+    token: Mapped[required_100]
+    user_loc_id: Mapped[required_60] = mapped_column(
+        ForeignKey("userlocation.id", onupdate="CASCADE", ondelete="CASCADE")
     )
     location = relationship(
         "UserLocation",
@@ -152,14 +154,12 @@ class NewLocationToken(Base):
 
 
 class Otp(Base):
-    id = Column(String(60), primary_key=True, index=True)
-    email = Column(String(20), unique=True, index=True)
-    token = Column(String(100), index=True)
-    expiry = Column("expiryDate", DateTime(timezone=True))
-    userid = Column(
-        String(60),
-        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
+    id: Mapped[str_pk_60]
+    email: Mapped[required_30]
+    token: Mapped[required_100]
+    expiry: Mapped[timestamp]
+    user_id: Mapped[required_60] = mapped_column(
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
     )
     owner = relationship(
         "User", back_populates="otp", single_parent=True, lazy="selectin"
@@ -167,13 +167,11 @@ class Otp(Base):
 
 
 class PasswordResetToken(Base):
-    id = Column(String(60), primary_key=True, index=True)
-    token = Column(String(100), index=True)
-    expiry = Column("expiryDate", DateTime(timezone=True))
-    userid = Column(
-        String(60),
-        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
+    id: Mapped[str_pk_60]
+    token: Mapped[required_100]
+    expiry: Mapped[timestamp]
+    user_id: Mapped[required_60] = mapped_column(
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
     )
     owner = relationship(
         "User",
@@ -184,44 +182,32 @@ class PasswordResetToken(Base):
 
 
 class DeviceMetaData(Base):
-    id = Column(String(60), primary_key=True, index=True)
-    device_details = Column(String(150), index=True)
-    location = Column(String(30), index=True)
-    last_login_date = Column(DateTime(timezone=True))
-    userid = Column(String(60), ForeignKey("user.id"), nullable=False)
+    id: Mapped[str_pk_60]
+    device_details: Mapped[required_100]
+    location: Mapped[required_60]
+    last_login_date: Mapped[timestamp]
+    user_id: Mapped[required_60] = mapped_column(
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
+    )
 
     def __repr__(self):
         return (
             f"<{self.__class__.__name__}("
             f"id::{self.id}, "
             f"last_login_date::{self.last_login_date}, "
-            f"userid::{self. userid}"
+            f"userid::{self. user_id}"
             f")>"
         )
 
 
-class UserAddress(Base):
-    id = Column(String(60), primary_key=True, index=True)
-    full_name = Column(String(30), index=True)
-    street_address = Column("streetAddress", String(30), index=True)
-    country = Column(String(30))
-    state = Column(String(30))
-    zip = Column(String(10), index=True)
-
-
 class Enquiry(Audit):
-    id = Column(
-        String(60),
-        ForeignKey("audit.id"),
-        primary_key=True,
-        index=True,
-    )
-    client_name = Column(String(20), nullable=False)
-    client_email = Column(String(20), nullable=False)
-    country = Column(String(30), nullable=False)
-    subject = Column(String(30), index=True)
-    message = Column(String(600))
-    is_closed = Column(Boolean, default=False)
+    id: Mapped[str_pk_60] = mapped_column(ForeignKey("audit.id"))
+    client_name: Mapped[required_60]
+    client_email: Mapped[required_30]
+    country: Mapped[required_30]
+    subject: Mapped[required_30]
+    message: Mapped[required_600]
+    is_closed: Mapped[bool_col]
 
     __mapper_args__ = {
         "polymorphic_identity": "enquiry",

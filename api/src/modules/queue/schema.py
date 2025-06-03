@@ -1,6 +1,4 @@
 from typing import Optional, List
-
-# from modules.repository.request_models.booking import BookingModel
 from sqlalchemy import Integer, ForeignKey, Enum
 from modules.database.schema.base import (
     Audit,
@@ -19,6 +17,7 @@ from modules.queue.enums import (
     ResultType,
 )
 from sqlalchemy.ext.mutable import MutableDict
+from modules.queue.models import BookingModel, SearchModel
 
 
 class Job(Audit):
@@ -40,13 +39,13 @@ class Job(Audit):
         PydanticColumn(JobStatus), nullable=False
     )
     number_of_tasks: Mapped[int] = mapped_column(Integer, nullable=False)
-    create_booking: Mapped[Optional[dict[str, str]]] = mapped_column(
-        MutableDict.as_mutable(JSONEncodedDict)
+    create_booking: Mapped[Optional[BookingModel]] = mapped_column(
+        PydanticColumn(BookingModel)
     )
     # pep-484 type will be Optional, but column will be
     # NOT NULL
-    create_search: Mapped[Optional[dict[str, str]]] = mapped_column(
-        MutableDict.as_mutable(JSONEncodedDict)
+    create_search: Mapped[Optional[SearchModel]] = mapped_column(
+        PydanticColumn(SearchModel)
     )
 
 
