@@ -8,7 +8,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import JSON, TypeDecorator, VARCHAR
 from typing_extensions import Annotated
 import datetime
-from sqlalchemy.dialects import postgresql
 import json
 
 str_60 = Annotated[str, 60]
@@ -56,7 +55,7 @@ class Base(AsyncAttrs):
     __name__: str
     # Generate __tablename__ automatically
 
-    @declared_attr
+    @declared_attr.directive
     def __tablename__(cls) -> Optional[str]:
         return cls.__name__.lower()
 

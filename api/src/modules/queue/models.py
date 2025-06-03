@@ -78,16 +78,16 @@ class JobStatus(BaseModel):
 
 
 class Job(BaseModel):
-    userid: str = Field(default="", serialization_alias="userId")
-    created_at: datetime = Field(
-        default=time_now_utc(), serialization_alias="createdAt"
-    )
+    job_id: str = Field(default="", serialization_alias="jobId")
+    user_id: str = Field(default="", serialization_alias="userId")
     job_type: JobType = Field(
         default=JobType.Empty,
         serialization_alias="jobType",
     )
-    job_id: str = Field(default="", serialization_alias="jobId")
-    task_ids: list = Field(default=[], serialization_alias="taskIds")
+    created_at: datetime = Field(
+        default=time_now_utc(), serialization_alias="createdAt"
+    )
+    # task_ids: list = Field(default=[], serialization_alias="taskIds")
     job_status: JobStatus = Field(
         default=JobStatus(),
         serialization_alias="jobStatus",
@@ -112,7 +112,7 @@ class Job(BaseModel):
         ]
     ]
 
-    model_config = ConfigDict(serialize_by_alias=True)
+    model_config = ConfigDict(serialize_by_alias=True, from_attributes=True)
 
 
 class Task(BaseModel):
@@ -132,7 +132,7 @@ class Task(BaseModel):
     started: Optional[datetime] = None
     finished: Optional[datetime] = None
 
-    model_config = ConfigDict(serialize_by_alias=True)
+    model_config = ConfigDict(serialize_by_alias=True, from_attributes=True)
 
 
 class Result(BaseModel):

@@ -24,11 +24,11 @@ class RabbitMQueueHandler(JobTaskQueries):
         queue_items_list: list[QueueItem],
     ) -> tuple[bool, str]:
         try:
-            
-        
+            job_id = job.job_id
+            model_dict = dict(job)
+
         except Exception as e:
             print(e)
-            
 
     async def _add_job_with_one_task(self, job: Job, queue_name: str):
         job.number_of_tasks = 1

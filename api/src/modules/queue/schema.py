@@ -26,7 +26,7 @@ class Job(Audit):
     }
     # add ForeignKey to mapped_column(String, primary_key=True)
     id: Mapped[str_pk_60] = mapped_column(ForeignKey("audit.id"))
-    userid: Mapped[str_60] = mapped_column(
+    user_id: Mapped[str_60] = mapped_column(
         ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
