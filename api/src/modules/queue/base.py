@@ -63,7 +63,7 @@ class RQHandler(JobTaskQueries):
                     created_at=task.created_at,
                     status=task.status,
                 )
-                await self.add_tasks_to_db_query(task)
+                await self.add_tasks_to_db_query(sql_task_model)
                 await self.add_task_result_db_query(task_result)
             # Perform connection
             connection = await connect(self.cf.rabbit_connect_string)
