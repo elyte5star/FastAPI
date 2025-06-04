@@ -7,6 +7,7 @@ from modules.repository.request_models.booking import (
 )
 from modules.repository.response_models.booking import CreateBookingResponse
 from modules.security.dependency import security, JWTPrincipal
+from modules.repository.response_models.job import JobResponse
 
 
 class BookingRouter(BookingHandler):
@@ -20,7 +21,7 @@ class BookingRouter(BookingHandler):
             path="/create",
             status_code=status.HTTP_201_CREATED,
             endpoint=self.create_booking,
-            response_model=CreateBookingResponse,
+            response_model=JobResponse,
             methods=["POST"],
             description="Register a booking",
         )
@@ -29,7 +30,7 @@ class BookingRouter(BookingHandler):
         self,
         data: CreateBooking,
         current_user: Annotated[JWTPrincipal, Depends(security)],
-    ) -> CreateBookingResponse:
+    ) -> JobResponse:
         return await self.__create_booking(
             CreateBookingRequest(new_order=data, credentials=current_user)
         )

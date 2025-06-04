@@ -118,7 +118,6 @@ class Job(BaseModel):
 class Task(BaseModel):
     task_id: str = Field(default="", serialization_alias="taskId")
     job_id: str = Field(default="", serialization_alias="jobId")
-    result_id: str = ""
     status: JobStatus = JobStatus()
     created_at: Optional[
         Annotated[
@@ -141,7 +140,7 @@ class Result(BaseModel):
     result_state: ResultState = ResultState.NotSet
     task_id: str = Field(default="", serialization_alias="taskId")
     data: Json = None
-    data_checksum: Optional[bytes] = None
+    data_checksum: Optional[str] = None
 
 
 class ResultLog(BaseModel):

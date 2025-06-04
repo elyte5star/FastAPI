@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field, ConfigDict, SecretStr, computed_field
 from modules.repository.validators.base import VerifyEmail, ValidateUUID
 from modules.repository.request_models.base import BaseReq
 from modules.repository.response_models.booking import (
-    CreateBookingResponse,
     GetBookingResponse,
 )
 from decimal import Decimal

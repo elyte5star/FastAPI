@@ -24,6 +24,6 @@ class ResultState(str, Enum):
 
 
 class ResultType(str, Enum):
-    Noop = "0"
+    Unknown = "0"
     Database = "10"
     File = "30"

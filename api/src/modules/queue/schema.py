@@ -1,5 +1,5 @@
 from typing import Optional, List
-from sqlalchemy import Integer, ForeignKey, Enum
+from sqlalchemy import Integer, ForeignKey, Enum, UniqueConstraint
 from modules.database.schema.base import (
     Audit,
     PydanticColumn,
@@ -76,8 +76,10 @@ class Result(Base):
         ForeignKey("task.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
-    task: Mapped["Task"] = relationship(back_populates="result")
+    task: Mapped["Task"] = relationship(back_populates="result", single_parent=True)
     data: Mapped[dict[str, str]] = mapped_column(
         MutableDict.as_mutable(JSONEncodedDict)
     )
-    data_checksum: Mapped[Optional[bytes]]
+    data_checksum: Mapped[Optional[str]]
+
+    __table_args__ = (UniqueConstraint("task_id"),)

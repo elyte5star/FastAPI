@@ -1,5 +1,5 @@
 from modules.database.connection import AsyncDatabaseSession
-from modules.queue.schema import Job, Task
+from modules.queue.schema import Job, Task, Result
 from asyncpg.exceptions import PostgresError
 from collections.abc import Sequence
 
@@ -8,6 +8,15 @@ class JobTaskQueries(AsyncDatabaseSession):
     async def add_job_to_db_query(self, job: Job) -> None:
         try:
             self.async_session.add(job)
+        except PostgresError:
+            await self.async_session.rollback()
+            raise
+        else:
+            await self.async_session.commit()
+
+    async def add_task_result_db_query(self, task_result: Result) -> None:
+        try:
+            self.async_session.add(task_result)
         except PostgresError:
             await self.async_session.rollback()
             raise
