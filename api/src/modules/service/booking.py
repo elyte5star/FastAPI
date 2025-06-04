@@ -27,7 +27,7 @@ class BookingHandler(RQHandler):
         check_cart = await self.check_products(cart)
         if check_cart is None:
             return req.req_failure("Product in cart does not exist")
-        avaliable_prods, unavaliable_prods = check_cart
+        _, unavaliable_prods = check_cart
         if unavaliable_prods:
             req.result = unavaliable_prods
             return req.req_failure("Products out of stock")
@@ -51,7 +51,6 @@ class BookingHandler(RQHandler):
             req.result = job.job_id
             return req.req_success(message)
         return req.req_failure(message)
-        
 
     async def _get_bookings(self, req: CreateBookingRequest) -> GetBookingsResponse:
         pass
