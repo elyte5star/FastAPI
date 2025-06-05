@@ -273,6 +273,7 @@ logs/*
 # DB data
 persistence/*
 !persistence/*.file
+data/*
 
 /api/*.log
 .env
