@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 from modules.database.schema.base import Base
-from modules.utils.misc import get_indent, time_now_utc
+from modules.utils.misc import get_indent, date_time_now_utc_tz
 from modules.database.schema.user import (
     User,  # noqa: F401
     UserLocation,  # noqa: F401
@@ -17,7 +17,7 @@ from modules.database.schema.user import (
     NewLocationToken,  # noqa: F401
     Enquiry,  # noqa: F401
     Address,  # noqa: F401
-    Booking
+    Booking,
 )
 from modules.database.schema.product import (
     Product,  # noqa: F401
@@ -88,7 +88,7 @@ class AsyncDatabaseSession:
 
     async def create_tables(self):
         async with self._engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
+            # await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
         await self.create_admin_account(self.async_session)
 
@@ -248,6 +248,6 @@ class AsyncDatabaseSession:
             return location
 
     async def lock_user_account_query(self, user: User) -> None:
-        changes = dict(lock_time=time_now_utc(), is_locked=True)
+        changes = dict(lock_time=date_time_now_utc_tz(), is_locked=True)
         await self.update_user_query(user.id, changes)
         self.logger.warning(f"User with id: {user.id} is locked")

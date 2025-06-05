@@ -1,0 +1,20 @@
+[
+    {
+        "username": "user1",
+        "password": "$2b$10$a6B3.7oYORSKCjb8JeaZk.uBWqM5h1gwSn50aeqU7Ns3avZ8XP3OG",
+        "email": "test@aon.com",
+        "admin": false,
+        "active": false,
+        "discount": 0.10,
+        "telephone": "7654321"
+    },
+    {
+        "username": "user2",
+        "password": "$2b$10$a6B3.7oYORSKCjb8JeaZk.uBWqM5h1gwSn50aeqU7Ns3avZ8XP3OG",
+        "email": "test1@aon.com",
+        "admin": false,
+        "active": false,
+        "discount": 0.05,
+        "telephone": "1234567"
+    }
+]

@@ -33,8 +33,7 @@ from fastapi_events.dispatcher import dispatch
 from modules.utils.misc import (
     get_indent,
     time_delta,
-    time_now,
-    time_now_utc,
+    date_time_now_utc,
     datetime,
     obj_as_json,
 )
@@ -135,7 +134,7 @@ class UserHandler(UserQueries):
         email: str,
     ) -> Otp:
         token = self.create_timed_token(email)
-        expiry = time_now() + time_delta(self.cf.otp_expiry)
+        expiry = date_time_now_utc() + time_delta(self.cf.otp_expiry)
         otp = await self.get_otp_by_email_query(email)
         if otp is None:
             new_otp = Otp(
@@ -161,7 +160,7 @@ class UserHandler(UserQueries):
         if otp is not None:
             token = self.create_timed_token(otp.owner.email)
             app_url = self.get_app_url(request)
-            expiry = time_now() + time_delta(self.cf.otp_expiry)
+            expiry = date_time_now_utc() + time_delta(self.cf.otp_expiry)
             changes = {"token": token, "expiry": expiry}
             await self.update_otp_query(otp.id, changes)
             event_payload = SignUpPayload(
@@ -206,7 +205,7 @@ class UserHandler(UserQueries):
     async def is_otp_valid(self, token: str, expiry: datetime) -> bool:
         if (
             self.verify_email_token(token, self.cf.otp_expiry * 60)
-            and expiry > time_now_utc()
+            and expiry > date_time_now_utc()
         ):
             return True
         return False
@@ -312,7 +311,7 @@ class UserHandler(UserQueries):
         user = await self.find_user_by_email(req.data.email)
         if user is not None:
             token = self.create_timed_token(user.email)
-            expiry = time_now() + time_delta(self.cf.otp_expiry)
+            expiry = date_time_now_utc() + time_delta(self.cf.otp_expiry)
             password_reset_token = await self.find_passw_token_by_user_query(
                 user,
             )

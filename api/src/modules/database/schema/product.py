@@ -1,19 +1,16 @@
-from sqlalchemy import (
-    ForeignKey,
-)
+from sqlalchemy import ForeignKey, UniqueConstraint
 from modules.database.schema.base import (
     Audit,
     Base,
     str_pk_60,
     required_30,
     required_100,
-    deferred_500,
     required_60,
     timestamp,
     required_600,
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from typing import Set
+from typing import List
 from sqlalchemy.sql import func
 from decimal import Decimal
 
@@ -29,10 +26,9 @@ class Product(Audit):
     category: Mapped[required_60]
     stock_quantity: Mapped[int] = mapped_column(default=0)
     promotion: Mapped["SpecialDeals"] = relationship(
-        uselist=False,
         back_populates="product",
     )
-    reviews: Mapped[Set["Review"]] = relationship(
+    reviews: Mapped[List["Review"]] = relationship(
         back_populates="product", cascade="all, delete-orphan", lazy="selectin"
     )
 
@@ -59,10 +55,10 @@ class Product(Audit):
 class Review(Base):
     id: Mapped[str_pk_60]
     reviewer_name: Mapped[required_60]
-    email: Mapped[deferred_500]
+    email: Mapped[required_30]
     rating: Mapped[int]
     comment: Mapped[required_600]
-    date: Mapped[timestamp]
+    date: Mapped[timestamp] = mapped_column(server_default=func.now())
     product_id: Mapped[required_60] = mapped_column(
         ForeignKey("product.id", onupdate="CASCADE", ondelete="CASCADE")
     )
@@ -94,3 +90,4 @@ class SpecialDeals(Base):
         single_parent=True,
         lazy="selectin",
     )
+    __table_args__ = (UniqueConstraint("product_id"),)

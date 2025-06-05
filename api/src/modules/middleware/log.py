@@ -5,7 +5,7 @@ from os import path, getenv
 from pathlib import Path
 from pythonjsonlogger import jsonlogger
 from modules.settings.configuration import ApiConfig
-from modules.utils.misc import get_indent, time_now_utc
+from modules.utils.misc import get_indent, date_time_now_utc
 
 
 base_dir = Path(__file__).parent.parent.parent.parent.parent
@@ -31,12 +31,14 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
             message_dict,
         )
         # Add fields here
-        log_record["asctime"] = time_now_utc().strftime("%d-%m-%Y, %H:%M:%S.%f UTC")
+        log_record["asctime"] = date_time_now_utc().strftime(
+            "%d-%m-%Y, %H:%M:%S.%f UTC"
+        )
 
 
 FORMATTER = logging.Formatter(fmt)
 
-FORMATTER.converter = lambda *args: time_now_utc().timetuple()
+FORMATTER.converter = lambda *args: date_time_now_utc().timetuple()
 
 
 def get_console_handler():

@@ -2,7 +2,7 @@ from modules.repository.queries.queue import JobTaskQueries
 from modules.queue.enums import JobState, JobType, ResultType
 from modules.queue import models
 from modules.queue import schema
-from modules.utils.misc import get_indent, time_now_utc
+from modules.utils.misc import get_indent, date_time_now_utc
 import hashlib
 from aio_pika import Message, connect, DeliveryMode
 
@@ -15,7 +15,7 @@ class RQHandler(JobTaskQueries):
         new_job.job_type = job_type
         new_job.job_id = get_indent()
         new_job.job_status.state = JobState.Pending
-        new_job.created_at = time_now_utc()
+        new_job.created_at = date_time_now_utc()
         return new_job
 
     def create_checksum(self, data: str) -> str:
@@ -96,7 +96,7 @@ class RQHandler(JobTaskQueries):
             task_id=get_indent(),
             job_id=job.job_id,
             status=models.JobStatus(state=JobState.Received),
-            created_at=time_now_utc(),
+            created_at=date_time_now_utc(),
         )
         queue_items = [models.QueueItem(job=job, task=task)]
         success, message = await self._add_job_tasks_to_queue(

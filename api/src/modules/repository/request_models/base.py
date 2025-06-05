@@ -43,9 +43,7 @@ class BaseReq(BaseModel):
 
     def req_process_time(self):
         self.result.stop_time = time.perf_counter()
-        self.result.process_time = str(
-            (self.result.stop_time - self.result.start_time,)
-        )
+        self.result.process_time = f"{self.result.stop_time - self.result.start_time}"
 
 
 class GetSystemInfoRequest(BaseReq):

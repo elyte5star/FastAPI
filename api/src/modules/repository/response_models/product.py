@@ -1,7 +1,51 @@
 from modules.repository.request_models.base import BaseResponse
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Any
+from typing import Optional
+from decimal import Decimal
+from datetime import datetime
+
+
+class ProductReview(BaseModel):
+    id: str = Field(serialization_alias="rid")
+    rating: int
+    comment: str
+    date: datetime = Field(serialization_alias="createdAt")
+    product_id: str = Field(serialization_alias="pid")
+    email: str = Field(exclude=True)
+    reviewer_name: str = Field(serialization_alias="reviewerName")
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SpecialDeals(BaseModel):
+    id: str
+    new_price: Decimal = Field(alias="newPrice", exclude=True)
+    product_id: str = Field(alias="pid", exclude=True)
+    discount: Decimal
+    model_config = ConfigDict(from_attributes=True)
+
+
+class Product(BaseModel):
+    model_config = ConfigDict(from_attributes=True, extra="allow")
+    id: str = Field(serialization_alias="pid")
+    created_at: datetime = Field(serialization_alias="createdAt", exclude=True)
+    modified_at: Optional[datetime] = Field(
+        serialization_alias="modifiedAt", exclude=True
+    )
+    modified_by: Optional[str] = Field(serialization_alias="modifiedBy", exclude=True)
+    created_by: str = Field(serialization_alias="createdBy", exclude=True)
+    type: str = Field(exclude=True)
+    name: str
+    description: str
+    details: str
+    image: str
+    price: Decimal = Field(max_digits=7, decimal_places=2)
+    category: str
+    stock_quantity: int = Field(
+        serialization_alias="stockQuantity",
+    )
+    reviews: Optional[list[ProductReview]] = []
+    # promotion: Optional[SpecialDeals] = None
 
 
 class CreateProductResponse(BaseResponse):
@@ -16,16 +60,6 @@ class CreateProductReviewResponse(BaseResponse):
     rid: str = ""
 
 
-class ProductReview(BaseModel):
-    rid: str
-    rating: int
-    comment: str
-    date: datetime = Field(serialization_alias="createdAt")
-    pid: str
-    email: EmailStr
-    reviewer_name: str = Field(serialization_alias="reviewerName")
-
-
 class ProductDeals(BaseModel):
     id: str
     new_price: float
@@ -33,7 +67,7 @@ class ProductDeals(BaseModel):
 
 
 class GetProductResponse(BaseResponse):
-    product: Any = {}
+    product: Product = None
 
 
 class GetProductReviewResponse(BaseResponse):
@@ -41,7 +75,7 @@ class GetProductReviewResponse(BaseResponse):
 
 
 class GetProductsResponse(BaseResponse):
-    products: list[dict] = []
+    products: list[Product] = []
 
 
 class GetProductReviewsResponse(BaseResponse):

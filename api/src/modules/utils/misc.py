@@ -8,18 +8,20 @@ import bcrypt
 from functools import lru_cache, wraps
 
 
-def time_now() -> datetime:
-    now = datetime.now()
-    now_est = now.astimezone(timezone("Europe/Stockholm"))
-    return now_est
+def date_time_now_local_tz() -> datetime:
+    return datetime.now().astimezone(timezone("Europe/Stockholm"))
 
 
-def time_now_utc() -> datetime:
+def date_time_now_utc_tz() -> datetime:
     return datetime.now().astimezone(timezone("UTC"))
 
 
 def time_then() -> datetime:
     return datetime(1971, 1, 1)
+
+
+def date_time_now_utc() -> datetime:
+    return datetime.now()
 
 
 def get_indent() -> str:

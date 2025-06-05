@@ -18,21 +18,13 @@ str_100 = Annotated[str, 100]
 
 str_500 = Annotated[str, 500]
 
-required_30 = Annotated[
-    str, mapped_column(String(30), nullable=False, unique=True, index=True)
-]
+required_30 = Annotated[str, mapped_column(String(30), nullable=False, index=True)]
 
-required_100 = Annotated[
-    str, mapped_column(String(100), nullable=False, unique=True, index=True)
-]
+required_100 = Annotated[str, mapped_column(String(100), nullable=False, index=True)]
 
-required_600 = Annotated[
-    str, mapped_column(String(600), nullable=False, unique=True, index=True)
-]
+required_600 = Annotated[str, mapped_column(String(600), nullable=False, index=True)]
 
-required_60 = Annotated[
-    str, mapped_column(String(60), nullable=False, unique=True, index=True)
-]
+required_60 = Annotated[str, mapped_column(String(60), nullable=False, index=True)]
 
 bool_col = Annotated[bool, mapped_column(default=False)]
 

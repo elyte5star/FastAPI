@@ -9,7 +9,7 @@ from modules.database.schema.user import (
 from modules.database.connection import AsyncDatabaseSession
 from asyncpg.exceptions import PostgresError
 from datetime import datetime
-from modules.utils.misc import time_now_utc
+from modules.utils.misc import date_time_now_utc
 from collections.abc import Sequence
 
 
@@ -32,7 +32,7 @@ class UserQueries(AsyncDatabaseSession):
     async def activate_new_user_account(self, userid: str):
         try:
             user = await self.async_session.get(User, userid)
-            user.modified_at = time_now_utc()
+            user.modified_at = date_time_now_utc()
             user.enabled = True
             user.modified_by = user.username
             await self.async_session.commit()
@@ -47,7 +47,7 @@ class UserQueries(AsyncDatabaseSession):
         try:
             user = await self.async_session.get(User, userid)
             user.password = hashed_password
-            user.modified_at = time_now_utc()
+            user.modified_at = date_time_now_utc()
             user.modified_by = modified_by
             await self.async_session.commit()
             result = True

@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr
 from fastapi_events.registry.payload_schema import registry as payload_schema
 from datetime import datetime
 from modules.repository.request_models.user import EmailRequestSchema
-from modules.utils.misc import time_now_utc
+from modules.utils.misc import date_time_now_utc_tz
 
 
 class UserEvents(Enum):
@@ -152,7 +152,7 @@ class APIEventsHandler(EmailService):
             "country": event_payload.country,
             "username": event_payload.username,
             "ip": event_payload.ip,
-            "time": time_now_utc().strftime("%d-%m-%Y, %H:%M:%S"),
+            "time": date_time_now_utc_tz().strftime("%d-%m-%Y, %H:%M:%S"),
             "enableLocationLink": event_payload.app_url
             + "/auth/enable-new-location?token="
             + event_payload.token,
@@ -178,7 +178,7 @@ class APIEventsHandler(EmailService):
             "message": event_payload.message,
             "case_id": event_payload.eid,
             "client_name": event_payload.client_name,
-            "time": time_now_utc().strftime('%d-%m-%Y, %H:%M:%S'),
+            "time": date_time_now_utc_tz().strftime('%d-%m-%Y, %H:%M:%S'),
             "home": event_payload.app_url,
         }
         email_req = EmailRequestSchema(

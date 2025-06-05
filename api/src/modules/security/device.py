@@ -1,7 +1,7 @@
 from modules.database.schema.user import DeviceMetaData
 from modules.repository.queries.auth import AuthQueries
 from fastapi import Request
-from modules.utils.misc import get_indent, time_now_utc
+from modules.utils.misc import get_indent, date_time_now_utc
 from fastapi_events.dispatcher import dispatch
 from modules.security.events.base import UserEvents, NewDeviceLogin
 from modules.database.schema.user import User
@@ -24,7 +24,7 @@ class DeviceMetaDataChecker(AuthQueries):
                 id=get_indent(),
                 device_details=device_details,
                 location=city,
-                last_login_date=time_now_utc(),
+                last_login_date=date_time_now_utc(),
                 userid=user.id,
             )
             await self.create_device_meta_data_query(new_device_meta_data)
@@ -38,7 +38,7 @@ class DeviceMetaDataChecker(AuthQueries):
             )
             dispatch(UserEvents.UNKNOWN_DEVICE_LOGIN, event_payload)
         else:
-            changes = {"last_login_date": time_now_utc()}
+            changes = {"last_login_date": date_time_now_utc()}
             _ = await self.update_device_meta_data_query(
                 existing_device.id,
                 changes,

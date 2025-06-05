@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict, Json
 from datetime import datetime
-from modules.utils.misc import time_now_utc
+from modules.utils.misc import date_time_now_utc_tz
 from typing_extensions import Annotated
 from decimal import Decimal
 
@@ -85,7 +85,7 @@ class Job(BaseModel):
         serialization_alias="jobType",
     )
     created_at: datetime = Field(
-        default=time_now_utc(), serialization_alias="createdAt"
+        default=date_time_now_utc_tz(), serialization_alias="createdAt"
     )
     # task_ids: list = Field(default=[], serialization_alias="taskIds")
     job_status: JobStatus = Field(
@@ -145,7 +145,7 @@ class Result(BaseModel):
 
 class ResultLog(BaseModel):
     result_id: str = ""
-    created_at: datetime = time_now_utc()
+    created_at: datetime = date_time_now_utc_tz()
     handled: bool = False
     handled_date: Optional[
         Annotated[

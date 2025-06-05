@@ -13,6 +13,7 @@ from modules.repository.response_models.job import JobResponse
 from decimal import Decimal
 from modules.utils.misc import obj_as_json
 from modules.queue.base import RQHandler, JobType, ResultType
+from modules.repository.response_models.product import Product
 
 
 class BookingHandler(RQHandler):
@@ -65,13 +66,12 @@ class BookingHandler(RQHandler):
     async def check_products(self, cart: list[CartItem]) -> tuple | None:
         avaliable_prods, unavaliable_prods = [], []
         for item in cart:
-            product_id = item.pid
-            product = await self.find_product_by_id(product_id)
-            if product is None:
+            product_in_db = await self.find_product_by_id(item.pid)
+            if product_in_db is None:
                 return None
-            product_dict = obj_as_json(product)
-            if product_dict["stock_quantity"] >= item.quantity:
-                avaliable_prods.append(product_dict)
+            pydantic_model = Product.model_validate(product_in_db)
+            if pydantic_model.stock_quantity >= item.quantity:
+                avaliable_prods.append(pydantic_model)
             else:
-                unavaliable_prods.append(product_dict)
+                unavaliable_prods.append(pydantic_model)
         return (avaliable_prods, unavaliable_prods)

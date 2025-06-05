@@ -10,7 +10,7 @@ from modules.repository.validators.base import is_valid_email
 from typing import Optional
 from datetime import timedelta
 from jose import jwt
-from modules.utils.misc import time_delta, time_now_utc, get_indent
+from modules.utils.misc import time_delta, date_time_now_utc, get_indent
 from modules.database.schema.user import User
 from fastapi import Request, Response
 from modules.security.login_attempt import LoginAttemptChecker
@@ -125,9 +125,9 @@ class AuthenticationHandler(LoginAttemptChecker):
     ):
         to_encode = data.copy()
         if expires_delta:
-            _expire = time_now_utc() + expires_delta
+            _expire = date_time_now_utc() + expires_delta
         else:
-            _expire = time_now_utc() + time_delta(self.cf.token_expire_min)
+            _expire = date_time_now_utc() + time_delta(self.cf.token_expire_min)
         to_encode.update({"exp": _expire})
         jwt_encode = jwt.encode(
             to_encode, self.cf.secret_key, algorithm=self.cf.algorithm

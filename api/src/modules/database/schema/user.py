@@ -10,6 +10,7 @@ from modules.database.schema.base import (
     required_100,
     deferred_500,
     required_60,
+    required_600,
     timestamp,
     bool_col,
     required_600,
@@ -20,22 +21,20 @@ from sqlalchemy.ext.mutable import MutableList
 from decimal import Decimal
 from sqlalchemy.ext.hybrid import hybrid_property
 
-# from modules.repository.request_models.booking import BookingModel
-
 
 class User(Audit):
     # add ForeignKey to mapped_column(String, primary_key=True)
     id: Mapped[str_pk_60] = mapped_column(ForeignKey("audit.id"))
     email: Mapped[required_30]
     username: Mapped[required_30]
-    password: Mapped[deferred_500]
+    password: Mapped[required_600]
     active: Mapped[bool_col]
     enabled: Mapped[bool_col]
     admin: Mapped[bool_col]
     telephone: Mapped[required_30]
     failed_attempts: Mapped[int] = mapped_column(default=0)
-    discount: Mapped[Decimal] = mapped_column(default=0.0)
-    lock_time: Mapped[Optional[timestamp]]
+    discount: Mapped[float] = mapped_column(default=0.0)
+    lock_time: Mapped[Optional[timestamp]] = mapped_column(default=None)
     is_using_mfa: Mapped[bool_col]
     is_locked: Mapped[bool_col]
     otp = relationship("Otp", uselist=False, back_populates="owner")

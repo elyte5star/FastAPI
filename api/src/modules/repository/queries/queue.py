@@ -1,10 +1,10 @@
-from modules.database.connection import AsyncDatabaseSession
+from modules.repository.queries.product import ProductQueries
 from modules.queue.schema import Job, Task, Result
 from asyncpg.exceptions import PostgresError
 from collections.abc import Sequence
 
 
-class JobTaskQueries(AsyncDatabaseSession):
+class JobTaskQueries(ProductQueries):
     async def add_job_to_db_query(self, job: Job) -> None:
         try:
             self.async_session.add(job)
