@@ -20,7 +20,7 @@ class ProductHandler(ProductQueries):
         req: CreateProductRequest,
     ) -> product.CreateProductResponse:
         product_exist = await self.find_product_by_name(req.new_product.name)
-        if product_exist is None:
+        if product_exist is None and req.credentials is not None:
             new_product = Product(
                 id=get_indent(),
                 created_by=req.credentials.username,
@@ -43,23 +43,27 @@ class ProductHandler(ProductQueries):
         self, req: CreateProductsRequest
     ) -> product.CreateProductsResponse:
         new_products, product_ids = [], []
-        for product in req.new_products:
-            product_exist = await self.find_product_by_name(product.name)
-            if product_exist is None:
+        for new_product in req.new_products:
+            product_exist = await self.find_product_by_name(new_product.name)
+            if product_exist is None and req.credentials is not None:
                 new_product = Product(
                     id=get_indent(),
                     created_by=req.credentials.username,
-                    description=product.description,
-                    name=product.name,
-                    details=product.details,
-                    image=product.image,
-                    price=product.price,
-                    category=product.category,
-                    stock_quantity=product.stock_quantity,
+                    description=new_product.description,
+                    name=new_product.name,
+                    details=new_product.details,
+                    image=new_product.image,
+                    price=new_product.price,
+                    category=new_product.category,
+                    stock_quantity=new_product.stock_quantity,
                 )
                 product_ids.append(new_product.id)
                 new_products.append(new_product)
-            self.cf.logger.warning(f"product with name: {product.name} exist")
+            else:
+                self.cf.logger.warning(
+                    f"product with name: {product.name} exist",
+                )
+
         await self.create_products_query(new_products)
         req.result.pids = product_ids
         return req.req_success(

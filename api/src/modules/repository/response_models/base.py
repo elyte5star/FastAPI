@@ -13,7 +13,7 @@ class BaseResponse(BaseModel):
     req_id: str = ""
     start_time: float = 0.0
     stop_time: float = 0.0
-    process_time: str = ""
+    process_time: float = 0.0
     success: bool = False
     message: str = ""
 

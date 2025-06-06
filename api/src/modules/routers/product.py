@@ -108,7 +108,7 @@ class ProductRouter(ProductHandler):
         self,
         new_products: list[CreateProduct],
         current_user: Annotated[JWTPrincipal, Depends(RoleChecker(["ADMIN"]))],
-    ) -> CreateProductResponse:
+    ) -> CreateProductsResponse:
         return await self._create_many_products(
             CreateProductsRequest(
                 new_products=new_products,

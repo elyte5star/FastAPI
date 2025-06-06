@@ -28,11 +28,11 @@ class BaseReq(BaseModel):
         self.req_process_time()
         return self.result
 
-    # def is_cred_expired(self) -> bool:
-    #     if self.credentials:
-    #         if time.time() > self.credentials.expires:
-    #             return True
-    #     return False
+    def is_cred_expired(self) -> bool:
+        if self.credentials:
+            if time.time() > self.credentials.expires:
+                return True
+        return False
 
     def req_failure(self, message="") -> BaseResponse:
         self.result.success = False
@@ -43,7 +43,7 @@ class BaseReq(BaseModel):
 
     def req_process_time(self):
         self.result.stop_time = time.perf_counter()
-        self.result.process_time = f"{self.result.stop_time - self.result.start_time}"
+        self.result.process_time = self.result.stop_time - self.result.start_time
 
 
 class GetSystemInfoRequest(BaseReq):

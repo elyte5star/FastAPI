@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional
 from decimal import Decimal
-from datetime import datetime
 
 
 class ProductReview(BaseModel):
@@ -32,7 +31,10 @@ class Product(BaseModel):
     modified_at: Optional[datetime] = Field(
         serialization_alias="modifiedAt", exclude=True
     )
-    modified_by: Optional[str] = Field(serialization_alias="modifiedBy", exclude=True)
+    modified_by: Optional[str] = Field(
+        serialization_alias="modifiedBy",
+        exclude=True,
+    )
     created_by: str = Field(serialization_alias="createdBy", exclude=True)
     type: str = Field(exclude=True)
     name: str
