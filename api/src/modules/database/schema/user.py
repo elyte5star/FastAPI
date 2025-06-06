@@ -1,25 +1,23 @@
-from sqlalchemy import (
-    ForeignKey,
-    PickleType,
-)
+from sqlalchemy import ForeignKey, PickleType, UniqueConstraint
 from modules.database.schema.base import (
     Audit,
     Base,
     str_pk_60,
     required_30,
     required_100,
-    deferred_500,
     required_60,
     required_600,
     timestamp,
     bool_col,
     required_600,
+    PydanticColumn,
 )
 from typing import Set, List, Optional
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.ext.mutable import MutableList
-from decimal import Decimal
+
 from sqlalchemy.ext.hybrid import hybrid_property
+from modules.queue.models import ShippingAddress
 
 
 class User(Audit):
@@ -42,7 +40,7 @@ class User(Audit):
         "PasswordResetToken", uselist=False, back_populates="owner"
     )
     locations: Mapped[Set["UserLocation"]] = relationship(
-        back_populates="owner", cascade="all, delete-orphan"
+        back_populates="owner", cascade="all, delete-orphan", lazy="selectin"
     )
     addresses: Mapped[List["Address"]] = relationship(
         cascade="all, delete", lazy="selectin"
@@ -65,6 +63,7 @@ class User(Audit):
             f" id:{self.id}, "
             f" failed_attempts:{self.failed_attempts}, "
             f" lock_time:{self.lock_time},"
+            f" locations:{self.locations},"
             f" username:{self.username},"
             f" email:{self.email},"
             f" created_at:{self.created_at},"
@@ -73,18 +72,6 @@ class User(Audit):
             f" modified_by:{self.modified_by}"
             f")>"
         )
-
-
-class Booking(Base):
-    id: Mapped[str_pk_60]
-    user_id: Mapped[required_60] = mapped_column(
-        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
-    )
-    cart: Mapped[MutableList] = mapped_column(
-        MutableList.as_mutable(PickleType), default=[]
-    )
-    created_at: Mapped[timestamp]
-    user: Mapped["User"] = relationship(back_populates="bookings")
 
 
 class Address(Base):
@@ -103,6 +90,22 @@ class Address(Base):
     @hybrid_property
     def full_name(self):
         return self.first_name + " " + self.last_name
+
+
+class Booking(Base):
+    id: Mapped[str_pk_60]
+    user_id: Mapped[required_60] = mapped_column(
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
+    )
+    cart: Mapped[MutableList] = mapped_column(
+        MutableList.as_mutable(PickleType), default=[]
+    )
+    address: Mapped[ShippingAddress] = mapped_column(
+        PydanticColumn(ShippingAddress), nullable=False
+    )
+    created_at: Mapped[timestamp]
+    total_price: Mapped[float]
+    user: Mapped["User"] = relationship(back_populates="bookings")
 
 
 class UserLocation(Base):
@@ -163,6 +166,7 @@ class Otp(Base):
     owner = relationship(
         "User", back_populates="otp", single_parent=True, lazy="selectin"
     )
+    __table_args__ = (UniqueConstraint("user_id"),)
 
 
 class PasswordResetToken(Base):
@@ -178,6 +182,7 @@ class PasswordResetToken(Base):
         single_parent=True,
         lazy="selectin",
     )
+    __table_args__ = (UniqueConstraint("user_id"),)
 
 
 class DeviceMetaData(Base):

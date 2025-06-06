@@ -17,8 +17,8 @@ from modules.repository.response_models.user import (
     GetUserResponse,
     GetUsersResponse,
     BaseResponse,
-    CreatedUserData,
     ClientEnquiryResponse,
+    UserDisplay,
 )
 from modules.database.schema.user import (
     User,
@@ -74,11 +74,9 @@ class UserHandler(UserQueries):
                 created_by=req.new_user.username,
                 active=True,
             )
-            await self.create_user_query(new_user)
-            response_data = CreatedUserData(
-                userid=new_user.id, created_at=new_user.created_at
-            )
-            req.result.data = response_data
+            user_in_db = await self.create_user_query(new_user)
+            pydantic_model = UserDisplay.model_validate(user_in_db)
+            req.result.data = pydantic_model
             await self.on_successfull_registration(new_user, request)
             return req.req_success("New user created!")
         return req.req_failure("User exist")
@@ -130,7 +128,7 @@ class UserHandler(UserQueries):
 
     async def generate_confirmation_token(
         self,
-        userid: str,
+        user_id: str,
         email: str,
     ) -> Otp:
         token = self.create_timed_token(email)
@@ -140,7 +138,7 @@ class UserHandler(UserQueries):
             new_otp = Otp(
                 id=get_indent(),
                 email=email,
-                userid=userid,
+                user_id=user_id,
                 expiry=expiry,
                 token=token,
             )
@@ -223,35 +221,21 @@ class UserHandler(UserQueries):
                 f"illegal operation by {req.credentials.userid}",
             )
             return req.req_failure("Forbidden: Access is denied")
-        user = await self.find_user_by_id(req.userid)
-        if user is None:
-            return req.req_failure(f"User with userid {req.userid} not found")
-        user_info_dict = obj_as_json(user)
-        req.result.user = self.filter_user_fields(user_info_dict)
-        return req.req_success(f"User with userid {req.userid} found")
-
-    def filter_user_fields(self, user_dict: dict) -> dict:
-        if user_dict:
-            user_dict["userId"] = user_dict.pop("id")
-            user_dict["password"] = "***********"
-            user_dict["lastModifiedAt"] = user_dict.pop("modified_at")
-            user_dict["createdAt"] = user_dict.pop("created_at")
-            user_dict["createdBy"] = user_dict.pop("created_by")
-            user_dict["IsUsing2FA"] = user_dict.pop("is_using_mfa")
-            user_dict["accountNonLocked"] = not user_dict.pop("is_locked")
-            user_dict["failedAttempts"] = user_dict.pop("failed_attempts")
-            user_dict["lockTime"] = user_dict.pop("lock_time")
-            del user_dict["type"]
-        return user_dict
+        user_in_db = await self.find_user_by_id(req.userid)
+        if user_in_db is None:
+            return req.req_failure(f"User with id {req.userid} not found")
+        pydantic_model = UserDisplay.model_validate(user_in_db)
+        req.result.user = pydantic_model
+        return req.req_success(f"User with id {req.userid} found")
 
     # ADMIN RIGHTS ONLY
     async def _get_users(self, req: GetUsersRequest) -> GetUsersResponse:
         users = await self.get_users_query()
-        result = []
-        for user in users:
-            user_info_dict = obj_as_json(user)
-            result.append(self.filter_user_fields(user_info_dict))
-        req.result.users = result
+        users = [
+            UserDisplay.model_validate(user_in_db)
+            for user_in_db in await self.get_users_query()
+        ]
+        req.result.users = users
         return req.req_success(f"Total number of users: {len(users)}")
 
     async def _delete_user(self, req: DeleteUserRequest) -> BaseResponse:
@@ -276,6 +260,7 @@ class UserHandler(UserQueries):
         await self.delete_user_query(user.id)
         return req.req_success(f"User with id: {req.userid} deleted")
 
+    # ADMIN RIGHTS ONLY
     async def _lock_user(
         self,
         req: LockUserAccountRequest,

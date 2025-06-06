@@ -5,7 +5,6 @@ from modules.utils.misc import date_time_now_utc_tz
 from typing_extensions import Annotated
 from decimal import Decimal
 
-# from modules.repository.request_models.booking import BookingModel
 from modules.queue.enums import (
     JobState,
     JobType,
@@ -25,7 +24,7 @@ class CartItem(BaseModel):
     model_config = ConfigDict(extra="forbid", serialize_by_alias=True)
 
 
-class ShippingDetails(BaseModel):
+class ShippingAddress(BaseModel):
     first_name: Annotated[str, Field(serialization_alias="firstName", repr=True)]
     last_name: Annotated[str, Field(serialization_alias="lastName", repr=True)]
     street_address: Annotated[
@@ -38,7 +37,7 @@ class ShippingDetails(BaseModel):
     country: str
     state: str
     email: str
-    zip_code: Annotated[str, Field(serialization_alias="zip", repr=True)]
+    zip_code: Annotated[str, Field(serialization_alias="zipCode", repr=True)]
     model_config = ConfigDict(extra="forbid", serialize_by_alias=True)
 
 
@@ -51,14 +50,15 @@ class BookingModel(BaseModel):
             repr=True,
         ),
     ]
-    shipping_details: Annotated[
-        ShippingDetails,
+    shipping_address: Annotated[
+        ShippingAddress,
         Field(
-            serialization_alias="shippingDetails",
+            serialization_alias="shippingAddress",
             repr=True,
         ),
     ]
-    userid: str = Field(serialization_alias="userId", repr=True)
+    user_id: str = Field(serialization_alias="userId", repr=True)
+    created_at: datetime = Field(serialization_alias="createdAt")
 
     model_config = ConfigDict(serialize_by_alias=True)
 

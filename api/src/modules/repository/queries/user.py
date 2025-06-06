@@ -14,7 +14,7 @@ from collections.abc import Sequence
 
 
 class UserQueries(AsyncDatabaseSession):
-    async def create_user_query(self, user: User) -> None:
+    async def create_user_query(self, user: User) -> User | None:
         try:
             self.async_session.add(user)
         except PostgresError:
@@ -22,6 +22,8 @@ class UserQueries(AsyncDatabaseSession):
             raise
         else:
             await self.async_session.commit()
+            await self.async_session.refresh(user)
+            return user
 
     async def get_users_query(self) -> Sequence[User]:
         stmt = self.select(User).order_by(User.created_at)

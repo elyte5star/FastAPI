@@ -44,7 +44,6 @@ class CartItem(BaseModel):
             examples=[0.0, 0.1, 0.3, 0.4],
             strict=True,
             repr=True,
-            
         ),
     ]
 
@@ -85,7 +84,7 @@ class PaymentDetails(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class ShippingDetails(BaseModel):
+class ShippingAddress(BaseModel):
     first_name: Annotated[str, Field(validation_alias="firstName", repr=True)]
     last_name: Annotated[str, Field(validation_alias="lastName", repr=True)]
     street_address: Annotated[
@@ -107,8 +106,8 @@ class CreateBooking(BaseModel):
     payment_details: Annotated[
         PaymentDetails, Field(validation_alias="paymentDetails", repr=True)
     ]
-    shipping_details: Annotated[
-        ShippingDetails, Field(validation_alias="shippingDetails", repr=True)
+    shipping_address: Annotated[
+        ShippingAddress, Field(validation_alias="shippingAddress", repr=True)
     ]
     userid: ValidateUUID = Field(validation_alias="userId", repr=True)
     model_config = ConfigDict(extra="forbid")
@@ -117,29 +116,6 @@ class CreateBooking(BaseModel):
 class CreateBookingRequest(BaseReq):
     new_order: CreateBooking | None = None
     result: JobResponse = JobResponse()
-
-
-class BookingModel(BaseModel):
-    cart: list[CartItem]
-    total_price: Annotated[
-        Decimal,
-        Field(
-            max_digits=7,
-            decimal_places=2,
-            validation_alias="totalPrice",
-            repr=True,
-        ),
-    ]
-    shipping_details: Annotated[
-        ShippingDetails,
-        Field(
-            serialization_alias="shippingDetails",
-            repr=True,
-        ),
-    ]
-    userid: str = Field(serialization_alias="userId", repr=True)
-
-    model_config = ConfigDict(serialize_by_alias=True)
 
 
 class GetBookingRequest(BaseReq):

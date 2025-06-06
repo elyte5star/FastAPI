@@ -3,7 +3,6 @@ from modules.repository.request_models.booking import (
     PaymentDetails,
     GetBookingRequest,
     CartItem,
-    BookingModel,
 )
 from modules.repository.response_models.booking import (
     GetBookingsResponse,
@@ -11,9 +10,9 @@ from modules.repository.response_models.booking import (
 )
 from modules.repository.response_models.job import JobResponse
 from decimal import Decimal
-from modules.utils.misc import obj_as_json
 from modules.queue.base import RQHandler, JobType, ResultType
 from modules.repository.response_models.product import Product
+from modules.queue.models import BookingModel
 
 
 class BookingHandler(RQHandler):
@@ -36,13 +35,13 @@ class BookingHandler(RQHandler):
         check_payment = self.make_payment(req.new_order.payment_details, amount_to_pay)
         if not check_payment:
             return req.req_failure("Problem with payment")
-
         job = await self._create_job(JobType.CreateBooking, req.credentials.userid)
         booking_model = BookingModel(
             cart=cart,
             total_price=amount_to_pay,
-            shipping_details=req.new_order.shipping_details,
-            userid=req.credentials.userid,
+            shipping_address=req.new_order.shipping_details,
+            user_id=req.credentials.userid,
+            created_at=job.created_at,
         )
         job.create_booking = booking_model
         success, message = await self._add_job_with_one_task(
