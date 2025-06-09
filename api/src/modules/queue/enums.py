@@ -18,9 +18,10 @@ class JobState(str, Enum):
 
 class ResultState(str, Enum):
     NotSet = "0"
-    Present = "10"
+    Pending = "10"
+    Present = "20"
     Archived = "30"
-    Removed = "30"
+    Removed = "40"
 
 
 class ResultType(str, Enum):

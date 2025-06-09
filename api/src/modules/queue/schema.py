@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import List
 from sqlalchemy import Integer, ForeignKey, Enum, UniqueConstraint
 from modules.database.schema.base import (
     Audit,
@@ -18,6 +18,7 @@ from modules.queue.enums import (
 )
 from sqlalchemy.ext.mutable import MutableDict
 from modules.queue.models import BookingModel, SearchModel
+from datetime import datetime
 
 
 class Job(Audit):
@@ -39,13 +40,11 @@ class Job(Audit):
         PydanticColumn(JobStatus), nullable=False
     )
     number_of_tasks: Mapped[int] = mapped_column(Integer, nullable=False)
-    create_booking: Mapped[Optional[BookingModel]] = mapped_column(
-        PydanticColumn(BookingModel)
+    create_booking: Mapped[BookingModel | None] = mapped_column(
+        PydanticColumn(BookingModel), default=None
     )
-    # pep-484 type will be Optional, but column will be
-    # NOT NULL
-    create_search: Mapped[Optional[SearchModel]] = mapped_column(
-        PydanticColumn(SearchModel)
+    create_search: Mapped[SearchModel | None] = mapped_column(
+        PydanticColumn(SearchModel), default=None
     )
 
 
@@ -55,13 +54,21 @@ class Task(Base):
         ForeignKey("job.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
-    result: Mapped["Result"] = relationship(back_populates="task")
+    result: Mapped["Result"] = relationship(
+        back_populates="task", cascade="all, delete-orphan"
+    )
     status: Mapped[JobStatus] = mapped_column(
         PydanticColumn(JobStatus), default=JobStatus()
     )
     created_at: Mapped[timestamp]
-    started: Mapped[Optional[timestamp]]
-    finished: Mapped[Optional[timestamp]]
+    started: Mapped[datetime | None] = mapped_column(
+        default=None,
+        nullable=True,
+    )
+    finished: Mapped[datetime | None] = mapped_column(
+        default=None,
+        nullable=True,
+    )
 
 
 class Result(Base):
@@ -69,17 +76,17 @@ class Result(Base):
     result_type: Mapped[ResultType] = mapped_column(
         Enum(ResultType), default=ResultType.Database
     )
-    result_state: Mapped[ResultState] = mapped_column(
-        Enum(ResultState), default=ResultState.NotSet
-    )
+    result_state: Mapped[ResultState] = mapped_column(Enum(ResultState), nullable=False)
     task_id: Mapped[str_60] = mapped_column(
         ForeignKey("task.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
-    task: Mapped["Task"] = relationship(back_populates="result", single_parent=True)
-    data: Mapped[dict[str, str]] = mapped_column(
+    task: Mapped["Task"] = relationship(
+        back_populates="result",
+        single_parent=True,
+    )
+    data: Mapped[dict[str, str] | None] = mapped_column(
         MutableDict.as_mutable(JSONEncodedDict)
     )
-    data_checksum: Mapped[Optional[str]]
 
     __table_args__ = (UniqueConstraint("task_id"),)

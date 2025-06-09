@@ -1,5 +1,5 @@
 from modules.repository.queries.queue import JobTaskQueries
-from modules.queue.enums import JobState, JobType, ResultType
+from modules.queue.enums import JobState, JobType, ResultType, ResultState
 from modules.queue import models
 from modules.queue import schema
 from modules.utils.misc import get_indent, date_time_now_utc
@@ -10,13 +10,13 @@ from aio_pika import Message, connect, DeliveryMode
 class RQHandler(JobTaskQueries):
 
     async def _create_job(self, job_type: JobType, userid: str) -> models.Job:
-        new_job = models.Job()
-        new_job.user_id = userid
-        new_job.job_type = job_type
-        new_job.job_id = get_indent()
-        new_job.job_status.state = JobState.Pending
-        new_job.created_at = date_time_now_utc()
-        return new_job
+        job = models.Job()
+        job.user_id = userid
+        job.job_type = job_type
+        job.id = get_indent()
+        job.job_status.state = JobState.Pending
+        job.created_at = date_time_now_utc()
+        return job
 
     def create_checksum(self, data: str) -> str:
         digest = hashlib.sha256()
@@ -29,42 +29,55 @@ class RQHandler(JobTaskQueries):
     async def create_task_result(
         self, result_type: ResultType, task_id: str
     ) -> models.Result:
-        new_result = models.Result()
-        new_result.result_id = get_indent()
-        new_result.result_type = result_type
-        new_result.task_id = task_id
-        return new_result
+        result = models.Result()
+        result.id = get_indent()
+        result.result_type = result_type
+        result.result_state = ResultState.Pending
+        result.task_id = task_id
+        return result
 
     async def _add_job_tasks_to_queue(
         self,
         job: models.Job,
         tasks: list[models.Task],
+        results: list[models.Result],
         queue_name: str,
         queue_items: list[models.QueueItem],
-        result_type: ResultType,
     ) -> tuple[bool, str]:
         try:
             sql_job_model = schema.Job(
-                id=job.job_id,
-                user_id=job.user_id,
-                job_type=job.job_type,
-                job_status=job.job_status,
-                number_of_tasks=job.number_of_tasks,
-                create_booking=job.create_booking,
-                create_search=job.create_search,
-                created_at=job.created_at,
+                **dict(
+                    id=job.id,
+                    user_id=job.user_id,
+                    job_type=job.job_type,
+                    job_status=job.job_status,
+                    number_of_tasks=job.number_of_tasks,
+                    create_booking=job.create_booking,
+                    create_search=job.create_search,
+                    created_at=job.created_at,
+                    created_by="LOGGED_IN_USER",
+                )
             )
             await self.add_job_to_db_query(sql_job_model)
-            for task in tasks:
-                task_result = await self.create_task_result(result_type, task.task_id)
-                sql_task_model = schema.Task(
-                    id=task.task_id,
-                    job_id=task.job_id,
-                    created_at=task.created_at,
-                    status=task.status,
+            for task, result in zip(tasks, results):
+                sql_task = schema.Task(
+                    **dict(
+                        id=task.id,
+                        job_id=task.job_id,
+                        created_at=task.created_at,
+                        status=task.status,
+                    )
                 )
-                await self.add_tasks_to_db_query(sql_task_model)
-                await self.add_task_result_db_query(task_result)
+                await self.add_task_to_db_query(sql_task)
+                sql_result = schema.Result(
+                    **dict(
+                        id=result.id,
+                        result_type=result.result_type,
+                        result_state=result.result_state,
+                        task_id=result.task_id,
+                    )
+                )
+                await self.add_task_result_db_query(sql_result)
             # Perform connection
             connection = await connect(self.cf.rabbit_connect_string)
             async with connection:
@@ -84,22 +97,31 @@ class RQHandler(JobTaskQueries):
             pass
 
         except Exception as e:
+            self.cf.logger.error(f"Error creating JOB:: {str(e)}")
             return (False, f"Failed to create job. {str(e)}.")
         else:
-            return (True, f"Job with id '{job.job_id}' created.")
+            return (True, f"Job with id '{job.id}' created.")
 
     async def _add_job_with_one_task(
         self, job: models.Job, queue_name: str, result_type: ResultType
     ) -> tuple[bool, str]:
         job.number_of_tasks = 1
         task = models.Task(
-            task_id=get_indent(),
-            job_id=job.job_id,
+            id=get_indent(),
+            job_id=job.id,
             status=models.JobStatus(state=JobState.Received),
             created_at=date_time_now_utc(),
         )
+        task_result = await self.create_task_result(
+            result_type,
+            task.id,
+        )
         queue_items = [models.QueueItem(job=job, task=task)]
         success, message = await self._add_job_tasks_to_queue(
-            job, [task], queue_name, queue_items, result_type
+            job,
+            [task],
+            [task_result],
+            queue_name,
+            queue_items,
         )
         return success, message

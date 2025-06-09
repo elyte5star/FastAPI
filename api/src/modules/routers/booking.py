@@ -1,11 +1,10 @@
-from modules.service.booking import BookingHandler
+from modules.queue.booking import BookingHandler
 from fastapi import APIRouter, Depends, status
 from typing import Annotated
 from modules.repository.request_models.booking import (
     CreateBooking,
     CreateBookingRequest,
 )
-from modules.repository.response_models.booking import CreateBookingResponse
 from modules.security.dependency import security, JWTPrincipal
 from modules.repository.response_models.job import JobResponse
 
@@ -31,6 +30,6 @@ class BookingRouter(BookingHandler):
         data: CreateBooking,
         current_user: Annotated[JWTPrincipal, Depends(security)],
     ) -> JobResponse:
-        return await self.__create_booking(
+        return await self._create_booking(
             CreateBookingRequest(new_order=data, credentials=current_user)
         )

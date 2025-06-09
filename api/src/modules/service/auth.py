@@ -163,7 +163,7 @@ class AuthenticationHandler(LoginAttemptChecker):
         current_user = req.credentials
         if current_user is not None:
             data = {
-                "userId": current_user.userid,
+                "userId": current_user.user_id,
                 "sub": current_user.username,
                 "email": current_user.email,
                 "admin": current_user.admin,
@@ -181,7 +181,7 @@ class AuthenticationHandler(LoginAttemptChecker):
             )
             req.result.data = dict(
                 accessToken=access_token,
-                userId=current_user.userid,
+                userId=current_user.user_id,
                 username=current_user.username,
                 email=current_user.email,
             )

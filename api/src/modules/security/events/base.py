@@ -65,6 +65,7 @@ class NewDeviceLogin(BaseModel):
     app_url: str
     # locale:str future?
 
+
 @payload_schema.register(event_name=UserEvents.CLIENT_ENQUIRY)
 class ClientEnquiry(BaseModel):
     eid: str

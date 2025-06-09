@@ -80,7 +80,7 @@ class UserRouter(UserHandler):
             description="Delete User",
         )
         self.router.add_api_route(
-            path="/lock-account/{userid}",
+            path="/lock-account/{userId}",
             endpoint=self.lock_user_account,
             response_model=BaseResponse,
             methods=["GET"],

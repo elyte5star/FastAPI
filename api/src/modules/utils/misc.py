@@ -5,7 +5,8 @@ from fastapi.encoders import jsonable_encoder
 import string
 import secrets
 import bcrypt
-from functools import lru_cache, wraps
+from decimal import Decimal
+from json import JSONEncoder
 
 
 def date_time_now_local_tz() -> datetime:
@@ -36,33 +37,28 @@ def obj_as_json(obj):
     return jsonable_encoder(obj)
 
 
-def hash_password(plain_password: str, salt: int, encoding: str) -> bytes:
+class DecimalEncoder(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Decimal):
+            return (str(o) for o in [o])
+        return super(DecimalEncoder, self).default(o)
+
+
+# class ObjIDEncoder(JSONEncoder):
+#     def default(self, obj):
+#         if isinstance(obj, ObjectId):
+#             return str(obj)
+#         return super(ObjIDEncoder, self).default(obj)
+
+
+def hash_password(plain_password: str, salt: int, encoding: str) -> str:
     hashed_password = bcrypt.hashpw(
         plain_password.encode(encoding), bcrypt.gensalt(salt)
     ).decode(encoding)
     return hashed_password
 
 
-def timed_lru_cache(minutes: int, maxsize: int = 128):
-    def wrapper_cache(func):
-        func = lru_cache(maxsize=maxsize)(func)
-        func.lifetime = time_delta(minutes)
-        func.expiration = time_now_utc() + func.lifetime
-
-        @wraps(func)
-        def wrapped_func(*args, **kwargs):
-            if time_now_utc() >= func.expiration:
-                func.cache_clear()
-                func.expiration = time_now_utc() + func.lifetime
-
-            return func(*args, **kwargs)
-
-        return wrapped_func
-
-    return wrapper_cache
-
-
-def create_password(size: int, salt: int, encoding: str) -> tuple[str, bytes]:
+def create_password(size: int, salt: int, encoding: str) -> tuple[str, str]:
     chars = (
         string.digits
         + string.ascii_letters

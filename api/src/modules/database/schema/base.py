@@ -7,7 +7,7 @@ from pydantic import BaseModel, TypeAdapter
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import JSON, TypeDecorator, VARCHAR
 from typing_extensions import Annotated
-import datetime
+from datetime import datetime
 import json
 
 str_60 = Annotated[str, 60]
@@ -32,7 +32,7 @@ deferred_500 = Annotated[str, mapped_column(String(500), nullable=False, deferre
 
 
 timestamp = Annotated[
-    datetime.datetime,
+    datetime,
     mapped_column(nullable=False, server_default=func.CURRENT_TIMESTAMP()),
 ]
 
@@ -55,9 +55,15 @@ class Base(AsyncAttrs):
 class Audit(Base):
     id: Mapped[str_pk_60]
     created_at: Mapped[timestamp] = mapped_column(server_default=func.now())
-    modified_at: Mapped[Optional[timestamp]]
-    modified_by: Mapped[Optional[str_60]]
-    created_by: Mapped[required_30]
+    modified_at: Mapped[datetime | None] = mapped_column(
+        default=None,
+        nullable=True,
+    )
+    modified_by: Mapped[str_60 | None] = mapped_column(
+        default=None,
+        nullable=True,
+    )
+    created_by: Mapped[required_60]
     type: Mapped[str]
 
     __mapper_args__ = {

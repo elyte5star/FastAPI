@@ -14,7 +14,7 @@ from collections.abc import Sequence
 
 
 class UserQueries(AsyncDatabaseSession):
-    async def create_user_query(self, user: User) -> User | None:
+    async def create_user_query(self, user: User) -> User:
         try:
             self.async_session.add(user)
         except PostgresError:
@@ -31,9 +31,9 @@ class UserQueries(AsyncDatabaseSession):
         users = result.scalars().all()
         return users
 
-    async def activate_new_user_account(self, userid: str):
+    async def activate_new_user_account(self, user_id: str):
         try:
-            user = await self.async_session.get(User, userid)
+            user = await self.async_session.get(User, user_id)
             user.modified_at = date_time_now_utc()
             user.enabled = True
             user.modified_by = user.username
@@ -43,7 +43,7 @@ class UserQueries(AsyncDatabaseSession):
             raise
 
     async def update_user_password_query(
-        self, userid: str, modified_by: str, hashed_password: bytes
+        self, userid: str, modified_by: str, hashed_password: str
     ) -> bool:
         result = False
         try:
@@ -87,17 +87,17 @@ class UserQueries(AsyncDatabaseSession):
         return result.scalars().first()
 
     # OTP
-    async def create_otp_query(self, otp: Otp) -> Otp | None:
-        self.async_session.add(otp)
-        result = None
+    async def create_otp_query(self, otp: Otp) -> Otp:
         try:
+            self.async_session.add(otp)
             await self.async_session.commit()
-            result = otp
         except PostgresError:
             await self.async_session.rollback()
             raise
-        finally:
-            return result
+        else:
+            await self.async_session.commit()
+            await self.async_session.refresh(otp)
+            return otp
 
     async def delete_otp_by_id_query(self, otp_id: str) -> bool:
         stmt = self.delete(Otp).where(Otp.id == otp_id)

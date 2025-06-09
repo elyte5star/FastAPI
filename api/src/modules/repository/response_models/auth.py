@@ -1,5 +1,5 @@
-from pydantic import Field, BaseModel
 from modules.repository.request_models.base import BaseResponse
+from pydantic import Field, BaseModel
 
 
 class TokenData(BaseModel):
@@ -16,4 +16,4 @@ class TokenData(BaseModel):
 
 
 class TokenResponse(BaseResponse):
-    data: dict = Field(default={}, alias="result")
+    data: dict = Field(default={})

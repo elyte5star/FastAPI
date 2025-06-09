@@ -1,10 +1,9 @@
-from typing import Optional
-from pydantic import BaseModel, Field, ConfigDict, Json
+from pydantic import BaseModel, Field, ConfigDict, Json, computed_field
 from datetime import datetime
-from modules.utils.misc import date_time_now_utc_tz
+from modules.utils.misc import date_time_now_utc
 from typing_extensions import Annotated
 from decimal import Decimal
-
+from modules.repository.validators.base import ValidateUUID
 from modules.queue.enums import (
     JobState,
     JobType,
@@ -14,37 +13,68 @@ from modules.queue.enums import (
 
 
 class CartItem(BaseModel):
-    price: Decimal
-    discount: Decimal
-    quantity: int
-    pid: str
-    calculated_price: Annotated[
-        Decimal, Field(serialization_alias="calculatedPrice", repr=True)
+    price: float = Field(
+        repr=True,
+        gt=0,
+    )
+    discount: float
+    quantity: Annotated[
+        int,
+        Field(
+            examples=[1, 3, 4],
+            strict=True,
+            repr=True,
+            gt=0,
+        ),
     ]
-    model_config = ConfigDict(extra="forbid", serialize_by_alias=True)
+    pid: ValidateUUID
+
+    @computed_field
+    @property
+    def calculated_price(self) -> str:
+        discount = Decimal(self.price) * Decimal(self.discount)
+        sale_price = Decimal(self.price) - discount
+        amount = sale_price * self.quantity
+        return "{:.2f}".format(amount)
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class ShippingAddress(BaseModel):
-    first_name: Annotated[str, Field(serialization_alias="firstName", repr=True)]
-    last_name: Annotated[str, Field(serialization_alias="lastName", repr=True)]
+    first_name: Annotated[
+        str,
+        Field(
+            validation_alias="firstName",
+            serialization_alias="firstName",
+        ),
+    ]
+    last_name: Annotated[
+        str, Field(validation_alias="lastName", serialization_alias="lastName")
+    ]
     street_address: Annotated[
         str,
         Field(
+            validation_alias="streetAddress",
             serialization_alias="streetAddress",
-            repr=True,
         ),
     ]
     country: str
     state: str
     email: str
-    zip_code: Annotated[str, Field(serialization_alias="zipCode", repr=True)]
+    zip_code: Annotated[
+        str,
+        Field(
+            validation_alias="zipCode",
+            serialization_alias="zipCode",
+        ),
+    ]
     model_config = ConfigDict(extra="forbid", serialize_by_alias=True)
 
 
 class BookingModel(BaseModel):
     cart: list[CartItem]
     total_price: Annotated[
-        Decimal,
+        str,
         Field(
             serialization_alias="totalPrice",
             repr=True,
@@ -58,7 +88,6 @@ class BookingModel(BaseModel):
         ),
     ]
     user_id: str = Field(serialization_alias="userId", repr=True)
-    created_at: datetime = Field(serialization_alias="createdAt")
 
     model_config = ConfigDict(serialize_by_alias=True)
 
@@ -66,7 +95,9 @@ class BookingModel(BaseModel):
 class SearchModel(BaseModel):
     text: list[str] = []
     categories: list[str] = []
-    return_count: Optional[int]
+    return_count: int | None = Field(
+        None, exclude=False, serialization_alias="returnCount"
+    )
     model_config = ConfigDict(extra="allow")
 
 
@@ -78,16 +109,15 @@ class JobStatus(BaseModel):
 
 
 class Job(BaseModel):
-    job_id: str = Field(default="", serialization_alias="jobId")
+    id: str = Field(default="", serialization_alias="jobId")
     user_id: str = Field(default="", serialization_alias="userId")
     job_type: JobType = Field(
         default=JobType.Empty,
         serialization_alias="jobType",
     )
     created_at: datetime = Field(
-        default=date_time_now_utc_tz(), serialization_alias="createdAt"
+        default=date_time_now_utc(), serialization_alias="createdAt"
     )
-    # task_ids: list = Field(default=[], serialization_alias="taskIds")
     job_status: JobStatus = Field(
         default=JobStatus(),
         serialization_alias="jobStatus",
@@ -96,70 +126,53 @@ class Job(BaseModel):
         default=0,
         serialization_alias="numberOfTasks",
     )
-    create_booking: Optional[
-        Annotated[
-            BookingModel,
-            Field(
-                default=None,
-                serialization_alias="createBooking",
-            ),
-        ]
-    ]
-    create_search: Optional[
-        Annotated[
-            SearchModel,
-            Field(default=None, serialization_alias="createSearch"),
-        ]
-    ]
+    create_booking: BookingModel | None = Field(
+        default=None,
+        serialization_alias="bookingRequest",
+    )
+    create_search: SearchModel | None = Field(
+        default=None, serialization_alias="searchRequest"
+    )
 
     model_config = ConfigDict(serialize_by_alias=True, from_attributes=True)
 
 
 class Task(BaseModel):
-    task_id: str = Field(default="", serialization_alias="taskId")
+    id: str = Field(default="", serialization_alias="taskId")
     job_id: str = Field(default="", serialization_alias="jobId")
     status: JobStatus = JobStatus()
-    created_at: Optional[
-        Annotated[
-            datetime,
-            Field(
-                default=None,
-                serialization_alias="createdAt",
-            ),
-        ]
-    ]
-    started: Optional[datetime] = None
-    finished: Optional[datetime] = None
+    created_at: datetime | None = Field(
+        default=None,
+        serialization_alias="createdAt",
+    )
+
+    started: datetime | None = None
+    finished: datetime | None = None
 
     model_config = ConfigDict(serialize_by_alias=True, from_attributes=True)
 
 
 class Result(BaseModel):
-    result_id: str = Field(default="", serialization_alias="resultId")
+    id: str = Field(default="", serialization_alias="resultId")
     result_type: ResultType = ResultType.Database
     result_state: ResultState = ResultState.NotSet
     task_id: str = Field(default="", serialization_alias="taskId")
     data: Json = None
-    data_checksum: Optional[str] = None
+    data_checksum: str | None = None
 
 
 class ResultLog(BaseModel):
     result_id: str = ""
-    created_at: datetime = date_time_now_utc_tz()
+    created_at: datetime = date_time_now_utc()
     handled: bool = False
-    handled_date: Optional[
-        Annotated[
-            datetime,
-            Field(
-                default=None,
-                serialization_alias="handledDate",
-            ),
-        ]
-    ]
+    handled_date: datetime | None = Field(
+        default=None,
+        serialization_alias="handledDate",
+    )
 
     model_config = ConfigDict(serialize_by_alias=True)
 
 
 class QueueItem(BaseModel):
-    job: Optional[Job] = None
-    task: Optional[Task] = None
+    job: Job | None = None
+    task: Task | None = None

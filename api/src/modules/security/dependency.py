@@ -13,7 +13,7 @@ db = AsyncDatabaseSession(cfg)
 
 
 class JWTPrincipal(BaseModel):
-    userid: str
+    user_id: str
     username: str
     email: str
     active: bool
@@ -65,7 +65,7 @@ class JWTBearer(HTTPBearer):
                 )
 
             current_user = JWTPrincipal(
-                userid=self.payload["userId"],
+                user_id=self.payload["userId"],
                 email=self.payload["email"],
                 username=self.payload["sub"],
                 active=self.payload["active"],

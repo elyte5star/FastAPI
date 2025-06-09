@@ -23,9 +23,9 @@ class JobTaskQueries(ProductQueries):
         else:
             await self.async_session.commit()
 
-    async def add_tasks_to_db_query(self, tasks: list[Task]) -> None:
+    async def add_task_to_db_query(self, task: Task) -> None:
         try:
-            self.async_session.add_all(tasks)
+            self.async_session.add(task)
         except PostgresError:
             await self.async_session.rollback()
             raise

@@ -35,7 +35,6 @@ from modules.utils.misc import (
     time_delta,
     date_time_now_utc,
     datetime,
-    obj_as_json,
 )
 from modules.security.events.base import (
     UserEvents,
@@ -57,7 +56,7 @@ USER_ENABLED = "enabled"
 class UserHandler(UserQueries):
     async def _create_user(
         self, req: CreateUserRequest, request: Request
-    ) -> CreateUserResponse:
+    ) -> BaseResponse:
         user_exist = await self.check_if_user_exist(
             req.new_user.email, req.new_user.username, req.new_user.telephone
         )
@@ -76,8 +75,8 @@ class UserHandler(UserQueries):
             )
             user_in_db = await self.create_user_query(new_user)
             pydantic_model = UserDisplay.model_validate(user_in_db)
-            req.result.data = pydantic_model
-            await self.on_successfull_registration(new_user, request)
+            req.result.new_user = pydantic_model
+            await self.on_successfull_registration(user_in_db, request)
             return req.req_success("New user created!")
         return req.req_failure("User exist")
 
@@ -208,7 +207,7 @@ class UserHandler(UserQueries):
             return True
         return False
 
-    def hash_password(self, plain_password: str) -> bytes:
+    def hash_password(self, plain_password: str) -> str:
         hashed_password = bcrypt.hashpw(
             plain_password.encode(self.cf.encoding),
             bcrypt.gensalt(rounds=self.cf.rounds),
@@ -216,7 +215,7 @@ class UserHandler(UserQueries):
         return hashed_password
 
     async def _get_user(self, req: GetUserRequest) -> GetUserResponse:
-        if req.credentials.userid != req.userid:
+        if req.credentials is not None and req.credentials.user_id != req.userid:
             self.logger.warning(
                 f"illegal operation by {req.credentials.userid}",
             )
@@ -239,7 +238,7 @@ class UserHandler(UserQueries):
         return req.req_success(f"Total number of users: {len(users)}")
 
     async def _delete_user(self, req: DeleteUserRequest) -> BaseResponse:
-        if req.credentials.userid != req.userid:
+        if req.credentials is not None and req.credentials.user_id != req.userid:
             self.logger.warning(
                 f"illegal operation by {req.credentials.username}",
             )
@@ -265,15 +264,15 @@ class UserHandler(UserQueries):
         self,
         req: LockUserAccountRequest,
     ) -> BaseResponse:
+        if req.credentials is not None and req.credentials.userid == req.userid:
+            return req.req_failure("You cant lock your own account")
         user = await self.find_user_by_id(req.userid)
         if user is None:
             return req.req_failure(f"No user with id: {req.userid}")
-        if req.credentials.userid == req.userid:
-            return req.req_failure("You cant lock your own account")
         await self.lock_user_account_query(user)
         self.logger.warning(
             f"""account with id: {req.userid} was locked by
-            admin with userId: {req.credentials.userid}"""
+            admin with userId: {req.credentials.user_id}"""
         )
         return req.req_success(f"User with id:{req.userid} locked")
 
@@ -373,7 +372,7 @@ class UserHandler(UserQueries):
 
     def check_if_valid_old_password(
         self,
-        password_in_db: bytes,
+        password_in_db: str,
         old_password: str,
     ) -> bool:
         return (
@@ -407,13 +406,15 @@ class UserHandler(UserQueries):
         request: Request,
     ) -> ClientEnquiryResponse:
         client_enquiry = Enquiry(
-            id=get_indent(),
-            client_name=req.enquiry.client_name,
-            client_email=req.enquiry.client_email,
-            country=req.enquiry.country,
-            subject=req.enquiry.subject,
-            message=req.enquiry.message,
-            created_by=req.enquiry.client_name,
+            **dict(
+                id=get_indent(),
+                client_name=req.enquiry.client_name,
+                client_email=req.enquiry.client_email,
+                country=req.enquiry.country,
+                subject=req.enquiry.subject,
+                message=req.enquiry.message,
+                created_by=req.enquiry.client_name,
+            )
         )
         result = await self.create_enquiry_query(client_enquiry)
         if result:
@@ -424,6 +425,7 @@ class UserHandler(UserQueries):
                 eid=result,
                 email=req.enquiry.client_email,
                 app_url=self.get_app_url(request),
+                expiry=date_time_now_utc() + time_delta(1600),
             )
             dispatch(UserEvents.CLIENT_ENQUIRY, event_payload)
             return req.req_success(f"Enquiry with id: {result} created")

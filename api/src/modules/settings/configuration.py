@@ -70,7 +70,7 @@ class ApiConfig:
         self.mail_ssl_tls: bool = False
         self.use_credentials: bool = False
         self.validate_certs: bool = False
-        self.email_config: ConnectionConfig = None
+        self.email_config: ConnectionConfig
 
         # RabbitMQ
         self.rabbit_host_name: str = ""
@@ -162,6 +162,7 @@ class ApiConfig:
 
     def from_env_file(self) -> Self:
         self.db_url = str(getenv("DB_URL"))
+        self.rabbit_connect_string = str(getenv("RQ_URL"))
         self.token_expire_min = int(
             getenv("API_JWT_TOKEN_EXPIRE_MINUTES", self.token_expire_min)
         )

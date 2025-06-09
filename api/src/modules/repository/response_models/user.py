@@ -1,7 +1,7 @@
 from modules.repository.request_models.base import BaseResponse
 from pydantic import BaseModel, Field, Json, ConfigDict
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 from decimal import Decimal
 
 
@@ -48,7 +48,7 @@ class UserDisplay(BaseModel):
     telephone: str
     failed_attempts: int = Field(serialization_alias="failedAttempts", exclude=True)
     discount: float
-    lock_time: datetime = Field(serialization_alias="lockTime")
+    lock_time: Optional[datetime] = Field(serialization_alias="lockTime")
     is_using_mfa: bool = Field(serialization_alias="IsUsingMFA")
     is_locked: bool = Field(serialization_alias="accountLocked")
     # otp:
@@ -61,7 +61,7 @@ class UserDisplay(BaseModel):
 
 
 class CreateUserResponse(BaseResponse):
-    data: UserDisplay = Field(default=None, alias="result")
+    new_user: UserDisplay | None = Field(default=None, alias="user")
 
 
 class GetUserResponse(BaseResponse):

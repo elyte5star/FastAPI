@@ -9,15 +9,15 @@ from modules.database.schema.base import (
     required_600,
     timestamp,
     bool_col,
-    required_600,
     PydanticColumn,
 )
-from typing import Set, List, Optional
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.ext.mutable import MutableList
 
 from sqlalchemy.ext.hybrid import hybrid_property
 from modules.queue.models import ShippingAddress
+from datetime import datetime
+from typing import List, Set
 
 
 class User(Audit):
@@ -32,7 +32,10 @@ class User(Audit):
     telephone: Mapped[required_30]
     failed_attempts: Mapped[int] = mapped_column(default=0)
     discount: Mapped[float] = mapped_column(default=0.0)
-    lock_time: Mapped[Optional[timestamp]] = mapped_column(default=None)
+    lock_time: Mapped[datetime | None] = mapped_column(
+        default=None,
+        nullable=True,
+    )
     is_using_mfa: Mapped[bool_col]
     is_locked: Mapped[bool_col]
     otp = relationship("Otp", uselist=False, back_populates="owner")
