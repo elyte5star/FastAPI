@@ -4,6 +4,7 @@ from modules.routers.auth import AuthRouter
 from modules.routers.user import UserRouter
 from modules.routers.product import ProductRouter
 from modules.routers.booking import BookingRouter
+from modules.routers.job import JobRouter
 from modules.routers.system import SystemInfoRouter
 from fastapi import APIRouter
 from modules.database.connection import AsyncDatabaseSession
@@ -24,6 +25,8 @@ product_router = ProductRouter(cfg)
 
 booking_router = BookingRouter(cfg)
 
+job_router = JobRouter(cfg)
+
 
 system_router = SystemInfoRouter(cfg)
 
@@ -32,6 +35,7 @@ routes: tuple[APIRouter, ...] = (
     user_router.router,
     product_router.router,
     booking_router.router,
+    job_router.router,
     system_router.router,
 )
 
