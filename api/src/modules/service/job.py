@@ -1,6 +1,6 @@
 from modules.repository.queries.queue import JobTaskQueries
 from modules.repository.request_models.job import GetJobRequest, GetJobsRequest, Job
-from modules.repository.response_models.job import JobResponse
+from modules.repository.response_models.job import JobResponse, BaseResponse
 from datetime import datetime
 from modules.queue.enums import JobState
 from modules.utils.misc import time_then
@@ -8,7 +8,7 @@ from modules.utils.misc import time_then
 
 class JobHandler(JobTaskQueries):
 
-    async def _get_job(self, req: GetJobRequest):
+    async def _get_job(self, req: GetJobRequest) -> BaseResponse:
         job = await self.find_job_by_id(req.job_id)
         if job is None:
             return req.req_failure(f"No job with id::{req.job_id}")
@@ -18,7 +18,7 @@ class JobHandler(JobTaskQueries):
             f"Success getting status for job with id: {req.job_id}.",
         )
 
-    async def _get_jobs(self, req: GetJobsRequest):
+    async def _get_jobs(self, req: GetJobsRequest) -> BaseResponse:
         jobs = await self.get_jobs_query()
         jobs_status = [
             await self.get_job_response(Job.model_validate(job)) for job in jobs

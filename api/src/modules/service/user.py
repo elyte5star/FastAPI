@@ -64,14 +64,16 @@ class UserHandler(UserQueries):
             new_user_password = req.new_user.password.get_secret_value()
             hashed_password = self.hash_password(new_user_password)
             new_user = User(
-                id=get_indent(),
-                email=req.new_user.email,
-                username=req.new_user.username,
-                password=hashed_password,
-                telephone=req.new_user.telephone,
-                discount=0.0,
-                created_by=req.new_user.username,
-                active=True,
+                **dict(
+                    id=get_indent(),
+                    email=req.new_user.email,
+                    username=req.new_user.username,
+                    password=hashed_password,
+                    telephone=req.new_user.telephone,
+                    discount=0.0,
+                    created_by=req.new_user.username,
+                    active=True,
+                )
             )
             user_in_db = await self.create_user_query(new_user)
             pydantic_model = UserDisplay.model_validate(user_in_db)
@@ -135,11 +137,13 @@ class UserHandler(UserQueries):
         otp = await self.get_otp_by_email_query(email)
         if otp is None:
             new_otp = Otp(
-                id=get_indent(),
-                email=email,
-                user_id=user_id,
-                expiry=expiry,
-                token=token,
+                **dict(
+                    id=get_indent(),
+                    email=email,
+                    user_id=user_id,
+                    expiry=expiry,
+                    token=token,
+                )
             )
             new_otp = await self.create_otp_query(new_otp)
             return new_otp
@@ -214,10 +218,13 @@ class UserHandler(UserQueries):
         ).decode(self.cf.encoding)
         return hashed_password
 
-    async def _get_user(self, req: GetUserRequest) -> GetUserResponse:
-        if req.credentials is not None and req.credentials.user_id != req.userid:
+    async def _get_user(self, req: GetUserRequest) -> BaseResponse:
+        if req.credentials is None:
+            return req.req_failure("No valid user session found")
+        current_user = req.credentials
+        if current_user.user_id != req.userid:
             self.logger.warning(
-                f"illegal operation by {req.credentials.userid}",
+                f"illegal operation by {current_user.user_id}",
             )
             return req.req_failure("Forbidden: Access is denied")
         user_in_db = await self.find_user_by_id(req.userid)
@@ -228,7 +235,7 @@ class UserHandler(UserQueries):
         return req.req_success(f"User with id {req.userid} found")
 
     # ADMIN RIGHTS ONLY
-    async def _get_users(self, req: GetUsersRequest) -> GetUsersResponse:
+    async def _get_users(self, req: GetUsersRequest) -> BaseResponse:
         users = [
             UserDisplay.model_validate(user_in_db)
             for user_in_db in await self.get_users_query()
@@ -237,7 +244,10 @@ class UserHandler(UserQueries):
         return req.req_success(f"Total number of users: {len(users)}")
 
     async def _delete_user(self, req: DeleteUserRequest) -> BaseResponse:
-        if req.credentials is not None and req.credentials.user_id != req.userid:
+        if req.credentials is None:
+            return req.req_failure("No valid user session found")
+        current_user = req.credentials
+        if current_user.user_id != req.userid:
             self.logger.warning(
                 f"illegal operation by {req.credentials.username}",
             )
@@ -263,7 +273,10 @@ class UserHandler(UserQueries):
         self,
         req: LockUserAccountRequest,
     ) -> BaseResponse:
-        if req.credentials is not None and req.credentials.userid == req.userid:
+        if req.credentials is None:
+            return req.req_failure("No valid user session found")
+        current_user = req.credentials
+        if current_user.user_id == req.userid:
             return req.req_failure("You cant lock your own account")
         user = await self.find_user_by_id(req.userid)
         if user is None:
@@ -271,7 +284,7 @@ class UserHandler(UserQueries):
         await self.lock_user_account_query(user)
         self.logger.warning(
             f"""account with id: {req.userid} was locked by
-            admin with userId: {req.credentials.user_id}"""
+            admin with userId: {current_user.user_id}"""
         )
         return req.req_success(f"User with id:{req.userid} locked")
 
@@ -283,7 +296,7 @@ class UserHandler(UserQueries):
             return None
         country, _ = await self.get_location_from_ip(ip)
         user_loc = UserLocation(
-            id=get_indent(), country=country, owner=user, enabled=True
+            **dict(id=get_indent(), country=country, owner=user, enabled=True)
         )
         await self.create_user_location_query(user_loc)
 
@@ -300,7 +313,12 @@ class UserHandler(UserQueries):
             )
             if password_reset_token is None:
                 new_reset_token = PasswordResetToken(
-                    id=get_indent(), token=token, expiry=expiry, userid=user.id
+                    **dict(
+                        id=get_indent(),
+                        token=token,
+                        expiry=expiry,
+                        user_id=user.id,
+                    )
                 )
                 await self.create_pass_reset_query(new_reset_token)
             else:
@@ -335,7 +353,7 @@ class UserHandler(UserQueries):
     async def validate_password_reset_token(
         self,
         token: str,
-        new_password: str,
+        new_password: SecretStr,
     ):
         pass_reset_token = await self.find_passw_token_by_token_query(token)
         if pass_reset_token is None:
@@ -352,19 +370,22 @@ class UserHandler(UserQueries):
 
     # Update user password
     async def _update_user_password(self, req: UpdateUserPasswordRequest):
-        if req.credentials.userid != req.userid:
+        if req.credentials is None:
+            return req.req_failure("No valid user session found")
+        current_user = req.credentials
+        if current_user.user_id != req.userid:
             self.logger.warning(
                 f"illegal operation by {req.credentials.username}",
             )
             return req.req_failure("Forbidden: Access is denied")
-        user = await self.find_user_by_email(req.credentials.email)
+        user = await self.find_user_by_email(current_user.email)
         if user is not None:
             if self.check_if_valid_old_password(
                 user.password,
                 req.data.old_password,
             ):
                 await self.change_user_password(
-                    user, req.credentials.username, req.data.new_password
+                    user, current_user.username, req.data.new_password
                 )
                 return req.req_success("Password updated successfully")
         return req.req_failure("Invalid old password or user does not exist")
@@ -394,7 +415,9 @@ class UserHandler(UserQueries):
         )
         if is_updated:
             event_payload = UserPasswordChange(
-                username=user.username, email=user.email, modified_by=modified_by
+                username=user.username,
+                email=user.email,
+                modified_by=modified_by,
             )
             dispatch(UserEvents.UPDATED_USER_PASSWORD, event_payload)
 
@@ -403,7 +426,7 @@ class UserHandler(UserQueries):
         self,
         req: UserEnquiryRequest,
         request: Request,
-    ) -> ClientEnquiryResponse:
+    ) -> BaseResponse:
         client_enquiry = Enquiry(
             **dict(
                 id=get_indent(),

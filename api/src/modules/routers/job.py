@@ -10,6 +10,7 @@ from modules.repository.response_models.job import (
     GetJobResponse,
     GetJobsResponse,
     CreateJobResponse,
+    BaseResponse,
 )
 from typing_extensions import Annotated
 from modules.queue.models import Job
@@ -47,7 +48,7 @@ class JobRouter(JobHandler):
 
     async def get_jobs(
         self, current_user: Annotated[JWTPrincipal, Depends(security)]
-    ) -> GetJobsResponse:
+    ) -> BaseResponse:
         return await self._get_jobs(GetJobsRequest(credentials=current_user))
 
     async def get_job(
@@ -57,7 +58,7 @@ class JobRouter(JobHandler):
             JWTPrincipal,
             Depends(security),
         ],
-    ) -> GetJobResponse:
+    ) -> BaseResponse:
         return await self._get_job(
             GetJobRequest(credentials=current_user, job_id=jobId)
         )
