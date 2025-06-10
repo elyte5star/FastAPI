@@ -8,7 +8,7 @@ from modules.queue.models import Job
 
 
 class GetJobRequest(BaseReq):
-    job_id: str = ""
+    job_id: str
     result: GetJobResponse = GetJobResponse()
 
 
@@ -17,5 +17,5 @@ class GetJobsRequest(BaseReq):
 
 
 class CreateJobRequest(BaseReq):
-    new_job: Job | None = None
+    new_job: Job
     result: CreateJobResponse = CreateJobResponse()

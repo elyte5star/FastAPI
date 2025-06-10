@@ -1,19 +1,16 @@
-from modules.repository.request_models.base import BaseResponse
-from modules.queue.enums import (
-    JobType,
-)
-from pydantic import Field
-from modules.queue.schema import (
-    JobStatus,
-)
+from pydantic import Field, BaseModel
+from datetime import datetime
+from modules.queue.enums import JobType
 from modules.queue.models import Job
+from modules.queue.schema import JobStatus
+from modules.repository.request_models.base import BaseResponse
 
 
-class GetJobResponse(BaseResponse):
-    userid: str = Field(default="", serialization_alias="userId")
-    start_time: float = 0.0
-    stop_time: float = 0.0
-    process_time: str = ""
+class JobResponse(BaseModel):
+    user_id: str = Field(default="", serialization_alias="userId")
+    start_time: datetime | None = None
+    stop_time: datetime | None = None
+    process_time: float = 0.0
     job_type: JobType = Field(
         default=JobType.Empty,
         serialization_alias="jobType",
@@ -26,12 +23,16 @@ class GetJobResponse(BaseResponse):
 
 
 class GetJobsResponse(BaseResponse):
-    jobs: list[GetJobResponse] = []
+    jobs_status: list[JobResponse] = []
+
+
+class GetJobResponse(BaseResponse):
+    job_status: JobResponse | None = None
 
 
 class CreateJobResponse(BaseResponse):
     job: Job | None = None
 
 
-class JobResponse(BaseResponse):
+class GetJobRequestResponse(BaseResponse):
     job_id: str = Field(default="", serialization_alias="jobId")

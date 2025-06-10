@@ -229,7 +229,6 @@ class UserHandler(UserQueries):
 
     # ADMIN RIGHTS ONLY
     async def _get_users(self, req: GetUsersRequest) -> GetUsersResponse:
-        users = await self.get_users_query()
         users = [
             UserDisplay.model_validate(user_in_db)
             for user_in_db in await self.get_users_query()

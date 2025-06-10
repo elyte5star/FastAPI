@@ -20,7 +20,7 @@ class BookingHandler(RQHandler):
         self,
         req: CreateBookingRequest,
     ) -> BaseResponse:
-        if req.credentials is not None and req.new_order is not None:
+        if req.credentials is not None:
             current_user = req.credentials
             new_order = req.new_order
             if current_user.user_id != new_order.user_id:
