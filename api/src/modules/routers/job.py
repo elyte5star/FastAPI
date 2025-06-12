@@ -39,7 +39,7 @@ class JobRouter(JobHandler):
 
         self.router.add_api_route(
             path="",
-            endpoint=self.get_users,
+            endpoint=self.get_jobs,
             response_model=GetJobsResponse,
             methods=["GET"],
             dependencies=[Depends(RoleChecker(["ADMIN"]))],

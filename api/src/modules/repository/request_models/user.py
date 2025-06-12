@@ -34,7 +34,7 @@ class CreateUser(BaseModel):
 
 
 class CreateUserRequest(BaseReq):
-    new_user: CreateUser 
+    new_user: CreateUser
     result: CreateUserResponse = CreateUserResponse()
 
 
