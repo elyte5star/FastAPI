@@ -13,11 +13,7 @@ from modules.repository.request_models.user import (
     LockUserAccountRequest,
 )
 from modules.repository.response_models.user import (
-    CreateUserResponse,
-    GetUserResponse,
-    GetUsersResponse,
     BaseResponse,
-    ClientEnquiryResponse,
     UserDisplay,
 )
 from modules.database.schema.user import (
@@ -57,25 +53,20 @@ class UserHandler(UserQueries):
     async def _create_user(
         self, req: CreateUserRequest, request: Request
     ) -> BaseResponse:
+        new_user = req.new_user
         user_exist = await self.check_if_user_exist(
-            req.new_user.email, req.new_user.username, req.new_user.telephone
+            new_user.email, new_user.username, new_user.telephone
         )
         if user_exist is None:
-            new_user_password = req.new_user.password.get_secret_value()
+            new_user_password = new_user.password.get_secret_value()
             hashed_password = self.hash_password(new_user_password)
-            new_user = User(
-                **dict(
-                    id=get_indent(),
-                    email=req.new_user.email,
-                    username=req.new_user.username,
-                    password=hashed_password,
-                    telephone=req.new_user.telephone,
-                    discount=0.0,
-                    created_by=req.new_user.username,
-                    active=True,
-                )
+            user = User(
+                **new_user.model_dump(
+                    exclude={"password", "confirm_password"},
+                ),
+                **dict(password=hashed_password),
             )
-            user_in_db = await self.create_user_query(new_user)
+            user_in_db = await self.create_user_query(user)
             pydantic_model = UserDisplay.model_validate(user_in_db)
             req.result.new_user = pydantic_model
             await self.on_successfull_registration(user_in_db, request)
@@ -199,9 +190,17 @@ class UserHandler(UserQueries):
         user = otp.owner
         if user.enabled:
             return USER_ENABLED
-        await self.activate_new_user_account(user.id)
+        await self.activate_new_user_account(user)
         await self.delete_otp_by_id_query(otp.id)
         return TOKEN_VALID
+
+    async def activate_new_user_account(self, user: User):
+        changes = dict(
+            modified_at=date_time_now_utc(),
+            enabled=True,
+            modified_by=user.username,
+        )
+        await self.update_user_info(user.id, changes)
 
     async def is_otp_valid(self, token: str, expiry: datetime) -> bool:
         if (
@@ -408,18 +407,18 @@ class UserHandler(UserQueries):
         self, user: User, modified_by: str, password: SecretStr
     ) -> None:
         hashed_password = self.hash_password(password.get_secret_value())
-        is_updated = await self.update_user_password_query(
-            user.id,
-            modified_by,
-            hashed_password,
+        changes = dict(
+            modified_at=date_time_now_utc(),
+            password=hashed_password,
+            modified_by=modified_by,
         )
-        if is_updated:
-            event_payload = UserPasswordChange(
-                username=user.username,
-                email=user.email,
-                modified_by=modified_by,
-            )
-            dispatch(UserEvents.UPDATED_USER_PASSWORD, event_payload)
+        await self.update_user_info(user.id, changes)
+        event_payload = UserPasswordChange(
+            username=user.username,
+            email=user.email,
+            modified_by=modified_by,
+        )
+        dispatch(UserEvents.UPDATED_USER_PASSWORD, event_payload)
 
     # USER ENQUIRY
     async def _create_enquiry(
@@ -427,28 +426,19 @@ class UserHandler(UserQueries):
         req: UserEnquiryRequest,
         request: Request,
     ) -> BaseResponse:
-        client_enquiry = Enquiry(
-            **dict(
-                id=get_indent(),
-                client_name=req.enquiry.client_name,
-                client_email=req.enquiry.client_email,
-                country=req.enquiry.country,
-                subject=req.enquiry.subject,
-                message=req.enquiry.message,
-                created_by=req.enquiry.client_name,
-            )
-        )
+        new_inquiry = req.enquiry
+        client_enquiry = Enquiry(**new_inquiry.model_dump())
         result = await self.create_enquiry_query(client_enquiry)
-        if result:
-            req.result.eid = result
+        if result is not None:
+            req.result.eid = result.id
             event_payload = ClientEnquiry(
-                message=req.enquiry.message,
-                client_name=req.enquiry.client_name,
-                eid=result,
-                email=req.enquiry.client_email,
+                message=new_inquiry.message,
+                client_name=new_inquiry.client_name,
+                eid=result.id,
+                email=new_inquiry.client_email,
                 app_url=self.get_app_url(request),
                 expiry=date_time_now_utc() + time_delta(1600),
             )
             dispatch(UserEvents.CLIENT_ENQUIRY, event_payload)
-            return req.req_success(f"Enquiry with id: {result} created")
+            return req.req_success(f"Enquiry with id: {result.id} created")
         return req.req_failure("Couldn't create enquiry")

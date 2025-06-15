@@ -156,7 +156,7 @@ class Result(BaseModel):
     id: str = Field(default="", serialization_alias="resultId")
     result_type: ResultType = ResultType.Database
     result_state: ResultState = ResultState.NotSet
-    task_id: str = Field(default="", serialization_alias="taskId")
+    task_id: str = Field(serialization_alias="taskId")
     data: Json = None
     data_checksum: str | None = None
 

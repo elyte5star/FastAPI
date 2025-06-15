@@ -25,7 +25,6 @@ from modules.database.schema.product import (
     SpecialDeals,  # noqa: F401
 )  # noqa: F401
 
-# from modules.repository.schema.booking import Order
 
 # noqa: F401
 from modules.queue.schema import Job, Task, Result  # noqa: F401
@@ -88,7 +87,7 @@ class AsyncDatabaseSession:
 
     async def create_tables(self):
         async with self._engine.begin() as conn:
-            # await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
         await self.create_admin_account(self.async_session)
 

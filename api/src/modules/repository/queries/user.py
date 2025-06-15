@@ -9,7 +9,6 @@ from modules.database.schema.user import (
 from modules.database.connection import AsyncDatabaseSession
 from asyncpg.exceptions import PostgresError
 from datetime import datetime
-from modules.utils.misc import date_time_now_utc
 from collections.abc import Sequence
 
 
@@ -17,47 +16,30 @@ class UserQueries(AsyncDatabaseSession):
     async def create_user_query(self, user: User) -> User:
         try:
             self.async_session.add(user)
+            await self.async_session.commit()
+            await self.async_session.refresh(user)
         except PostgresError:
             await self.async_session.rollback()
             raise
         else:
-            await self.async_session.commit()
-            await self.async_session.refresh(user)
             return user
 
     async def get_users_query(self) -> Sequence[User]:
         stmt = self.select(User).order_by(User.created_at)
         result = await self.async_session.execute(stmt)
-        users = result.scalars().all()
-        return users
+        return result.scalars().all()
 
-    async def activate_new_user_account(self, user_id: str):
+    async def update_user_info(self, user_id: str, changes: dict):
         try:
             user = await self.async_session.get(User, user_id)
-            user.modified_at = date_time_now_utc()
-            user.enabled = True
-            user.modified_by = user.username
+            for key, value in changes.items():
+                if hasattr(user, key):
+                    setattr(user, key, value)
             await self.async_session.commit()
-        except PostgresError:
+        except PostgresError as e:
             await self.async_session.rollback()
+            self.logger.error("Failed to update user:", e)
             raise
-
-    async def update_user_password_query(
-        self, userid: str, modified_by: str, hashed_password: str
-    ) -> bool:
-        result = False
-        try:
-            user = await self.async_session.get(User, userid)
-            user.password = hashed_password
-            user.modified_at = date_time_now_utc()
-            user.modified_by = modified_by
-            await self.async_session.commit()
-            result = True
-        except PostgresError:
-            await self.async_session.rollback()
-            raise
-        finally:
-            return result
 
     async def delete_user_query(self, userid: str) -> None:
         try:
@@ -91,26 +73,23 @@ class UserQueries(AsyncDatabaseSession):
         try:
             self.async_session.add(otp)
             await self.async_session.commit()
+            await self.async_session.refresh(otp)
         except PostgresError:
             await self.async_session.rollback()
             raise
         else:
-            await self.async_session.commit()
-            await self.async_session.refresh(otp)
             return otp
 
     async def delete_otp_by_id_query(self, otp_id: str) -> bool:
         stmt = self.delete(Otp).where(Otp.id == otp_id)
-        result = False
         try:
             await self.async_session.execute(stmt)
             await self.async_session.commit()
-            result = True
         except PostgresError:
             await self.async_session.rollback()
             raise
-        finally:
-            return result
+        else:
+            return True
 
     async def get_otp_by_user_query(self, user: User) -> Otp | None:
         stmt = self.select(Otp).where(Otp.owner == user)
@@ -145,14 +124,13 @@ class UserQueries(AsyncDatabaseSession):
             await self.async_session.rollback()
             raise
 
-    async def find_all_otps_expiry_less(self, now: datetime) -> list[Otp]:
+    async def find_all_otps_expiry_less(self, now: datetime) -> Sequence[Otp]:
         stmt = self.select(Otp).where(Otp.expiry <= now)
         result = await self.async_session.execute(stmt)
         otps = result.scalars().all()
         return otps
 
-    async def update_otp_query(self, id: str, data: dict) -> dict | None:
-        result = None
+    async def update_otp_query(self, id: str, data: dict):
         stmt = (
             self.sqlalchemy_update(Otp)
             .where(Otp.id == id)
@@ -161,12 +139,12 @@ class UserQueries(AsyncDatabaseSession):
         )
         try:
             result = await self.async_session.execute(stmt)
-            result = result.last_updated_params()
-            return result
         except PostgresError as e:
             await self.async_session.rollback()
             self.logger.error("Failed to update otp:", e)
             raise
+        else:
+            return result.last_updated_params()
 
     async def find_new_location_by_user_location_query(
         self, user_loc: UserLocation
@@ -208,8 +186,7 @@ class UserQueries(AsyncDatabaseSession):
         self,
         id: str,
         data: dict,
-    ) -> dict | None:
-        result = None
+    ):
         stmt = (
             self.sqlalchemy_update(PasswordResetToken)
             .where(PasswordResetToken.id == id)
@@ -218,11 +195,11 @@ class UserQueries(AsyncDatabaseSession):
         )
         try:
             result = await self.async_session.execute(stmt)
-            result = result.last_updated_params()
-            return result
         except PostgresError:
             await self.async_session.rollback()
             raise
+        else:
+            return result.last_updated_params()
 
     async def find_passw_token_by_token_query(
         self, token: str
@@ -234,14 +211,14 @@ class UserQueries(AsyncDatabaseSession):
     async def find_passw_token_by_user_query(
         self,
         user: User,
-    ) -> PasswordResetToken:
+    ) -> PasswordResetToken | None:
         stmt = self.select(PasswordResetToken).where(PasswordResetToken.owner == user)
         result = await self.async_session.execute(stmt)
         return result.scalars().first()
 
     async def find_all_passw_reset_token_expiry_less(
         self, now: datetime
-    ) -> list[PasswordResetToken]:
+    ) -> Sequence[PasswordResetToken]:
         stmt = self.select(PasswordResetToken).where(PasswordResetToken.expiry <= now)
         result = await self.async_session.execute(stmt)
         return result.scalars().all()
@@ -271,14 +248,13 @@ class UserQueries(AsyncDatabaseSession):
         finally:
             return result
 
-    async def create_enquiry_query(self, enquiry: Enquiry) -> str:
-        self.async_session.add(enquiry)
-        result = ""
+    async def create_enquiry_query(self, enquiry: Enquiry) -> Enquiry | None:
         try:
+            self.async_session.add(enquiry)
             await self.async_session.commit()
-            result = enquiry.id
+            await self.async_session.refresh(enquiry)
         except PostgresError:
             await self.async_session.rollback()
             raise
-        finally:
-            return result
+        else:
+            return enquiry

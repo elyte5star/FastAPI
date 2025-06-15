@@ -1,4 +1,11 @@
-from pydantic import EmailStr, model_validator, FilePath, BaseModel, Field
+from pydantic import (
+    EmailStr,
+    model_validator,
+    FilePath,
+    BaseModel,
+    Field,
+    computed_field,
+)
 from fastapi.exceptions import RequestValidationError
 from typing_extensions import Self
 from modules.repository.request_models.base import BaseResponse
@@ -17,20 +24,31 @@ from modules.repository.validators.base import (
 )
 from modules.repository.request_models.base import BaseReq
 from typing import Any, Optional
+from modules.utils.misc import get_indent
 
 
 class CreateUser(BaseModel):
+    id: str = get_indent()
     username: ValidateUsername
     email: VerifyEmail
     password: ValidatePassword
-    confirm_password: ValidatePassword = Field(alias="confirmPassword")
+    confirm_password: ValidatePassword = Field(
+        validation_alias="confirmPassword",
+    )
     telephone: ValidateTelephone
+    active: bool = True
+    discount: float = 0.0
 
     @model_validator(mode="after")
     def verify_password(self) -> Self:
         if self.password != self.confirm_password:
             raise RequestValidationError("password and confirm password do not match")
         return self
+
+    @computed_field
+    @property
+    def created_by(self) -> str:
+        return self.username
 
 
 class CreateUserRequest(BaseReq):
@@ -81,16 +99,22 @@ class VerifyRegistrationOtpRequest(BaseReq):
 
 
 class UserEnquiry(BaseModel):
-    client_name: str = Field(min_length=3, max_length=10, alias="clientName")
-    client_email: VerifyEmail = Field(alias="clientEmail")
+    id: str = get_indent()
+    client_name: str = Field(min_length=3, max_length=10, validation_alias="clientName")
+    client_email: VerifyEmail = Field(validation_alias="clientEmail")
     country: str
     subject: str
     message: str = Field(min_length=3, max_length=500)
     is_closed: bool = Field(default=False, alias="isClosed")
 
+    @computed_field
+    @property
+    def created_by(self) -> str:
+        return self.client_name
+
 
 class UserEnquiryRequest(BaseReq):
-    enquiry: UserEnquiry = None
+    enquiry: UserEnquiry
     result: ClientEnquiryResponse = ClientEnquiryResponse()
 
 
@@ -99,7 +123,7 @@ class ResetUserPassword(BaseModel):
 
 
 class ResetUserPasswordRequest(BaseReq):
-    data: ResetUserPassword = None
+    data: ResetUserPassword
     result: BaseResponse = BaseResponse()
 
 
@@ -136,11 +160,11 @@ class ChangePassword(BaseModel):
 
 
 class UpdateUserPasswordRequest(BaseReq):
-    data: UpdateUserPassword = None
+    data: UpdateUserPassword
     userid: ValidateUUID
     result: BaseResponse = BaseResponse()
 
 
 class SaveUserPassswordRequest(BaseReq):
-    data: ChangePassword = None
+    data: ChangePassword
     result: BaseResponse = BaseResponse()
