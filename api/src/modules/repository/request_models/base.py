@@ -21,7 +21,7 @@ class BaseReq(BaseModel):
         self.result.req_id = get_indent()
         self.result.start_time = time.perf_counter()
 
-    def req_success(self, message="") -> BaseResponse:
+    def req_success(self, message: str = "") -> BaseResponse:
         self.result.success = True
         if message:
             self.result.message = message
@@ -34,7 +34,7 @@ class BaseReq(BaseModel):
                 return True
         return False
 
-    def req_failure(self, message="") -> BaseResponse:
+    def req_failure(self, message: str = "") -> BaseResponse:
         self.result.success = False
         if message:
             self.result.message = message

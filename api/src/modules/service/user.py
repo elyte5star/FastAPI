@@ -429,16 +429,16 @@ class UserHandler(UserQueries):
         new_inquiry = req.enquiry
         client_enquiry = Enquiry(**new_inquiry.model_dump())
         result = await self.create_enquiry_query(client_enquiry)
-        if result is not None:
-            req.result.eid = result.id
-            event_payload = ClientEnquiry(
-                message=new_inquiry.message,
-                client_name=new_inquiry.client_name,
-                eid=result.id,
-                email=new_inquiry.client_email,
-                app_url=self.get_app_url(request),
-                expiry=date_time_now_utc() + time_delta(1600),
-            )
-            dispatch(UserEvents.CLIENT_ENQUIRY, event_payload)
-            return req.req_success(f"Enquiry with id: {result.id} created")
-        return req.req_failure("Couldn't create enquiry")
+        if result is None:
+            return req.req_failure("Couldn't create enquiry")
+        req.result.eid = result.id
+        event_payload = ClientEnquiry(
+            message=new_inquiry.message,
+            client_name=new_inquiry.client_name,
+            eid=result.id,
+            email=new_inquiry.client_email,
+            app_url=self.get_app_url(request),
+            expiry=date_time_now_utc() + time_delta(1600),
+        )
+        dispatch(UserEvents.CLIENT_ENQUIRY, event_payload)
+        return req.req_success(f"Enquiry with id: {result.id} created")

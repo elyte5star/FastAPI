@@ -87,7 +87,7 @@ class AsyncDatabaseSession:
 
     async def create_tables(self):
         async with self._engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
+            # await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
         await self.create_admin_account(self.async_session)
 
@@ -119,15 +119,17 @@ class AsyncDatabaseSession:
             tel = self.cf.contacts["telephone"]
             password = self.cf.contacts["password"]
             admin_user = User(
-                id=get_indent(),
-                email=admin_email,
-                username=admin_username,
-                password=password,
-                active=True,
-                telephone=tel,
-                admin=True,
-                enabled=True,
-                created_by=self.cf.contacts["username"],
+                **dict(
+                    id=get_indent(),
+                    email=admin_email,
+                    username=admin_username,
+                    password=password,
+                    active=True,
+                    telephone=tel,
+                    admin=True,
+                    enabled=True,
+                    created_by=self.cf.contacts["username"],
+                )
             )
             try:
                 async_session.add(admin_user)

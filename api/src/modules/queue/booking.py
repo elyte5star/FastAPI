@@ -10,7 +10,7 @@ from modules.repository.response_models.booking import (
 from modules.repository.response_models.job import BaseResponse
 from decimal import Decimal
 from modules.queue.base import RQHandler, JobType, ResultType
-from modules.repository.response_models.product import Product
+from modules.repository.response_models.product import ProductDisplay
 from modules.queue.models import BookingModel, CartItem
 
 
@@ -87,7 +87,7 @@ class BookingHandler(RQHandler):
             product_in_db = await self.find_product_by_id(item.pid)
             if product_in_db is None:
                 return None
-            pydantic_model = Product.model_validate(product_in_db)
+            pydantic_model = ProductDisplay.model_validate(product_in_db)
             if pydantic_model.stock_quantity >= item.quantity:
                 avaliable_prods.append(pydantic_model)
             else:

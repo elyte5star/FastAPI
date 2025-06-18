@@ -89,7 +89,7 @@ class ProductRouter(ProductHandler):
         self,
         new_product: CreateProduct,
         current_user: Annotated[JWTPrincipal, Depends(security)],
-    ) -> CreateProductResponse:
+    ) -> BaseResponse:
         return await self._create_product(
             CreateProductRequest(
                 new_product=new_product,
@@ -97,9 +97,7 @@ class ProductRouter(ProductHandler):
             ),
         )
 
-    async def create_product_review(
-        self, review: CreateProductReview
-    ) -> CreateProductReviewResponse:
+    async def create_product_review(self, review: CreateProductReview) -> BaseResponse:
         return await self._create_review(
             CreateProductReviewRequest(review=review),
         )
@@ -108,7 +106,7 @@ class ProductRouter(ProductHandler):
         self,
         new_products: list[CreateProduct],
         current_user: Annotated[JWTPrincipal, Depends(RoleChecker(["ADMIN"]))],
-    ) -> CreateProductsResponse:
+    ) -> BaseResponse:
         return await self._create_many_products(
             CreateProductsRequest(
                 new_products=new_products,
@@ -118,19 +116,19 @@ class ProductRouter(ProductHandler):
 
     async def get_products(
         self,
-    ) -> GetProductsResponse:
+    ) -> BaseResponse:
         return await self._get_products(GetProductsRequest())
 
     async def get_product(
         self,
         pid: str,
-    ) -> GetProductResponse:
+    ) -> BaseResponse:
         return await self._get_product(GetProductRequest(pid=pid))
 
     async def get_product_review(
         self,
         rid: str,
-    ) -> GetProductReviewResponse:
+    ) -> BaseResponse:
         return await self._get_product_review(GetProductReviewRequest(rid=rid))
 
     async def delete_product(

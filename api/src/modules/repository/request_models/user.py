@@ -28,7 +28,6 @@ from modules.utils.misc import get_indent
 
 
 class CreateUser(BaseModel):
-    id: str = get_indent()
     username: ValidateUsername
     email: VerifyEmail
     password: ValidatePassword
@@ -49,6 +48,10 @@ class CreateUser(BaseModel):
     @property
     def created_by(self) -> str:
         return self.username
+
+    @computed_field
+    def id(self) -> str:
+        return get_indent()
 
 
 class CreateUserRequest(BaseReq):

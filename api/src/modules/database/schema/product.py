@@ -59,7 +59,7 @@ class Review(Base):
     rating: Mapped[int]
     comment: Mapped[required_600]
     date: Mapped[timestamp] = mapped_column(server_default=func.now())
-    product_id: Mapped[required_60] = mapped_column(
+    pid: Mapped[required_60] = mapped_column(
         ForeignKey("product.id", onupdate="CASCADE", ondelete="CASCADE")
     )
     product = relationship("Product", back_populates="reviews")

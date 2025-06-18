@@ -105,7 +105,32 @@ class JobStatus(BaseModel):
     state: JobState = JobState.NotSet
     success: bool = False
     is_finished: bool = Field(default=False, serialization_alias="isFinished")
-    model_config = ConfigDict(serialize_by_alias=True)
+    model_config = ConfigDict(serialize_by_alias=True, use_enum_values=True)
+
+
+class Result(BaseModel):
+    id: str = Field(default="", serialization_alias="resultId")
+    result_type: ResultType = ResultType.Database
+    result_state: ResultState = ResultState.NotSet
+    task_id: str = Field(default="", serialization_alias="taskId")
+    data: Json = None
+    data_checksum: str | None = None
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
+
+
+class Task(BaseModel):
+    id: str = Field(default="", serialization_alias="taskId")
+    job_id: str = Field(default="", serialization_alias="jobId")
+    status: JobStatus = JobStatus()
+    created_at: datetime | None = Field(
+        default=None,
+        serialization_alias="createdAt",
+    )
+
+    started: datetime | None = None
+    finished: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 
 class Job(BaseModel):
@@ -134,31 +159,9 @@ class Job(BaseModel):
         default=None, serialization_alias="searchRequest"
     )
 
-    model_config = ConfigDict(serialize_by_alias=True, from_attributes=True)
+    created_by: str = Field(default="", serialization_alias="createdBy")
 
-
-class Task(BaseModel):
-    id: str = Field(default="", serialization_alias="taskId")
-    job_id: str = Field(default="", serialization_alias="jobId")
-    status: JobStatus = JobStatus()
-    created_at: datetime | None = Field(
-        default=None,
-        serialization_alias="createdAt",
-    )
-
-    started: datetime | None = None
-    finished: datetime | None = None
-
-    model_config = ConfigDict(serialize_by_alias=True, from_attributes=True)
-
-
-class Result(BaseModel):
-    id: str = Field(default="", serialization_alias="resultId")
-    result_type: ResultType = ResultType.Database
-    result_state: ResultState = ResultState.NotSet
-    task_id: str = Field(serialization_alias="taskId")
-    data: Json = None
-    data_checksum: str | None = None
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 
 class ResultLog(BaseModel):

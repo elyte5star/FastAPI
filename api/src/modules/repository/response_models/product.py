@@ -24,7 +24,7 @@ class SpecialDeals(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class Product(BaseModel):
+class ProductDisplay(BaseModel):
     model_config = ConfigDict(from_attributes=True, extra="allow")
     id: str = Field(serialization_alias="pid")
     created_at: datetime = Field(serialization_alias="createdAt", exclude=True)
@@ -69,15 +69,15 @@ class ProductDeals(BaseModel):
 
 
 class GetProductResponse(BaseResponse):
-    product: Product = None
+    product: ProductDisplay | None = None
 
 
 class GetProductReviewResponse(BaseResponse):
-    review: ProductReview = None
+    review: ProductReview | None = None
 
 
 class GetProductsResponse(BaseResponse):
-    products: list[Product] = []
+    products: list[ProductDisplay] = []
 
 
 class GetProductReviewsResponse(BaseResponse):

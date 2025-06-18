@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, SecretStr, computed_field
+from pydantic import BaseModel, Field, ConfigDict, SecretStr
 from modules.repository.validators.base import VerifyEmail, ValidateUUID
 from modules.repository.request_models.base import BaseReq
 from modules.repository.response_models.booking import (
@@ -6,7 +6,7 @@ from modules.repository.response_models.booking import (
 )
 from typing_extensions import Annotated
 import datetime
-from modules.repository.response_models.job import JobResponse
+from modules.repository.response_models.job import GetJobRequestResponse
 from modules.queue.models import CartItem, ShippingAddress
 
 
@@ -53,7 +53,7 @@ class CreateBooking(BaseModel):
 
 class CreateBookingRequest(BaseReq):
     new_order: CreateBooking
-    result: JobResponse = JobResponse()
+    result: GetJobRequestResponse = GetJobRequestResponse()
 
 
 class GetBookingRequest(BaseReq):

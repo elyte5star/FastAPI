@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from typing_extensions import Annotated
 from modules.repository.request_models.base import BaseReq
 from modules.repository.response_models.product import (
@@ -13,6 +13,7 @@ from modules.repository.response_models.product import (
 )
 from modules.repository.validators.base import VerifyEmail, ValidateUUID
 from decimal import Decimal
+from modules.utils.misc import get_indent
 
 
 class CreateProduct(BaseModel):
@@ -33,6 +34,10 @@ class CreateProduct(BaseModel):
         ),
     ]
 
+    @computed_field
+    def id(self) -> str:
+        return get_indent()
+
 
 class CreateProductReview(BaseModel):
     rating: int = Field(ge=0, le=5)
@@ -44,6 +49,10 @@ class CreateProductReview(BaseModel):
         Field(strict=True, validation_alias="reviewerName"),
     ]
 
+    @computed_field
+    def id(self) -> str:
+        return get_indent()
+
 
 class DeleteProductRequest(BaseReq):
     pid: ValidateUUID
@@ -51,7 +60,7 @@ class DeleteProductRequest(BaseReq):
 
 
 class CreateProductReviewRequest(BaseReq):
-    review: CreateProductReview = None
+    review: CreateProductReview
     result: CreateProductReviewResponse = CreateProductReviewResponse()
 
 
@@ -61,7 +70,7 @@ class CreateProductsRequest(BaseReq):
 
 
 class CreateProductRequest(BaseReq):
-    new_product: CreateProduct = None
+    new_product: CreateProduct
     result: CreateProductResponse = CreateProductResponse()
 
 
@@ -76,7 +85,7 @@ class GetProductReviewRequest(BaseReq):
 
 
 class GetProductsRequest(BaseReq):
-    result: GetProductResponse = GetProductsResponse()
+    result: GetProductsResponse = GetProductsResponse()
 
 
 class GetProductReviewsRequest(BaseReq):

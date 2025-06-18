@@ -35,7 +35,7 @@ class JWTBearer(HTTPBearer):
         super(JWTBearer, self).__init__(auto_error=auto_error)
 
     async def __call__(self, request: Request) -> JWTPrincipal:
-        credentials: HTTPAuthorizationCredentials = await super(
+        credentials: HTTPAuthorizationCredentials | None = await super(
             JWTBearer, self
         ).__call__(request)
         if credentials:
@@ -89,7 +89,11 @@ class JWTBearer(HTTPBearer):
         if token is None:
             return None
         try:
-            self.payload = jwt.decode(token, cfg.secret_key, algorithms=[cfg.algorithm])
+            self.payload = jwt.decode(
+                token,
+                cfg.secret_key,
+                algorithms=[cfg.algorithm],
+            )
             return self.payload if self.payload["exp"] >= time.time() else None
         except JWTError:
             return None
@@ -116,14 +120,14 @@ class RoleChecker:
 
 class RefreshTokenChecker:
 
-    async def __call__(self, request: Request) -> JWTPrincipal:
+    async def __call__(self, request: Request) -> JWTPrincipal | HTTPException:
         cookie = request.cookies
         if not cookie:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No cookie found",
             )
-        if "refresh-token" not in cookie:
+        if cookie.get("refresh-token") is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Refresh token missing.",
@@ -147,7 +151,7 @@ class RefreshTokenChecker:
                 detail="User account Not Verified/Locked",
             )
         return JWTPrincipal(
-            userid=self.payload["userId"],
+            user_id=self.payload["userId"],
             email=self.payload["email"],
             username=self.payload["sub"],
             active=self.payload["active"],
@@ -164,7 +168,11 @@ class RefreshTokenChecker:
         if token is None:
             return None
         try:
-            self.payload = jwt.decode(token, cfg.secret_key, algorithms=[cfg.algorithm])
+            self.payload = jwt.decode(
+                token,
+                cfg.secret_key,
+                algorithms=[cfg.algorithm],
+            )
             return self.payload if self.payload["exp"] >= time.time() else None
         except JWTError:
             return None
