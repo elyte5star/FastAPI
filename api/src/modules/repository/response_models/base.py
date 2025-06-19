@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class BaseResponse(BaseModel):
@@ -10,10 +10,10 @@ class BaseResponse(BaseModel):
         extra="allow",
         serialize_by_alias=True,
     )
-    req_id: str = ""
-    start_time: float = 0.0
-    stop_time: float = 0.0
-    process_time: float = 0.0
+    req_id: str = Field(default="", serialization_alias="requestId")
+    start_time: float = Field(default=0.0, serialization_alias="startTime")
+    stop_time: float = Field(default=0.0, serialization_alias="stopTime")
+    process_time: float = Field(default=0.0, serialization_alias="processTime")
     success: bool = False
     message: str = ""
 

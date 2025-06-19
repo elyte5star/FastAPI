@@ -13,6 +13,7 @@ class JobHandler(JobTaskQueries):
         print(job)
         if job is None:
             return req.req_failure(f"No job with id::{req.job_id}")
+        print(job)
         pydantic_model = Job.model_validate(job)
         req.result.job_status = await self.get_job_response(pydantic_model)
         return req.req_success(

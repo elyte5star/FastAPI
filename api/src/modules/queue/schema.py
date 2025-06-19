@@ -6,6 +6,7 @@ from modules.database.schema.base import (
     Base,
     str_60,
     str_pk_60,
+    str_500,
     timestamp,
     JSONEncodedDict,
 )
@@ -40,11 +41,11 @@ class Job(Audit):
         PydanticColumn(JobStatus), nullable=False
     )
     number_of_tasks: Mapped[int] = mapped_column(Integer, nullable=False)
-    create_booking: Mapped[BookingModel | None] = mapped_column(
-        PydanticColumn(BookingModel), default=None
+    create_booking: Mapped[dict[str, str] | None] = mapped_column(
+        MutableDict.as_mutable(JSONEncodedDict)
     )
-    create_search: Mapped[SearchModel | None] = mapped_column(
-        PydanticColumn(SearchModel), default=None
+    create_search: Mapped[dict[str, str] | None] = mapped_column(
+        MutableDict.as_mutable(JSONEncodedDict)
     )
 
 
@@ -87,6 +88,10 @@ class Result(Base):
     )
     data: Mapped[dict[str, str] | None] = mapped_column(
         MutableDict.as_mutable(JSONEncodedDict)
+    )
+    data_checksum: Mapped[str_500 | None] = mapped_column(
+        default=None,
+        nullable=True,
     )
 
     __table_args__ = (UniqueConstraint("task_id"),)

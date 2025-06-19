@@ -37,8 +37,6 @@ class CartItem(BaseModel):
         amount = sale_price * self.quantity
         return "{:.2f}".format(amount)
 
-    model_config = ConfigDict(extra="forbid")
-
 
 class ShippingAddress(BaseModel):
     first_name: Annotated[
@@ -77,27 +75,22 @@ class BookingModel(BaseModel):
         str,
         Field(
             serialization_alias="totalPrice",
-            repr=True,
         ),
     ]
     shipping_address: Annotated[
         ShippingAddress,
         Field(
             serialization_alias="shippingAddress",
-            repr=True,
         ),
     ]
-    user_id: str = Field(serialization_alias="userId", repr=True)
-
-    model_config = ConfigDict(serialize_by_alias=True)
+    user_id: str = Field(serialization_alias="userId")
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SearchModel(BaseModel):
     text: list[str] = []
     categories: list[str] = []
-    return_count: int | None = Field(
-        None, exclude=False, serialization_alias="returnCount"
-    )
+    return_count: int = Field(default=0, serialization_alias="returnCount")
     model_config = ConfigDict(extra="allow")
 
 
@@ -105,7 +98,7 @@ class JobStatus(BaseModel):
     state: JobState = JobState.NotSet
     success: bool = False
     is_finished: bool = Field(default=False, serialization_alias="isFinished")
-    model_config = ConfigDict(serialize_by_alias=True, use_enum_values=True)
+    model_config = ConfigDict(serialize_by_alias=True)
 
 
 class Result(BaseModel):
@@ -114,8 +107,8 @@ class Result(BaseModel):
     result_state: ResultState = ResultState.NotSet
     task_id: str = Field(default="", serialization_alias="taskId")
     data: Json = None
-    data_checksum: str | None = None
-    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
+    data_checksum: str | None = Field(default=None, serialization_alias="dataChecksum")
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Task(BaseModel):
@@ -130,7 +123,7 @@ class Task(BaseModel):
     started: datetime | None = None
     finished: datetime | None = None
 
-    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Job(BaseModel):
@@ -161,7 +154,7 @@ class Job(BaseModel):
 
     created_by: str = Field(default="", serialization_alias="createdBy")
 
-    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ResultLog(BaseModel):

@@ -47,13 +47,13 @@ class RQHandler(JobTaskQueries):
     ) -> tuple[bool, str]:
         try:
             # ADD JOB,TASK,RESULT TO DB
-            new_job = schema.Job(**job.model_dump())
-            await self.add_job_to_db_query(new_job)
+            new_job = schema.Job(**dict(job))
+            _ = await self.add_job_to_db_query(new_job)
             for task, result in zip(tasks, results):
-                new_task = schema.Task(**task.model_dump())
-                await self.add_task_to_db_query(new_task)
-                new_result = schema.Result(**result.model_dump())
-                await self.add_task_result_db_query(new_result)
+                new_task = schema.Task(**dict(task))
+                _ = await self.add_task_to_db_query(new_task)
+                new_result = schema.Result(**dict(result))
+                _ = await self.add_task_result_db_query(new_result)
 
             # Perform connection
             connection = await connect(self.cf.rabbit_connect_string)
@@ -64,6 +64,9 @@ class RQHandler(JobTaskQueries):
                 _ = await channel.declare_queue(queue_name, durable=True)
                 for queue_item in queue_items:
                     # Sending the message
+                    queue_item.job.create_booking = models.BookingModel.model_validate(
+                        queue_item.job.create_booking
+                    )
                     await channel.default_exchange.publish(
                         Message(
                             queue_item.model_dump_json(by_alias=True).encode(),
