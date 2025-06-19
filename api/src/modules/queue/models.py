@@ -107,7 +107,10 @@ class Result(BaseModel):
     result_state: ResultState = ResultState.NotSet
     task_id: str = Field(default="", serialization_alias="taskId")
     data: Json = None
-    data_checksum: str | None = Field(default=None, serialization_alias="dataChecksum")
+    data_checksum: str | None = Field(
+        default=None,
+        serialization_alias="dataChecksum",
+    )
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -144,12 +147,13 @@ class Job(BaseModel):
         default=0,
         serialization_alias="numberOfTasks",
     )
-    create_booking: BookingModel | dict = Field(
-        default={},
+    booking: BookingModel | Json = Field(
+        default=None,
         serialization_alias="bookingRequest",
     )
-    create_search: SearchModel | dict = Field(
-        default={}, serialization_alias="searchRequest"
+    search: SearchModel | Json = Field(
+        default=None,
+        serialization_alias="searchRequest",
     )
 
     created_by: str = Field(default="", serialization_alias="createdBy")

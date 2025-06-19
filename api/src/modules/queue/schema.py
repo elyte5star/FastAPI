@@ -18,7 +18,6 @@ from modules.queue.enums import (
     ResultType,
 )
 from sqlalchemy.ext.mutable import MutableDict
-from modules.queue.models import BookingModel, SearchModel
 from datetime import datetime
 
 
@@ -41,10 +40,10 @@ class Job(Audit):
         PydanticColumn(JobStatus), nullable=False
     )
     number_of_tasks: Mapped[int] = mapped_column(Integer, nullable=False)
-    create_booking: Mapped[dict[str, str] | None] = mapped_column(
+    booking: Mapped[dict[str, str] | None] = mapped_column(
         MutableDict.as_mutable(JSONEncodedDict)
     )
-    create_search: Mapped[dict[str, str] | None] = mapped_column(
+    search: Mapped[dict[str, str] | None] = mapped_column(
         MutableDict.as_mutable(JSONEncodedDict)
     )
 

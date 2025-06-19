@@ -55,7 +55,7 @@ class BookingHandler(RQHandler):
             shipping_address=new_order.shipping_address,
             user_id=current_user.user_id,
         )
-        job.create_booking = booking_model.model_dump()
+        job.booking = booking_model
         success, message = await self._add_job_with_one_task(
             job, self.cf.queue_name[1], ResultType.Database
         )
