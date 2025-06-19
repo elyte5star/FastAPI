@@ -144,12 +144,12 @@ class Job(BaseModel):
         default=0,
         serialization_alias="numberOfTasks",
     )
-    create_booking: BookingModel | None = Field(
-        default=None,
+    create_booking: BookingModel | dict = Field(
+        default={},
         serialization_alias="bookingRequest",
     )
-    create_search: SearchModel | None = Field(
-        default=None, serialization_alias="searchRequest"
+    create_search: SearchModel | dict = Field(
+        default={}, serialization_alias="searchRequest"
     )
 
     created_by: str = Field(default="", serialization_alias="createdBy")
