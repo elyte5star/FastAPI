@@ -4,9 +4,11 @@ from typing import Annotated
 from modules.repository.request_models.booking import (
     CreateBooking,
     CreateBookingRequest,
+    BookingResultRequest,
 )
 from modules.security.dependency import security, JWTPrincipal
 from modules.repository.response_models.job import GetJobRequestResponse, BaseResponse
+from modules.repository.response_models.booking import GetBookingResponse
 
 
 class BookingRouter(BookingHandler):
@@ -24,6 +26,13 @@ class BookingRouter(BookingHandler):
             methods=["POST"],
             description="Register a booking",
         )
+        self.router.add_api_route(
+            path="/{jobId}",
+            endpoint=self.get_booking_result,
+            response_model=GetBookingResponse,
+            methods=["GET"],
+            description="Get booking result",
+        )
 
     async def create_booking(
         self,
@@ -32,4 +41,16 @@ class BookingRouter(BookingHandler):
     ) -> BaseResponse:
         return await self._create_booking(
             CreateBookingRequest(new_order=data, credentials=current_user)
+        )
+
+    async def get_booking_result(
+        self,
+        jobId: str,
+        current_user: Annotated[
+            JWTPrincipal,
+            Depends(security),
+        ],
+    ) -> BaseResponse:
+        return await self._get_booking_result(
+            BookingResultRequest(job_id=jobId, credentials=current_user)
         )

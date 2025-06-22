@@ -9,19 +9,20 @@ from modules.utils.misc import time_then
 class JobHandler(JobTaskQueries):
 
     async def _get_job(self, req: GetJobRequest) -> BaseResponse:
-        job = await self.find_job_by_id(req.job_id)
-        if job is None:
+        job_in_db = await self.find_job_by_id(req.job_id)
+        if job_in_db is None:
             return req.req_failure(f"No job with id::{req.job_id}")
-        pydantic_model = Job.model_validate(job)
-        req.result.job_status = await self.get_job_response(pydantic_model)
+        job = Job.model_validate(job_in_db)
+        req.result.job_status = await self.get_job_response(job)
         return req.req_success(
             f"Success getting status for job with id: {req.job_id}.",
         )
 
     async def _get_jobs(self, req: GetJobsRequest) -> BaseResponse:
-        jobs = await self.get_jobs_query()
+        jobs_in_db = await self.get_jobs_query()
         jobs_status = [
-            await self.get_job_response(Job.model_validate(job)) for job in jobs
+            await self.get_job_response(Job.model_validate(job_in_db))
+            for job_in_db in jobs_in_db
         ]
         req.result.jobs_status = jobs_status
         return req.req_success(
@@ -80,3 +81,10 @@ class JobHandler(JobTaskQueries):
             job_status=job.job_status,
             process_time=float((stopped - job.created_at).total_seconds()),
         )
+
+    def is_job_result_available(self, job: Job) -> bool:
+        if job.job_status.is_finished is False:
+            return False
+        if job.job_status.state != JobState.Finished:
+            return False
+        return job.job_status.success

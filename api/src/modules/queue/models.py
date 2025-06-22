@@ -106,7 +106,7 @@ class Result(BaseModel):
     result_type: ResultType = ResultType.Database
     result_state: ResultState = ResultState.NotSet
     task_id: str = Field(default="", serialization_alias="taskId")
-    data: Json = None
+    data: dict = {}
     data_checksum: str | None = Field(
         default=None,
         serialization_alias="dataChecksum",
@@ -143,16 +143,17 @@ class Job(BaseModel):
         default=JobStatus(),
         serialization_alias="jobStatus",
     )
+    tasks: list[Task] = []
     number_of_tasks: int = Field(
         default=0,
         serialization_alias="numberOfTasks",
     )
     booking: BookingModel | Json = Field(
-        default=None,
+        default={},
         serialization_alias="bookingRequest",
     )
     search: SearchModel | Json = Field(
-        default=None,
+        default={},
         serialization_alias="searchRequest",
     )
 
@@ -176,3 +177,4 @@ class ResultLog(BaseModel):
 class QueueItem(BaseModel):
     job: Job | None = None
     task: Task | None = None
+    result: Result | None = None

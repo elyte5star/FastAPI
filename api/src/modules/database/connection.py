@@ -45,8 +45,8 @@ class AsyncDatabaseSession:
     def __init__(self, config: ApiConfig):
         self.cf = config
         self.logger = config.logger
-        self._engine: AsyncEngine = None
-        self.async_session: AsyncSession = None
+        self._engine: AsyncEngine
+        self.async_session: AsyncSession
         self.select = select
         self.delete = delete
         self.sqlalchemy_update = sqlalchemy_update
@@ -144,10 +144,12 @@ class AsyncDatabaseSession:
 
     async def admin_location(self, user: User):
         user_loc = UserLocation(
-            id=get_indent(),
-            country="UNKNOWN",
-            owner=user,
-            enabled=True,
+            **dict(
+                id=get_indent(),
+                country="UNKNOWN",
+                owner=user,
+                enabled=True,
+            )
         )
         await self.create_user_location_query(user_loc)
 

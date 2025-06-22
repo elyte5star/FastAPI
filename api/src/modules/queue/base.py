@@ -1,13 +1,13 @@
-from modules.repository.queries.queue import JobTaskQueries
 from modules.queue.enums import JobState, JobType, ResultType, ResultState
 from modules.queue import models
 from modules.queue import schema
-from modules.utils.misc import get_indent, date_time_now_utc
+from modules.utils.misc import get_indent, date_time_now_utc, time_then
 import hashlib
 from aio_pika import Message, connect, DeliveryMode
+from modules.service.job import JobHandler
 
 
-class RQHandler(JobTaskQueries):
+class RQHandler(JobHandler):
 
     async def _create_job(self, job_type: JobType, user_id: str) -> models.Job:
         job = models.Job()
@@ -90,12 +90,19 @@ class RQHandler(JobTaskQueries):
             job_id=job.id,
             status=models.JobStatus(state=JobState.Received),
             created_at=date_time_now_utc(),
+            finished=time_then(),
         )
         task_result = self.create_task_result(
             result_type,
             task.id,
         )
-        queue_items = [models.QueueItem(job=job, task=task)]
+        queue_items = [
+            models.QueueItem(
+                job=job,
+                task=task,
+                result=task_result,
+            )
+        ]
         success, message = await self._add_job_tasks_to_queue(
             job,
             [task],

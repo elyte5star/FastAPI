@@ -1,6 +1,7 @@
 from modules.settings.configuration import ApiConfig
 from fastapi.logger import logger
 from modules.routers.auth import AuthRouter
+from modules.routers.search import SearchRouter
 from modules.routers.user import UserRouter
 from modules.routers.product import ProductRouter
 from modules.routers.booking import BookingRouter
@@ -25,6 +26,8 @@ product_router = ProductRouter(cfg)
 
 booking_router = BookingRouter(cfg)
 
+search_router = SearchRouter(cfg)
+
 job_router = JobRouter(cfg)
 
 
@@ -35,6 +38,7 @@ routes: tuple[APIRouter, ...] = (
     user_router.router,
     product_router.router,
     booking_router.router,
+    search_router.router,
     job_router.router,
     system_router.router,
 )

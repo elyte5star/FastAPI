@@ -3,7 +3,7 @@ import sys
 from logging.handlers import TimedRotatingFileHandler, SMTPHandler
 from os import path, getenv
 from pathlib import Path
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 from modules.settings.configuration import ApiConfig
 from modules.utils.misc import get_indent, date_time_now_utc
 
@@ -23,7 +23,7 @@ class UserFilter(logging.Filter):
         return True
 
 
-class CustomJsonFormatter(jsonlogger.JsonFormatter):
+class CustomJsonFormatter(JsonFormatter):
     def add_fields(self, log_record, record, message_dict) -> None:
         super(CustomJsonFormatter, self).add_fields(
             log_record,
@@ -31,9 +31,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
             message_dict,
         )
         # Add fields here
-        log_record["asctime"] = date_time_now_utc().strftime(
-            "%d-%m-%Y, %H:%M:%S.%f UTC"
-        )
+        log_record["asctime"] = date_time_now_utc().strftime("%d-%m-%Y, %H:%M:%S.%f")
 
 
 FORMATTER = logging.Formatter(fmt)
@@ -50,7 +48,7 @@ def get_console_handler():
 
 def smtp_log_handler(cfg: ApiConfig):
     smtp_handler = SMTPHandler(
-        mailhost=[cfg.mail_server, cfg.mail_port],
+        mailhost=(cfg.mail_server, cfg.mail_port),
         fromaddr=cfg.email,
         toaddrs=["elyte5star@gmail.com"],
         subject="Exceptional Log",

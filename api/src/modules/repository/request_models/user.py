@@ -103,7 +103,11 @@ class VerifyRegistrationOtpRequest(BaseReq):
 
 class UserEnquiry(BaseModel):
     id: str = get_indent()
-    client_name: str = Field(min_length=3, max_length=10, validation_alias="clientName")
+    client_name: str = Field(
+        min_length=3,
+        max_length=10,
+        validation_alias="clientName",
+    )
     client_email: VerifyEmail = Field(validation_alias="clientEmail")
     country: str
     subject: str

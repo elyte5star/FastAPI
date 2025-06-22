@@ -1,6 +1,6 @@
 from modules.repository.request_models.base import BaseResponse
-from typing import Any
 from pydantic import ConfigDict
+from modules.repository.response_models.job import JobResponse
 
 
 class CreateBookingResponse(BaseResponse):
@@ -14,5 +14,5 @@ class GetBookingsResponse(BaseResponse):
 
 
 class GetBookingResponse(BaseResponse):
-    model_config = ConfigDict(from_attributes=True)
-    booking: Any = {}
+    job: JobResponse = JobResponse()
+    data: dict = {}

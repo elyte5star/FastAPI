@@ -47,6 +47,23 @@ class Job(Audit):
         MutableDict.as_mutable(JSONEncodedDict)
     )
 
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__}("
+            f" id:{self.id}, "
+            f" user_id:{self.user_id}, "
+            f" status:{self.job_status},"
+            f" number_of_tasks:{self.number_of_tasks},"
+            f" tasks:{self.tasks}, "
+            f" booking_request:{self.booking},"
+            f" search_request:{self.search},"
+            f" created_at:{self.created_at},"
+            f" created_by:{self.created_by},"
+            f" modified_at:{self.modified_at},"
+            f" modified_by:{self.modified_by}"
+            f")>"
+        )
+
 
 class Task(Base):
     id: Mapped[str_pk_60]

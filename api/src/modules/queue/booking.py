@@ -1,17 +1,25 @@
 from modules.repository.request_models.booking import (
     CreateBookingRequest,
     PaymentDetails,
-    GetBookingRequest,
+    BookingResultRequest,
 )
 from modules.repository.response_models.booking import (
     GetBookingsResponse,
-    GetBookingResponse,
 )
 from modules.repository.response_models.job import BaseResponse
 from decimal import Decimal
-from modules.queue.base import RQHandler, JobType, ResultType
+from modules.queue.base import RQHandler, JobType, ResultType, JobState
 from modules.repository.response_models.product import ProductDisplay
-from modules.queue.models import BookingModel, CartItem
+from modules.queue.models import (
+    BookingModel,
+    CartItem,
+    Task,
+    QueueItem,
+    JobStatus,
+    Result,
+    Job,
+)
+from modules.utils.misc import get_indent, date_time_now_utc, time_then
 
 
 class BookingHandler(RQHandler):
@@ -56,8 +64,29 @@ class BookingHandler(RQHandler):
             user_id=current_user.user_id,
         )
         job.booking = booking_model
-        success, message = await self._add_job_with_one_task(
-            job, self.cf.queue_name[1], ResultType.Database
+        tasks = []
+        queue_items = []
+        tasks_result = []
+        for item in cart:
+            task = Task(
+                id=get_indent(),
+                job_id=job.id,
+                status=JobStatus(state=JobState.Received),
+                created_at=date_time_now_utc(),
+                finished=time_then(),
+            )
+            result = self.create_task_result(ResultType.Database, task.id)
+            tasks.append(task)
+            tasks_result.append(result)
+            queue_items.append(QueueItem(job=job, task=task, result=result))
+        job.number_of_tasks = len(tasks)
+        QUEUE = self.cf.queue_name[1]
+        success, message = await self._add_job_tasks_to_queue(
+            job,
+            tasks,
+            tasks_result,
+            QUEUE,
+            queue_items,
         )
         if success:
             req.result.job_id = job.id
@@ -70,8 +99,34 @@ class BookingHandler(RQHandler):
     ) -> GetBookingsResponse:
         return GetBookingsResponse()
 
-    async def _get_booking(self, req: GetBookingRequest) -> GetBookingResponse:
-        return GetBookingResponse()
+    async def _get_booking_result(
+        self,
+        req: BookingResultRequest,
+    ) -> BaseResponse:
+        job_id = req.job_id
+        job_in_db = await self.find_job_by_id(job_id)
+        if job_in_db is None:
+            return req.req_failure(f"No job with id::{req.job_id}")
+        job = Job.model_validate(job_in_db)
+        if job.job_type != JobType.CreateBooking:
+            return req.req_failure("Wrong job type")
+        req.result.job = await self.get_job_response(job)
+        if not self.is_job_result_available(job):
+            return req.req_failure("No result for job")
+        req.result.data = await self.create_booking_result(job.tasks)
+        return req.req_success(
+            f"Success getting result for job with id: {job_id}.",
+        )
+
+    async def create_booking_result(self, tasks: list[Task]) -> dict:
+        result = {}
+        if not tasks:
+            return result
+        for task in tasks:
+            result_in_db = await self.find_result_by_task_id(task.id)
+            res = Result.model_validate(result_in_db)
+            result[task.job_id] = (task.id, dict(res))
+        return result
 
     async def make_payment(
         self,

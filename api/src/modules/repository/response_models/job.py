@@ -4,12 +4,13 @@ from modules.queue.enums import JobType
 from modules.queue.models import Job
 from modules.queue.schema import JobStatus
 from modules.repository.request_models.base import BaseResponse
+from modules.utils.misc import time_then
 
 
 class JobResponse(BaseModel):
     user_id: str = Field(default="", serialization_alias="userId")
-    start_time: datetime | None = None
-    stop_time: datetime | None = None
+    start_time: datetime = time_then()
+    stop_time: datetime = time_then()
     process_time: float = 0.0
     job_type: JobType = Field(
         default=JobType.Empty,
