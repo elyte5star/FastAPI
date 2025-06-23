@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.future import select
-from sqlalchemy import inspect, __version__, delete, or_, and_
+from sqlalchemy import delete, or_, and_
 from sqlalchemy import update as sqlalchemy_update
 from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 from modules.database.schema.base import Base
-from modules.utils.misc import get_indent, date_time_now_utc
 from modules.database.schema.user import (
     User,  # noqa: F401
     UserLocation,  # noqa: F401
@@ -17,14 +16,13 @@ from modules.database.schema.user import (
     NewLocationToken,  # noqa: F401
     Enquiry,  # noqa: F401
     Address,  # noqa: F401
-    Booking,
+    Booking,  # noqa: F401
 )
 from modules.database.schema.product import (
     Product,  # noqa: F401
     Review,  # noqa: F401
     SpecialDeals,  # noqa: F401
 )  # noqa: F401
-
 
 # noqa: F401
 from modules.queue.schema import Job, Task, Result  # noqa: F401
@@ -66,7 +64,6 @@ class AsyncDatabaseSession:
         async with self._engine.begin() as conn:
             # await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
-        # await self.create_admin_account(self.async_session)
 
     async def drop_tables(self) -> None:
         async with self._engine.begin() as conn:

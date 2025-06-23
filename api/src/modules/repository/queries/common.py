@@ -133,12 +133,6 @@ class CommonQueries(AsyncDatabaseSession):
         inspector = inspect(conn)
         return inspector.get_table_names()
 
-    async def async_inspect_schema(self):
-        async with self._engine.connect() as conn:
-            tables = await conn.run_sync(self.use_inspector)
-        self.logger.info(tables)
-        return tables
-
     async def lock_user_account_query(self, user: User) -> None:
         changes = dict(lock_time=date_time_now_utc(), is_locked=True)
         await self.update_user_info(user.id, changes)
@@ -195,11 +189,15 @@ class CommonQueries(AsyncDatabaseSession):
         ).decode(self.cf.encoding)
         return hashed_password
 
-    async def create_admin_account(self, async_session: AsyncSession) -> None:
+    async def create_admin_account(self) -> None:
         admin_username = self.cf.contacts["username"]
         admin_email = self.cf.contacts["email"]
         tel = self.cf.contacts["telephone"]
-        user_exist = await self.check_if_user_exist(admin_email, admin_username, tel)
+        user_exist = await self.check_if_user_exist(
+            admin_email,
+            admin_username,
+            tel,
+        )
         if user_exist is None:
             password = self.cf.contacts["password"]
             admin_user = User(
@@ -216,15 +214,15 @@ class CommonQueries(AsyncDatabaseSession):
                 )
             )
             try:
-                async_session.add(admin_user)
-                await async_session.commit()
-                self.logger.info(f"Admin account with id {admin_user.id} created")
+                self.async_session.add(admin_user)
+                await self.async_session.commit()
+                self.logger.info(f"Admin account::{admin_user.id} created")
                 await self.admin_location(admin_user)
             except PostgresError:
-                await async_session.rollback()
+                await self.async_session.rollback()
                 raise
         else:
-            self.logger.info(f"Account with name {admin_username} exist already")
+            self.logger.info(f"Admin account::{admin_username} exist already")
 
     async def admin_location(self, user: User):
         user_loc = UserLocation(
