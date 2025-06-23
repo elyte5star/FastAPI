@@ -64,9 +64,7 @@ class BookingHandler(RQHandler):
             user_id=current_user.user_id,
         )
         job.booking = booking_model
-        tasks = []
-        queue_items = []
-        tasks_result = []
+        tasks, queue_items, tasks_result = ([], [], [])
         for item in cart:
             task = Task(
                 id=get_indent(),

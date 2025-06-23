@@ -210,12 +210,6 @@ class UserHandler(UserQueries):
             return True
         return False
 
-    def hash_password(self, plain_password: str) -> str:
-        hashed_password = bcrypt.hashpw(
-            plain_password.encode(self.cf.encoding),
-            bcrypt.gensalt(rounds=self.cf.rounds),
-        ).decode(self.cf.encoding)
-        return hashed_password
 
     async def _get_user(self, req: GetUserRequest) -> BaseResponse:
         if req.credentials is None:

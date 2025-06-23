@@ -6,13 +6,13 @@ from modules.database.schema.user import (
     PasswordResetToken,
     Enquiry,
 )
-from modules.database.connection import AsyncDatabaseSession
+from modules.repository.queries.common import CommonQueries
 from asyncpg.exceptions import PostgresError
 from datetime import datetime
 from collections.abc import Sequence
 
 
-class UserQueries(AsyncDatabaseSession):
+class UserQueries(CommonQueries):
     async def create_user_query(self, user: User) -> User:
         try:
             self.async_session.add(user)
@@ -29,18 +29,6 @@ class UserQueries(AsyncDatabaseSession):
         result = await self.async_session.execute(stmt)
         return result.scalars().all()
 
-    async def update_user_info(self, user_id: str, changes: dict):
-        try:
-            user = await self.async_session.get(User, user_id)
-            for key, value in changes.items():
-                if hasattr(user, key):
-                    setattr(user, key, value)
-            await self.async_session.commit()
-        except PostgresError as e:
-            await self.async_session.rollback()
-            self.logger.error("Failed to update user:", e)
-            raise
-
     async def delete_user_query(self, userid: str) -> None:
         try:
             stmt = self.delete(User).where(User.id == userid)
@@ -50,23 +38,6 @@ class UserQueries(AsyncDatabaseSession):
             raise
         else:
             await self.async_session.commit()
-
-    async def check_if_user_exist(
-        self, email: str, username: str, telephone: str
-    ) -> User | None:
-        stmt = (
-            self.select(User.email, User.username)
-            .where(
-                self.or_(
-                    User.email == email,
-                    User.username == username,
-                    User.telephone == telephone,
-                )
-            )
-            .limit(1)
-        )
-        result = await self.async_session.execute(stmt)
-        return result.scalars().first()
 
     # OTP
     async def create_otp_query(self, otp: Otp) -> Otp:

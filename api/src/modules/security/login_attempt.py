@@ -17,7 +17,7 @@ class LoginAttemptChecker(DifferentLocationChecker):
         return None
 
     async def reset_user_failed_attempts(self, user: User) -> None:
-        await self.update_user_query(user.id, dict(failed_attempts=0))
+        await self.update_user_info(user.id, dict(failed_attempts=0))
 
     async def increase_user_failed_attempts(self, user: User) -> None:
         user_failed_attempts = user.failed_attempts
@@ -26,4 +26,4 @@ class LoginAttemptChecker(DifferentLocationChecker):
         else:
             userid = user.id
             changes = dict(failed_attempts=user_failed_attempts + 1)
-            await self.update_user_query(userid, changes)
+            await self.update_user_info(userid, changes)

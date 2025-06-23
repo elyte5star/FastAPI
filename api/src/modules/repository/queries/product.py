@@ -1,10 +1,10 @@
-from modules.database.connection import AsyncDatabaseSession
 from modules.database.schema.product import Product, Review
 from asyncpg.exceptions import PostgresError
 from collections.abc import Sequence
+from modules.repository.queries.common import CommonQueries
 
 
-class ProductQueries(AsyncDatabaseSession):
+class ProductQueries(CommonQueries):
     async def create_product_query(self, product: Product) -> Product:
         try:
             self.async_session.add(product)

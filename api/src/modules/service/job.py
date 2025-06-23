@@ -1,12 +1,12 @@
-from modules.repository.queries.queue import JobTaskQueries
 from modules.repository.request_models.job import GetJobRequest, GetJobsRequest, Job
 from modules.repository.response_models.job import JobResponse, BaseResponse
 from datetime import datetime
 from modules.queue.enums import JobState
 from modules.utils.misc import time_then
+from modules.repository.queries.common import CommonQueries
 
 
-class JobHandler(JobTaskQueries):
+class JobHandler(CommonQueries):
 
     async def _get_job(self, req: GetJobRequest) -> BaseResponse:
         job_in_db = await self.find_job_by_id(req.job_id)

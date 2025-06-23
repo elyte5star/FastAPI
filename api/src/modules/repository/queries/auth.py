@@ -1,4 +1,3 @@
-from modules.database.connection import AsyncDatabaseSession
 from modules.database.schema.user import (
     DeviceMetaData,
     UserLocation,
@@ -6,9 +5,10 @@ from modules.database.schema.user import (
     NewLocationToken,
 )
 from asyncpg.exceptions import PostgresError
+from modules.repository.queries.common import CommonQueries
 
 
-class AuthQueries(AsyncDatabaseSession):
+class AuthQueries(CommonQueries):
 
     # DEVICE METADATA
     async def find_device_meta_data_by_userid_query(
@@ -21,17 +21,16 @@ class AuthQueries(AsyncDatabaseSession):
     async def create_device_meta_data_query(
         self, device_metadata: DeviceMetaData
     ) -> DeviceMetaData | None:
-        self.async_session.add(device_metadata)
-        result = None
         try:
+            self.async_session.add(device_metadata)
             await self.async_session.commit()
-            result = device_metadata
+            await self.async_session.refresh(device_metadata)
         except PostgresError as e:
             await self.async_session.rollback()
             self.logger.error("Failed to create device metadata: ", e)
             raise
-        finally:
-            return result
+        else:
+            return device_metadata
 
     async def update_device_meta_data_query(self, id: str, data: dict) -> dict | None:
         result = None
@@ -57,17 +56,16 @@ class AuthQueries(AsyncDatabaseSession):
     async def create_new_location_token_query(
         self, new_loc_token: NewLocationToken
     ) -> NewLocationToken | None:
-        self.async_session.add(new_loc_token)
-        result = None
         try:
+            self.async_session.add(new_loc_token)
             await self.async_session.commit()
-            result = new_loc_token
+            await self.async_session.refresh(new_loc_token)
         except PostgresError as e:
             await self.async_session.rollback()
             self.logger.error("Failed to create new location token: ", e)
             raise
-        finally:
-            return result
+        else:
+            return new_loc_token
 
     async def find_new_location_by_token_query(
         self, token: str
@@ -108,14 +106,12 @@ class AuthQueries(AsyncDatabaseSession):
         result = await self.async_session.execute(stmt)
         return result.scalars().first()
 
-    async def update_user_loc_query(self, id: str, data: dict) -> None:
-        update_stmt = (
-            self.sqlalchemy_update(UserLocation)
-            .where(UserLocation.id == id)
-            .values(data)
-        )
+    async def update_user_loc_query(self, id: str, changes: dict) -> None:
         try:
-            await self.async_session.execute(update_stmt)
+            user_loc = await self.async_session.get(UserLocation, id)
+            for key, value in changes.items():
+                if hasattr(user_loc, key):
+                    setattr(user_loc, key, value)
             await self.async_session.commit()
         except PostgresError:
             await self.async_session.rollback()
