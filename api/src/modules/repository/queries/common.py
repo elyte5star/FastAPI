@@ -16,6 +16,7 @@ from asyncpg.exceptions import PostgresError
 from collections.abc import Sequence
 import bcrypt
 
+
 class CommonQueries(AsyncDatabaseSession):
 
     async def add_job_to_db_query(self, job: Job) -> Job:
@@ -222,7 +223,8 @@ class CommonQueries(AsyncDatabaseSession):
             except PostgresError:
                 await async_session.rollback()
                 raise
-        self.logger.info(f"Account with name {admin_username} exist already")
+        else:
+            self.logger.info(f"Account with name {admin_username} exist already")
 
     async def admin_location(self, user: User):
         user_loc = UserLocation(
