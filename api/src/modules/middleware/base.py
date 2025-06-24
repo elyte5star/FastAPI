@@ -18,7 +18,7 @@ class CustomHeaderMiddleware(BaseHTTPMiddleware):
 
 
 class TokenBucket:
-    def __init__(self, tokens, refill_rate) -> None:
+    def __init__(self, tokens: int, refill_rate: int) -> None:
         self.tokens = tokens
         self.refill_rate = refill_rate
         self.bucket = tokens
@@ -40,7 +40,7 @@ class TokenBucket:
 class RateLimiterMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: FastAPI, config: ApiConfig):
         super().__init__(app)
-        self.bucket = TokenBucket(2, 2) # 2 request per 2 second
+        self.bucket = TokenBucket(2, 2)  # 2 request per 2 second
         self.config = config
 
     async def dispatch(self, request, call_next):

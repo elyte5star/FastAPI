@@ -157,13 +157,13 @@ class CommonQueries(AsyncDatabaseSession):
             _, kwargs = self._engine.dialect.create_connect_args(
                 self._engine.url,
             )
-        return dict(
-            database_parameters=kwargs,
-            sqlalchemy_version=__version__,
-            tables_in_database=await self.async_inspect_schema(),
-            queue_parameters=self.cf.rabbit_connect_string,
-            cpu_count=cpu_count(),
-        )
+        return {
+            "databaseParameters": kwargs,
+            "sqlalchemyVersion": __version__,
+            "databaseTables": await self.async_inspect_schema(),
+            "rabbitMQParameters": self.cf.rabbit_connect_string,
+            "cpuCount": cpu_count(),
+        }
 
     async def check_if_user_exist(
         self, email: str, username: str, telephone: str
