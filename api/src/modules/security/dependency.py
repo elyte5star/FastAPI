@@ -5,11 +5,11 @@ import time
 from pydantic import BaseModel, Field
 from modules.settings.configuration import ApiConfig
 from typing import Annotated
-from modules.database.connection import AsyncDatabaseSession
+from modules.repository.queries.common import CommonQueries
 
 cfg = ApiConfig().from_toml_file().from_env_file()
 
-db = AsyncDatabaseSession(cfg)
+queries = CommonQueries(cfg)
 
 
 class JWTPrincipal(BaseModel):
@@ -51,7 +51,7 @@ class JWTBearer(HTTPBearer):
                     detail="Invalid token or expired token.",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
-            db_user = await db.find_user_by_id(self.payload["userId"])
+            db_user = await queries.find_user_by_id(self.payload["userId"])
             if db_user is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -138,7 +138,7 @@ class RefreshTokenChecker:
                 detail="Invalid refresh token or expired token.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        db_user = await db.find_user_by_id(self.payload["userId"])
+        db_user = await queries.find_user_by_id(self.payload["userId"])
         if db_user is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

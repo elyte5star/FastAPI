@@ -15,6 +15,9 @@ cfg = ApiConfig().from_toml_file().from_env_file()
 
 cfg.logger = logger
 
+
+system_router = SystemInfoRouter(cfg)
+
 auth_router = AuthRouter(cfg)
 
 user_router = UserRouter(cfg)
@@ -28,8 +31,6 @@ search_router = SearchRouter(cfg)
 job_router = JobRouter(cfg)
 
 
-system_router = SystemInfoRouter(cfg)
-
 routes: tuple[APIRouter, ...] = (
     auth_router.router,
     user_router.router,
@@ -42,26 +43,26 @@ routes: tuple[APIRouter, ...] = (
 
 
 async def on_api_start():
-    await user_router.create_tables()
-    await user_router.create_admin_account()
+    await system_router.create_tables()
+    await system_router.create_admin_account()
     logger.info(f"{cfg.name}: v{cfg.version} is starting.")
 
 
 async def on_api_shuttdown():
-    await user_router._engine.dispose()
+    await system_router._engine.dispose()
     logger.info(f"{cfg.name}: v{cfg.version} is shutting down.")
 
 
 @event.listens_for(Engine, "first_connect")
 def receive_connect(dbapi_con, connection_record):
     "listen for the 'first_connect' event"
-    logger.info(f"New DBAPI connection::{connection_record}")
+    logger.info("New Database connection::")
 
 
 @event.listens_for(Engine, "close")
 def receive_close(dbapi_con, connection_record):
     "listen for the 'close' event"
-    logger.warning(f"New DBAPI connection: {dbapi_con.cursor()} closed")
+    logger.warning(f"Connection closed::{dbapi_con.cursor()} closed")
 
 
 @event.listens_for(Engine, "before_cursor_execute")

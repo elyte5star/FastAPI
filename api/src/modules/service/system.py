@@ -2,10 +2,10 @@ from modules.repository.request_models.base import (
     GetSystemInfoRequest,
     GetInfoResponse,
 )
-from modules.database.connection import AsyncDatabaseSession
+from modules.repository.queries.common import CommonQueries
 
 
-class SystemHandler(AsyncDatabaseSession):
+class SystemHandler(CommonQueries):
     async def _get_sys_info(
         self,
         req: GetSystemInfoRequest,
