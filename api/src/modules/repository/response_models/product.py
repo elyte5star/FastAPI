@@ -10,7 +10,7 @@ class ProductReview(BaseModel):
     rating: int
     comment: str
     date: datetime = Field(serialization_alias="createdAt")
-    pid: str = Field(serialization_alias="pid")
+    pid: str
     email: str = Field(exclude=True)
     reviewer_name: str = Field(serialization_alias="reviewerName")
     model_config = ConfigDict(from_attributes=True)
