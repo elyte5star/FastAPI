@@ -43,7 +43,7 @@ class SearchRouter(SearchHandler):
         data: Search,
         current_user: Annotated[JWTPrincipal, Depends(security)],
     ) -> BaseResponse:
-        return await self._create_booking(
+        return await self._create_search(
             CreateSearchRequest(search=data, credentials=current_user)
         )
 

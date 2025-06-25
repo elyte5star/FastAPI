@@ -30,5 +30,5 @@ class SystemInfoRouter(SystemHandler):
         return await self._get_sys_info(
             GetSystemInfoRequest(
                 credentials=current_user,
-            )
+            ),
         )

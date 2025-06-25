@@ -39,12 +39,10 @@ class BookingHandler(RQHandler):
             return req.req_failure("Forbidden: Access is denied")
         cart = new_order.cart
         check_cart = await self.check_products(cart)
-        if check_cart is None:
-            return req.req_failure("Product in cart does not exist")
         _, unavaliable_prods = check_cart
         if unavaliable_prods:
             req.result = unavaliable_prods
-            return req.req_failure("Products out of stock")
+            return req.req_failure("Product(s) out of stock")
         sum_of_items = sum(Decimal(item.calculated_price) for item in cart)
         amount_to_pay = "{:.2f}".format(sum_of_items)
         check_payment = await self.make_payment(
@@ -134,12 +132,12 @@ class BookingHandler(RQHandler):
         # TODO implement card payment
         return True
 
-    async def check_products(self, cart: list[CartItem]) -> tuple | None:
+    async def check_products(self, cart: list[CartItem]) -> tuple:
         avaliable_prods, unavaliable_prods = [], []
         for item in cart:
             product_in_db = await self.find_product_by_id(item.pid)
             if product_in_db is None:
-                return None
+                continue
             pydantic_model = ProductDisplay.model_validate(product_in_db)
             if pydantic_model.stock_quantity >= item.quantity:
                 avaliable_prods.append(pydantic_model)

@@ -48,7 +48,8 @@ class RQHandler(JobHandler):
         try:
             # ADD JOB,TASK,RESULT TO DB
             aux_job = job
-            aux_job.booking = job.booking.model_dump()
+            aux_job.booking = job.booking.model_dump() if job.booking else {}
+            aux_job.search = job.search.model_dump() if job.search else {}
             new_job = schema.Job(**dict(aux_job))
             _ = await self.add_job_to_db_query(new_job)
             for task, result in zip(tasks, results):

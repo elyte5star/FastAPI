@@ -28,6 +28,7 @@ class BookingRouter(BookingHandler):
         )
         self.router.add_api_route(
             path="/{jobId}",
+            status_code=status.HTTP_200_OK,
             endpoint=self.get_booking_result,
             response_model=GetBookingResponse,
             methods=["GET"],

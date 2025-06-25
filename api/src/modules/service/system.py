@@ -10,7 +10,8 @@ class SystemHandler(CommonQueries):
         self,
         req: GetSystemInfoRequest,
     ) -> GetInfoResponse:
-        result = await self.system_info()
-        req.result.info = result
+        info = await self.system_info()
+        info["currentUser"] = dict(req.credentials)
+        req.result.info = info
         self.logger.info(f"{req.credentials.username} checked the system")
         return req.req_success("System information")

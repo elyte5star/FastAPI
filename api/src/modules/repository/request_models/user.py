@@ -36,7 +36,6 @@ class CreateUser(BaseModel):
     )
     telephone: ValidateTelephone
     active: bool = True
-    discount: float = 0.0
 
     @model_validator(mode="after")
     def verify_password(self) -> Self:
@@ -52,6 +51,10 @@ class CreateUser(BaseModel):
     @computed_field
     def id(self) -> str:
         return get_indent()
+
+    @computed_field
+    def discount(self) -> float:
+        return 0.0
 
 
 class CreateUserRequest(BaseReq):
@@ -102,7 +105,6 @@ class VerifyRegistrationOtpRequest(BaseReq):
 
 
 class UserEnquiry(BaseModel):
-    id: str = get_indent()
     client_name: str = Field(
         min_length=3,
         max_length=10,
@@ -112,12 +114,19 @@ class UserEnquiry(BaseModel):
     country: str
     subject: str
     message: str = Field(min_length=3, max_length=500)
-    is_closed: bool = Field(default=False, alias="isClosed")
 
     @computed_field
     @property
     def created_by(self) -> str:
         return self.client_name
+
+    @computed_field
+    def id(self) -> str:
+        return get_indent()
+
+    @computed_field
+    def is_closed(self) -> bool:
+        return False
 
 
 class UserEnquiryRequest(BaseReq):

@@ -30,9 +30,6 @@ class ProductQueries(CommonQueries):
         result = await self.async_session.execute(stmt)
         return result.scalars().all()
 
-    async def find_product_by_id(self, pid: str) -> Product | None:
-        return await self.async_session.get(Product, pid)
-
     async def delete_product_query(self, pid: str) -> None:
         try:
             stmt = self.delete(Product).where(Product.id == pid)

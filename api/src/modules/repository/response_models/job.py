@@ -9,9 +9,9 @@ from modules.utils.misc import time_then
 
 class JobResponse(BaseModel):
     user_id: str = Field(default="", serialization_alias="userId")
-    start_time: datetime = time_then()
-    stop_time: datetime = time_then()
-    process_time: float = 0.0
+    start_time: datetime = Field(default=time_then(), serialization_alias="startTime")
+    stop_time: datetime = Field(default=time_then(), serialization_alias="stopTime")
+    process_time: float = Field(default=0.0, serialization_alias="processTime")
     job_type: JobType = Field(
         default=JobType.Empty,
         serialization_alias="jobType",

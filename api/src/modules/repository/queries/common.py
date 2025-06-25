@@ -9,8 +9,8 @@ import geoip2.errors
 import geoip2.database
 from fastapi import Request
 from modules.database.schema.user import User, UserLocation
+from modules.database.schema.product import Product
 from sqlalchemy import __version__, inspect
-from sqlalchemy.ext.asyncio import AsyncSession
 from multiprocessing import cpu_count
 from asyncpg.exceptions import PostgresError
 from collections.abc import Sequence
@@ -84,6 +84,9 @@ class CommonQueries(AsyncDatabaseSession):
     def get_new_id(self) -> str:
         return get_indent()
 
+    async def find_product_by_id(self, pid: str) -> Product | None:
+        return await self.async_session.get(Product, pid)
+
     async def find_user_by_id(self, userid: str) -> User | None:
         return await self.async_session.get(User, userid)
 
@@ -126,7 +129,7 @@ class CommonQueries(AsyncDatabaseSession):
     async def async_inspect_schema(self):
         async with self._engine.connect() as conn:
             tables = await conn.run_sync(self.use_inspector)
-        self.logger.info(tables)
+        # self.logger.info(tables)
         return tables
 
     def use_inspector(self, conn):
@@ -163,6 +166,7 @@ class CommonQueries(AsyncDatabaseSession):
             "databaseTables": await self.async_inspect_schema(),
             "rabbitMQParameters": self.cf.rabbit_connect_string,
             "cpuCount": cpu_count(),
+            "apiVersion": self.cf.version,
         }
 
     async def check_if_user_exist(
