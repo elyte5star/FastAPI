@@ -5,8 +5,10 @@ import json
 from pprint import pprint
 from dotenv import load_dotenv
 import logging
-from typing import Any, Dict, Self
+from typing import Self
 from fastapi_mail import ConnectionConfig
+from pydantic import SecretStr
+
 
 load_dotenv()
 
@@ -23,15 +25,14 @@ class ApiConfig:
         self.log_type: str = ""
         self.log_file_path: str = ""
         self.host_url: str = ""
-        self.debug: int = 0
+        self.debug: bool = False
         self.auth_type: str = ""
         self.origins: list[str] = ["*"]
         self.roles: list[str] = [""]
         self.pwd_len: int = 0
         self.encoding: str = ""
         self.sql_url: str = ""
-        self.logger: logging.Logger = None
-        self.queries: Dict[Any, Any] = None
+        self.logger: logging.Logger = logging.getLogger(__name__)
         self.max_login_attempt: int = 0
         self.lock_duration: int = 0
         self.is_geo_ip_enabled: bool = False
@@ -82,12 +83,7 @@ class ApiConfig:
         self.rabbit_connect_string: str = ""
 
         # Visa Payment API
-        self.visa_userid: str = ""
-        self.visa_password: str = ""
-        self.visa_cert: str = ""
-        self.visa_key: str = ""
-        self.visa_url: str = ""
-        self.visa_shared_secret: str = ""
+        self.visa_params: dict = {}
 
         # CLIENT
         self.client_url: str = ""
@@ -98,27 +94,29 @@ class ApiConfig:
         self.sql_host = config.database.host
         self.sql_port = config.database.port
         self.sql_db = config.database.db
-        self.db_url = f"postgresql+asyncpg://{self.sql_username}:{self.sql_password}@{self.sql_host}:{self.sql_port}/{self.sql_db}"
+        self.db_url = f"""postgresql+asyncpg://{self.sql_username}:
+        {self.sql_password}@{self.sql_host}:{self.sql_port}/{self.sql_db}
+        """
         self.log_level = config.api.log_level
-        self.log_file_path = config.api.log_file_path
-        self.host_url = config.api.host_url
-        self.debug = config.api.debug
-        self.auth_type = config.api.auth_type
-        self.max_login_attempt = config.api.login_attempts
-        self.lock_duration = config.api.lock_duration
-        self.is_geo_ip_enabled = config.api.enabled_geoip
-        self.otp_expiry = config.api.otp_expiry
+        self.log_file_path = config.api["log_file_path"]
+        self.host_url = config.api["host_url"]
+        self.debug = config.api["debug"]
+        self.auth_type = config.api["auth_type"]
+        self.max_login_attempt = config.api["login_attempts"]
+        self.lock_duration = config.api["lock_duration"]
+        self.is_geo_ip_enabled = config.api["enabled_geoip"]
+        self.otp_expiry = config.api["otp_expiry"]
 
-        self.pwd_len = config.encryption.length
-        self.rounds = config.encryption.rounds
-        self.encoding = config.encryption.encoding
-        self.roles = config.encryption.roles
+        self.pwd_len = config.encryption["length"]
+        self.rounds = config.encryption["rounds"]
+        self.encoding = config.encryption["encoding"]
+        self.roles = config.encryption["roles"]
 
-        self.rabbit_host_name = config.queue.params.host_name
-        self.rabbit_host_port = config.queue.params.port
-        self.rabbit_user = config.queue.params.user
-        self.rabbit_pass = config.queue.params.pwd
-        self.queue_name = config.queue.params.my_queue
+        self.rabbit_host_name = config.queue.params["host_name"]
+        self.rabbit_host_port = config.queue.params["port"]
+        self.rabbit_user = config.queue.params["user"]
+        self.rabbit_pass = config.queue.params["pwd"]
+        self.queue_name = config.queue.params["my_queue"]
         self.rabbit_connect_string = (
             f"amqp://{self.rabbit_user}:{self.rabbit_pass}@"
             + self.rabbit_host_name
@@ -138,26 +136,20 @@ class ApiConfig:
         self.email = config.api.doc.contact["email"]
 
         self.name = config.api.doc["name"]
-        self.terms = config.api.doc.terms_of_service
-        self.version = config.tool.poetry.version
-        self.description = config.api.doc.description
+        self.terms = config.api.doc["terms_of_service"]
+        self.version = config.tool.poetry["version"]
+        self.description = config.api.doc["description"]
         self.contacts = config.api.doc.contact.as_dict()
         self.license = config.api.doc.contact.license.as_dict()
 
-        self.algorithm = config.encryption.algorithm
-        self.secret_key = config.encryption.secret_key
-        self.token_expire_min = config.encryption.token_expire_min
-        self.refresh_token_expire_min = config.encryption.refresh_token_expire_min
-        self.grant_type = config.encryption.grant_type
+        self.algorithm = config.encryption["algorithm"]
+        self.secret_key = config.encryption["secret_key"]
+        self.token_expire_min = config.encryption["token_expire_min"]
+        self.refresh_token_expire_min = config.encryption["refresh_token_expire_min"]
+        self.grant_type = config.encryption["grant_type"]
 
         # Visa Payment API
-        self.visa_userid = config.VDP.userId
-        self.visa_password = config.VDP.password
-        self.visa_cert = config.VDP.cert
-        self.visa_key = config.VDP.key
-        self.visa_url = config.VDP.visaUrl
-        self.visa_shared_secret = config.VDP.sharedSecret
-
+        self.visa_params = config.visa.params.as_dict()
         return self
 
     def from_env_file(self) -> Self:
@@ -169,13 +161,13 @@ class ApiConfig:
         self.mail_password = str(getenv("MAIL_PASSWORD"))
         self.email_config = ConnectionConfig(
             MAIL_USERNAME=self.mail_username,
-            MAIL_PASSWORD=self.mail_password,
+            MAIL_PASSWORD=SecretStr(self.mail_password),
             MAIL_FROM=self.email,
             MAIL_PORT=self.mail_port,
             MAIL_SERVER=self.mail_server,
             MAIL_STARTTLS=self.mail_starttls,
             MAIL_SSL_TLS=self.mail_ssl_tls,
-            MAIL_DEBUG=self.debug,
+            MAIL_DEBUG=0,
             MAIL_FROM_NAME="Elyte Application",
             TEMPLATE_FOLDER=Path(__file__).parent.parent / "templates",
         )

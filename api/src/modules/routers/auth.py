@@ -9,6 +9,7 @@ from modules.repository.request_models.auth import (
 )
 from modules.security.dependency import RefreshTokenChecker, JWTPrincipal
 from typing import Annotated
+from pydantic import SecretStr
 
 
 class AuthRouter(AuthenticationHandler):
@@ -48,7 +49,7 @@ class AuthRouter(AuthenticationHandler):
         return await self.authenticate_user(
             LoginRequest(
                 username=form_data.username,
-                password=form_data.password,
+                password=SecretStr(form_data.password),
             ),
             request,
             response,

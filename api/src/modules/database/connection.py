@@ -32,7 +32,7 @@ from modules.settings.configuration import ApiConfig
 class AsyncDatabaseSession:
     def __init__(self, config: ApiConfig):
         self.cf = config
-        self.logger = config.logger
+        self.logger = config.logger if config else None
         self._engine: AsyncEngine
         self.async_session: AsyncSession
         self.select = select

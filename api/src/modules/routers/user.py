@@ -137,7 +137,7 @@ class UserRouter(UserHandler):
 
     async def create_user(
         self, new_user: Annotated[CreateUser, Depends()], request: Request
-    ) -> CreateUserResponse:
+    ) -> BaseResponse:
         return await self._create_user(
             CreateUserRequest(new_user=new_user),
             request,
@@ -145,7 +145,7 @@ class UserRouter(UserHandler):
 
     async def get_users(
         self, current_user: Annotated[JWTPrincipal, Depends(security)]
-    ) -> GetUsersResponse:
+    ) -> BaseResponse:
         return await self._get_users(GetUsersRequest(credentials=current_user))
 
     async def lock_user_account(
@@ -167,7 +167,7 @@ class UserRouter(UserHandler):
             JWTPrincipal,
             Depends(security),
         ],
-    ) -> GetUserResponse:
+    ) -> BaseResponse:
         return await self._get_user(
             GetUserRequest(credentials=current_user, userid=userId)
         )
@@ -213,7 +213,7 @@ class UserRouter(UserHandler):
         self,
         enquiry: Annotated[UserEnquiry, Depends()],
         request: Request,
-    ) -> ClientEnquiryResponse:
+    ) -> BaseResponse:
         return await self._create_enquiry(
             UserEnquiryRequest(enquiry=enquiry),
             request,

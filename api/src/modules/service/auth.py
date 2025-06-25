@@ -22,7 +22,7 @@ from modules.security.login_attempt import LoginAttemptChecker
 class AuthenticationHandler(LoginAttemptChecker):
     async def authenticate_user(
         self, req: LoginRequest, request: Request, response: Response
-    ) -> TokenResponse:
+    ) -> BaseResponse:
         is_email, email = is_valid_email(req.username)
         user = None
         if is_email:
@@ -76,7 +76,7 @@ class AuthenticationHandler(LoginAttemptChecker):
         await self.login_notification(user, request)
         return False
 
-    async def on_login_failure(self, user: User, request: Request):
+    async def on_login_failure(self, user: User | None, request: Request):
         if user is None:
             print("Yes")
         else:
@@ -127,7 +127,9 @@ class AuthenticationHandler(LoginAttemptChecker):
         if expires_delta:
             _expire = date_time_now_utc() + expires_delta
         else:
-            _expire = date_time_now_utc() + time_delta(self.cf.token_expire_min)
+            _expire = date_time_now_utc() + time_delta(
+                self.cf.token_expire_min,
+            )
         to_encode.update({"exp": _expire})
         jwt_encode = jwt.encode(
             to_encode, self.cf.secret_key, algorithm=self.cf.algorithm
@@ -159,7 +161,7 @@ class AuthenticationHandler(LoginAttemptChecker):
     async def _refresh_access_token(
         self,
         req: RefreshTokenRequest,
-    ) -> TokenResponse:
+    ) -> BaseResponse:
         current_user = req.credentials
         if current_user is not None:
             data = {

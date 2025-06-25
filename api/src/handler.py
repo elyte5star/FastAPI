@@ -32,13 +32,13 @@ job_router = JobRouter(cfg)
 
 
 routes: tuple[APIRouter, ...] = (
+    system_router.router,
     auth_router.router,
     user_router.router,
     product_router.router,
     booking_router.router,
     search_router.router,
     job_router.router,
-    system_router.router,
 )
 
 
