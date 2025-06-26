@@ -167,6 +167,7 @@ class CommonQueries(AsyncDatabaseSession):
             "rabbitMQParameters": self.cf.rabbit_connect_string,
             "cpuCount": cpu_count(),
             "apiVersion": self.cf.version,
+            "env": str(vars(self.cf)),
         }
 
     async def check_if_user_exist(

@@ -2,7 +2,7 @@ from fastapi import Request, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 import time
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from modules.settings.configuration import ApiConfig
 from typing import Annotated
 from modules.repository.queries.common import CommonQueries
@@ -13,7 +13,7 @@ queries = CommonQueries(cfg)
 
 
 class JWTPrincipal(BaseModel):
-    user_id: str
+    user_id: str = Field(serialization_alias="userId")
     username: str
     email: str
     active: bool
@@ -23,7 +23,7 @@ class JWTPrincipal(BaseModel):
     expires: float
     discount: float
     is_locked: bool = Field(serialization_alias='"accountNonLocked"')
-    token_id: str = Field(alias="tokenId")
+    token_id: str = Field(serialization_alias="tokenId")
 
 
 # https://testdriven.io/blog/fastapi-jwt-auth/
@@ -74,8 +74,8 @@ class JWTBearer(HTTPBearer):
                 admin=self.payload["admin"],
                 role=self.payload["role"],
                 discount=self.payload["discount"],
-                tokenId=self.payload["jti"],
-                is_locked=not self.payload["accountNonLocked"],
+                token_id=self.payload["jti"],
+                is_locked=self.payload["accountNonLocked"],
             )
 
             return current_user
@@ -160,7 +160,7 @@ class RefreshTokenChecker:
             admin=self.payload["admin"],
             role=self.payload["role"],
             discount=self.payload["discount"],
-            tokenId=self.payload["jti"],
+            token_id=self.payload["jti"],
             is_locked=not self.payload["accountNonLocked"],
         )
 
