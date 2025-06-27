@@ -6,7 +6,7 @@ from pathlib import Path
 from pythonjsonlogger.json import JsonFormatter
 from modules.settings.configuration import ApiConfig
 from modules.utils.misc import get_indent, date_time_now_utc
-
+import json
 
 base_dir = Path(__file__).parent.parent.parent.parent.parent
 logs_target = path.join(base_dir / "logs", "api.log")
@@ -14,6 +14,18 @@ logs_error_target = path.join(base_dir / "logs", "error.log")
 
 
 fmt = "%(levelname)s::%(asctime)s::%(name)s::%(funcName)s::USER:%(current_user)s::LOG_ID:%(log_id)s::%(message)s"
+
+
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        # Convert LogRecord to a dict
+        log_record = {
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "name": record.name,
+            "time": self.formatTime(record, self.datefmt),
+        }
+        return json.dumps(log_record, sort_keys=True)
 
 
 class UserFilter(logging.Filter):
