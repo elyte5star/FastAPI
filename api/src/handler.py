@@ -66,7 +66,14 @@ def receive_close(dbapi_con, connection_record):
 
 
 @event.listens_for(Engine, "before_cursor_execute")
-def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+def before_cursor_execute(
+    conn,
+    cursor,
+    statement,
+    parameters,
+    context,
+    executemany,
+):
     # logger.info("Received statement: %s", statement)
     pass
 

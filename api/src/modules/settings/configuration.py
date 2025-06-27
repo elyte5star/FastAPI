@@ -22,7 +22,7 @@ class ApiConfig:
 
     def __init__(self) -> None:
         # API
-        self.log_type: str = ""
+        self.log_level: logging._Level = logging.NOTSET
         self.log_file_path: str = ""
         self.host_url: str = ""
         self.debug: bool = False
