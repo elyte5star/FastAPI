@@ -7,6 +7,7 @@ import secrets
 import bcrypt
 from decimal import Decimal
 from json import JSONEncoder
+import random
 
 
 def date_time_now_local_tz() -> datetime:
@@ -35,6 +36,13 @@ def time_delta(min: int) -> timedelta:
 
 def obj_as_json(obj):
     return jsonable_encoder(obj)
+
+
+def _get_x_correlation_id() -> str:
+    size = 12
+    chars = string.digits
+    correlation_id = "".join(random.choice(chars) for _ in range(size)) + "_SC"
+    return correlation_id
 
 
 class DecimalEncoder(JSONEncoder):

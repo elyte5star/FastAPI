@@ -111,12 +111,10 @@ class AuthenticationHandler(LoginAttemptChecker):
         plain_password: str,
         hashed_password: str,
     ) -> bool:
-        if bcrypt.checkpw(
+        return bcrypt.checkpw(
             plain_password.encode(self.cf.encoding),
             hashed_password.encode(self.cf.encoding),
-        ):
-            return True
-        return False
+        )
 
     def create_token(
         self,

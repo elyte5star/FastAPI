@@ -97,7 +97,7 @@ class ApiConfig:
         self.db_url = f"""postgresql+asyncpg://{self.sql_username}:
         {self.sql_password}@{self.sql_host}:{self.sql_port}/{self.sql_db}
         """
-        self.log_level = config.api.log_level
+        self.log_level = getattr(logging, config.api["log_level"])
         self.log_file_path = config.api["log_file_path"]
         self.host_url = config.api["host_url"]
         self.debug = config.api["debug"]
