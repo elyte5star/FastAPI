@@ -7,9 +7,19 @@ import sys
 import hmac
 import requests
 
+"""
+@author: visa
+"""
+
 
 class VisaAPIClient(CommonQueries):
-    def _get_x_pay_session(self, shared_secret, resource_path, query_string, body):
+    def _get_x_pay_session(
+        self,
+        shared_secret,
+        resource_path,
+        query_string,
+        body,
+    ):
         return XSession(shared_secret, resource_path, query_string, body)
 
     def _get_mutual_auth_session(
@@ -18,7 +28,8 @@ class VisaAPIClient(CommonQueries):
         return MSession(user_name, password, cert, key)
 
     """
-       Correlation Id ( x-correlation-id ) is an optional header while making an API call. You can skip passing the header while calling the API's.
+       Correlation Id ( x-correlation-id ) is an optional header.
+       You can skip passing the header while calling the API's.
     """
 
     def _logging_helper(self, url, response, test_info, body):
@@ -46,7 +57,12 @@ class VisaAPIClient(CommonQueries):
         end_point = self.cf.visa_params["visaUrl"]
         url = end_point + path
         response = {}
-        self.session = self._get_mutual_auth_session(user_name, password, cert, key)
+        self.session = self._get_mutual_auth_session(
+            user_name,
+            password,
+            cert,
+            key,
+        )
         if input_headers:
             for key in input_headers.keys():
                 self.session.headers[key] = input_headers[key]
