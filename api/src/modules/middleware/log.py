@@ -3,7 +3,6 @@ import sys
 from logging.handlers import TimedRotatingFileHandler, SMTPHandler
 from os import path, getenv
 from pathlib import Path
-from pythonjsonlogger.json import JsonFormatter
 from modules.settings.configuration import ApiConfig
 from modules.utils.misc import get_indent, date_time_now_utc
 import json
@@ -18,12 +17,17 @@ fmt = "%(levelname)s::%(asctime)s::%(name)s::%(funcName)s::USER:%(current_user)s
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
-        # Convert LogRecord to a dict
         log_record = {
             "level": record.levelname,
             "message": record.getMessage(),
             "name": record.name,
             "time": self.formatTime(record, self.datefmt),
+            "function": record.funcName,
+            "currentUser": str(getenv("current_user", "API")),
+            "logId": get_indent(),
+            "filename": record.filename,
+            "module": record.module,
+            "filePathName": record.pathname,
         }
         return json.dumps(log_record, sort_keys=True)
 
@@ -33,17 +37,6 @@ class UserFilter(logging.Filter):
         record.current_user = str(getenv("current_user", "API"))
         record.log_id = get_indent()
         return True
-
-
-class CustomJsonFormatter(JsonFormatter):
-    def add_fields(self, log_record, record, message_dict) -> None:
-        super(CustomJsonFormatter, self).add_fields(
-            log_record,
-            record,
-            message_dict,
-        )
-        # Add fields here
-        log_record["asctime"] = date_time_now_utc().strftime("%d-%m-%Y, %H:%M:%S.%f")
 
 
 FORMATTER = logging.Formatter(fmt)
@@ -67,7 +60,7 @@ def smtp_log_handler(cfg: ApiConfig):
         credentials=(cfg.mail_username, cfg.mail_password),
         secure=None,
     )
-    smtp_handler.setFormatter(FORMATTER)
+    smtp_handler.setFormatter(JSONFormatter(fmt=fmt))
     smtp_handler.addFilter(UserFilter())
     smtp_handler.setLevel(logging.CRITICAL)
     return smtp_handler
@@ -75,8 +68,7 @@ def smtp_log_handler(cfg: ApiConfig):
 
 def info_file_handler(filename: str = logs_target):
     file_handler = TimedRotatingFileHandler(filename, when="midnight")
-    formatter = CustomJsonFormatter(fmt)
-    file_handler.setFormatter(formatter)
+    file_handler.setFormatter(JSONFormatter())
     file_handler.addFilter(UserFilter())
     file_handler.setLevel(logging.INFO)
     return file_handler
@@ -84,8 +76,7 @@ def info_file_handler(filename: str = logs_target):
 
 def error_file_handler(filename: str = logs_error_target):
     file_handler = TimedRotatingFileHandler(filename, when="midnight")
-    formatter = CustomJsonFormatter(fmt)
-    file_handler.setFormatter(formatter)
+    file_handler.setFormatter(JSONFormatter())
     file_handler.addFilter(UserFilter())
     file_handler.setLevel(logging.WARNING)
     return file_handler
