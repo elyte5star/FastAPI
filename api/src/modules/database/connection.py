@@ -58,7 +58,7 @@ class AsyncDatabaseSession:
                 expire_on_commit=False,
             )()
         except Exception as error:
-            raise SystemExit("Couldn't connect to database %s" % error)
+            raise SystemExit(f"Couldn't connect to database: {error}")
 
     async def create_tables(self):
         async with self._engine.begin() as conn:
