@@ -112,7 +112,7 @@ class CommonQueries(AsyncDatabaseSession):
             return xf_header.split(",")[0]
         # return "128.101.101.101"  # for testing Richfield,United States
         # return "41.238.0.198"  # for testing Giza, Egypt
-        return request.client.host
+        return request.client.host if request.client else ""
 
     async def get_location_from_ip(self, ip: str) -> tuple:
         location = ("UNKNOWN", "UNKNOWN")

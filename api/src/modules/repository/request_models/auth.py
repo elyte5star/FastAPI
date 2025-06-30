@@ -21,3 +21,8 @@ class RefreshTokenRequest(BaseReq):
 class EnableLocationRequest(BaseReq):
     token: str
     result: BaseResponse = BaseResponse()
+
+
+class GoogleLoginRequest(BaseReq):
+    token: str
+    result: TokenResponse = TokenResponse()

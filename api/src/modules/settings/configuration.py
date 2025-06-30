@@ -26,7 +26,7 @@ class ApiConfig:
         self.log_file_path: str = ""
         self.host_url: str = ""
         self.debug: bool = False
-        self.auth_type: str = ""
+        self.auth_types: str = ""
         self.origins: list[str] = ["*"]
         self.roles: list[str] = [""]
         self.pwd_len: int = 0
@@ -55,10 +55,13 @@ class ApiConfig:
         self.token_url: str = ""
         self.grant_type: str = ""
 
+        # Google AUTH
+        self.google_client_id: str = ""
+
         # MSOFT AUTH
-        self.msal_login_authority: str = ""
+        self.msal_tenant_id: str = ""
         self.msal_client_id: str = ""
-        self.msal_issuer: str = ""
+        self.msal_client_secret: str = ""
 
         # EMAIL CONFIG
         self.email: str = ""
@@ -101,7 +104,7 @@ class ApiConfig:
         self.log_file_path = config.api["log_file_path"]
         self.host_url = config.api["host_url"]
         self.debug = config.api["debug"]
-        self.auth_type = config.api["auth_type"]
+        self.auth_types = config.api["auth_types"]
         self.max_login_attempt = config.api["login_attempts"]
         self.lock_duration = config.api["lock_duration"]
         self.is_geo_ip_enabled = config.api["enabled_geoip"]
@@ -182,6 +185,7 @@ class ApiConfig:
                 self.refresh_token_expire_min,
             )
         )
+        self.google_client_id = str(getenv("GOOGLE_CLIENT_ID"))
         return self
 
     def pretty_print(self):

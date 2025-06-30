@@ -71,6 +71,7 @@ class UserHandler(UserQueries):
             req.result.new_user = pydantic_model
             await self.on_successfull_registration(user_in_db, request)
             return req.req_success("New user created!")
+        self.cf.logger.warning("Username/tel/email already exist")
         return req.req_failure("User exist")
 
     async def on_successfull_registration(

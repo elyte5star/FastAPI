@@ -45,7 +45,7 @@ class AuthRouter(AuthenticationHandler):
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
         request: Request,
         response: Response,
-    ) -> TokenResponse:
+    ) -> BaseResponse:
         return await self.authenticate_user(
             LoginRequest(
                 username=form_data.username,
@@ -61,7 +61,7 @@ class AuthRouter(AuthenticationHandler):
             JWTPrincipal,
             Depends(RefreshTokenChecker()),
         ],
-    ) -> TokenResponse:
+    ) -> BaseResponse:
         return await self._refresh_access_token(
             RefreshTokenRequest(credentials=current_user),
         )

@@ -27,3 +27,8 @@ class LoginAttemptChecker(DifferentLocationChecker):
             userid = user.id
             changes = dict(failed_attempts=user_failed_attempts + 1)
             await self.update_user_info(userid, changes)
+
+    # TODO
+    async def temp_block_ip_address(self, request: Request) -> None:
+        ip_address = self.get_client_ip_address(request)
+        print(ip_address)

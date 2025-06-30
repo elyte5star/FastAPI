@@ -78,7 +78,8 @@ class AuthenticationHandler(LoginAttemptChecker):
 
     async def on_login_failure(self, user: User | None, request: Request):
         if user is None:
-            print("Yes")
+            await self.temp_block_ip_address(request)
+            self.cf.logger.warning("Potential brute-force attack")
         else:
             await self.increase_user_failed_attempts(user)
 
@@ -200,11 +201,3 @@ class AuthenticationHandler(LoginAttemptChecker):
             samesite="lax",
             max_age=max_age,
         )
-
-
-class GoogleAuthenticationHandler(LoginAttemptChecker):
-    pass
-
-
-class MSOFTAuthenticationHandler(LoginAttemptChecker):
-    pass

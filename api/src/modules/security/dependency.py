@@ -2,7 +2,7 @@ from fastapi import Request, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 import time
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 from modules.settings.configuration import ApiConfig
 from typing import Annotated
 from modules.repository.queries.common import CommonQueries
