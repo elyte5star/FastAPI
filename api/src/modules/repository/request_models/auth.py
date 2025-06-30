@@ -23,6 +23,6 @@ class EnableLocationRequest(BaseReq):
     result: BaseResponse = BaseResponse()
 
 
-class GoogleLoginRequest(BaseReq):
+class MFALoginRequest(BaseReq):
     token: str
     result: TokenResponse = TokenResponse()

@@ -34,7 +34,7 @@ class JSONFormatter(logging.Formatter):
             "module": record.module,
             "filePathName": record.pathname,
         }
-        return json.dumps(log_record, sort_keys=False)
+        return json.dumps(log_record, sort_keys=True)
 
 
 class QueueLoggingHandler(QueueHandler):

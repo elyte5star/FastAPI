@@ -1,11 +1,13 @@
-from api.src.modules.settings.configuration import ApiConfig
-from modules.service.auth import AuthenticationHandler
-from jose import JWTError, jwt
-import requests
-from cryptography.hazmat.primitives import serialization
 import json
 
-# Azure AD Configurations
+import requests
+from fastapi import Response
+from jose import JWTError, jwk, jwt
+
+from modules.repository.request_models.auth import BaseResponse, MFALoginRequest
+from modules.service.auth import AuthenticationHandler
+from modules.settings.configuration import ApiConfig
+from modules.utils.misc import get_indent
 
 
 class MSOFTHandler(AuthenticationHandler):
@@ -14,42 +16,64 @@ class MSOFTHandler(AuthenticationHandler):
         self.TENANT_ID = config.msal_tenant_id
         self.CLIENT_ID = config.msal_client_id
         self.CLIENT_SECRET = config.msal_client_secret
-        self.AUTH_URL = (
-            f"https://login.microsoftonline.com/{self.TENANT_ID}/oauth2/v2.0/authorize"
-        )
-        self.TOKEN_URL = (
-            f"https://login.microsoftonline.com/{self.TENANT_ID}/oauth2/v2.0/token"
-        )
         self.KEYS_URL = (
             f"https://login.microsoftonline.com/{self.TENANT_ID}/discovery/keys"
         )
-        self.SCOPE = f"api://{self.CLIENT_ID}/access_as_user offline_access"
+
+    async def authenticate_msoft_user(
+        self, req: MFALoginRequest, response: Response
+    ) -> BaseResponse:
+        token = req.token
+        claims = self.verify_msal_jwt(token)
+        if claims is None:
+            return req.req_failure("Couldnt not verify audience.")
+        email = claims["preferred_username"]
+        user_in_db = await self.find_user_by_email(email)
+        if user_in_db is not None:
+            if not user_in_db.enabled or user_in_db.is_locked:
+                return req.req_failure(
+                    " Account unverified or locked. Please, contact admin "
+                )
+            if not user_in_db.is_using_mfa:
+                return req.req_failure("MFA is disabled for this account ")
+            data = {
+                "userId": user_in_db.id,
+                "sub": user_in_db.username,
+                "email": user_in_db.email,
+                "admin": user_in_db.admin,
+                "enabled": user_in_db.enabled,
+                "active": user_in_db.active,
+                "role": "USER" if not user_in_db.admin else "ADMIN",
+                "jti": get_indent(),
+                "discount": user_in_db.discount,
+                "accountNonLocked": not user_in_db.is_locked,
+            }
+            token_data = await self.create_token_response(user_in_db, data)
+            self.create_cookie(token_data.pop("refreshToken"), response)
+            req.result.data = token_data
+            return req.req_success(
+                f"User with username/email: {user_in_db.username} is authorized"
+            )
+        return req.req_failure(f"User with email {email} is not authorized.")
 
     # Validate Token using Azure AD Public Keys
     def verify_msal_jwt(self, token: str) -> dict | None:
         if not token:
             return None
         try:
-            response1 = requests.get(self.KEYS_URL)
-            response1.raise_for_status()
-            keys = response1.json().get("keys", [])
+            response = requests.get(self.KEYS_URL)
+            response.raise_for_status()
+            keys = response.json().get("keys", [])
 
             token_headers = jwt.get_unverified_header(token)
             token_kid = token_headers.get("kid")
-            public_key = next(
-                (key for key in keys if key.get("kid") == token_kid), None
-            )
-            rsa_pem_key = jwt.construct_rsa_public_key(json.dumps(public_key))
-            rsa_pem_key_bytes = rsa_pem_key.public_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo,
-            )
-
+            key = next((key for key in keys if key.get("kid") == token_kid), None)
+            public_key = jwk.construct(json.dumps(key), algorithm="RS256")
             claims = jwt.decode(
                 token,
-                key=rsa_pem_key_bytes,
+                key=public_key,
                 algorithms=["RS256"],
-                audience=f"api://{self.CLIENT_ID}",
+                audience=self.CLIENT_ID,
                 issuer=f"https://sts.windows.net/{self.TENANT_ID}/",
             )
 

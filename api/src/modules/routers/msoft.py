@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Response
-from modules.service.google import GoogleHandler
+from modules.service.msoft import MSOFTHandler
 from modules.repository.response_models.auth import TokenResponse, BaseResponse
 from modules.repository.request_models.auth import MFALoginRequest
 
 
-class GoogleAuthRouter(GoogleHandler):
+class MSOFTAuthRouter(MSOFTHandler):
 
     def __init__(self, config):
         super().__init__(config)
         self.router: APIRouter = APIRouter(
-            prefix="/google",
-            tags=["GOOGLE"],
+            prefix="/msal",
+            tags=["MSOFT"],
         )
 
         self.router.add_api_route(
@@ -18,7 +18,7 @@ class GoogleAuthRouter(GoogleHandler):
             endpoint=self.login,
             response_model=TokenResponse,
             methods=["GET"],
-            description="Verify google token",
+            description="Verify MSOFT token",
         )
 
     async def login(
@@ -26,6 +26,6 @@ class GoogleAuthRouter(GoogleHandler):
         token: str,
         response: Response,
     ) -> BaseResponse:
-        return await self.authenticate_google_user(
+        return await self.authenticate_msoft_user(
             MFALoginRequest(token=token), response
         )

@@ -1,20 +1,20 @@
 from modules.service.auth import AuthenticationHandler
 from google.oauth2 import id_token
 from google.auth.transport import requests
-from modules.repository.request_models.auth import GoogleLoginRequest, BaseResponse
+from modules.repository.request_models.auth import MFALoginRequest, BaseResponse
 from modules.utils.misc import get_indent
-from fastapi import Request, Response
+from fastapi import Response
 
 
 class GoogleHandler(AuthenticationHandler):
 
     async def authenticate_google_user(
-        self, req: GoogleLoginRequest, response: Response
+        self, req: MFALoginRequest, response: Response
     ) -> BaseResponse:
         token = req.token
         user_dict = self.verify_gmail_jwt(token)
         if user_dict is None:
-            return req.req_failure("Couldnt not verify your account.Try other method ")
+            return req.req_failure("Couldnt not verify the audience.")
         user_in_db = await self.find_user_by_email(user_dict["email"])
         if user_in_db is not None:
             if not user_in_db.enabled or user_in_db.is_locked:

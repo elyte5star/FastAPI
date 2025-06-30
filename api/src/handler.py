@@ -2,6 +2,7 @@ from modules.settings.configuration import ApiConfig
 from fastapi.logger import logger
 from modules.routers.auth import AuthRouter
 from modules.routers.google_auth import GoogleAuthRouter
+from modules.routers.msoft import MSOFTAuthRouter
 from modules.routers.search import SearchRouter
 from modules.routers.user import UserRouter
 from modules.routers.product import ProductRouter
@@ -23,6 +24,8 @@ auth_router = AuthRouter(cfg)
 
 google_router = GoogleAuthRouter(cfg)
 
+msal_router = MSOFTAuthRouter(cfg)
+
 user_router = UserRouter(cfg)
 
 product_router = ProductRouter(cfg)
@@ -38,6 +41,7 @@ routes: tuple[APIRouter, ...] = (
     system_router.router,
     auth_router.router,
     google_router.router,
+    msal_router.router,
     user_router.router,
     product_router.router,
     booking_router.router,
