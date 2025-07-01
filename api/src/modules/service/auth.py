@@ -63,8 +63,7 @@ class AuthenticationHandler(LoginAttemptChecker):
                 )
         await self.on_login_failure(user, request)
         return req.req_failure(
-            f"""User {req.username} is not authorized.
-            Incorrect username or password"""
+            f"User {req.username} is not authorized.Incorrect username or password"
         )
 
     async def on_login_success(self, user: User, request: Request) -> bool:

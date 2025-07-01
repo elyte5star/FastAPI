@@ -16,9 +16,11 @@ class MSOFTHandler(AuthenticationHandler):
         self.TENANT_ID = config.msal_tenant_id
         self.CLIENT_ID = config.msal_client_id
         self.CLIENT_SECRET = config.msal_client_secret
-        self.KEYS_URL = (
-            f"https://login.microsoftonline.com/{self.TENANT_ID}/discovery/keys"
+        self.PUBLIC_KEYS_URL = (
+            f"https://login.microsoftonline.com/{self.TENANT_ID}/discovery/v2.0/keys"
         )
+        # A cache for Microsoft keys
+        self.public_keys = {}
 
     async def authenticate_msoft_user(
         self, req: MFALoginRequest, response: Response
@@ -56,19 +58,27 @@ class MSOFTHandler(AuthenticationHandler):
             )
         return req.req_failure(f"User with email {email} is not authorized.")
 
+    def get_public_keys(self) -> dict:
+        if not self.public_keys:
+            response = requests.get(self.PUBLIC_KEYS_URL)
+            response.raise_for_status()
+            self.public_keys = response.json().get("keys", [])
+        return self.public_keys
+
     # Validate Token using Azure AD Public Keys
     def verify_msal_jwt(self, token: str) -> dict | None:
         if not token:
             return None
         try:
-            response = requests.get(self.KEYS_URL)
-            response.raise_for_status()
-            keys = response.json().get("keys", [])
-
+            # Get Microsoft's public keys
+            public_keys = self.get_public_keys()
+            # Decode JWT Header to get the key ID (kid)
             token_headers = jwt.get_unverified_header(token)
             token_kid = token_headers.get("kid")
-            key = next((key for key in keys if key.get("kid") == token_kid), None)
-            public_key = jwk.construct(json.dumps(key), algorithm="RS256")
+            key_id = next(
+                (key for key in public_keys if key.get("kid") == token_kid), None
+            )
+            public_key = jwk.construct(json.dumps(key_id), algorithm="RS256")
             claims = jwt.decode(
                 token,
                 key=public_key,
@@ -76,7 +86,7 @@ class MSOFTHandler(AuthenticationHandler):
                 audience=self.CLIENT_ID,
                 issuer=f"https://sts.windows.net/{self.TENANT_ID}/",
             )
-
+            print(claims)
             return claims
         except requests.RequestException as e:
             self.cf.logger.error(f"Request error: {str(e)}")
@@ -87,3 +97,5 @@ class MSOFTHandler(AuthenticationHandler):
         except Exception as e:
             self.cf.logger.error(f"Internal server error: {str(e)}")
             return None
+
+        

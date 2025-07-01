@@ -157,7 +157,6 @@ bcrypt = "^4.2.1"
 fastapi-sso = "^0.17.0"
 email-validator = "^2.2.0"
 python-multipart = "^0.0.20"
-fastapi-microsoft-identity = "^0.1.6"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 pydocstyle = "^6.3.0"
 python-dotenv = "^1.0.1"

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import logging
 from typing import Self
 from fastapi_mail import ConnectionConfig
-from pydantic import SecretStr
+from pydantic import SecretStr, AnyHttpUrl
 
 
 load_dotenv()
@@ -27,7 +27,7 @@ class ApiConfig:
         self.host_url: str = ""
         self.debug: bool = False
         self.auth_types: str = ""
-        self.origins: list[str] = ["*"]
+        self.origins: list[str | AnyHttpUrl] = ["http://localhost:8000"]
         self.roles: list[str] = [""]
         self.pwd_len: int = 0
         self.encoding: str = ""
@@ -62,6 +62,9 @@ class ApiConfig:
         self.msal_tenant_id: str = ""
         self.msal_client_id: str = ""
         self.msal_client_secret: str = ""
+        self.msal_scope_name: str = ""
+        self.msal_scope_desc: str = "user_impersonation"
+        self.msal_scopes: dict = {}
 
         # EMAIL CONFIG
         self.email: str = ""
@@ -186,6 +189,11 @@ class ApiConfig:
             )
         )
         self.google_client_id = str(getenv("GOOGLE_CLIENT_ID"))
+        self.msal_tenant_id = str(getenv("MICROSOFT_TENANT_ID"))
+        self.msal_client_id = str(getenv("MICROSOFT_CLIENT_ID"))
+        self.msal_client_secret = str(getenv("MICROSOFT_CLIENT_SECRET"))
+        self.msal_scope_name = f"api://{self.msal_client_id}/{self.msal_scope_desc}"
+        self.msal_scopes = {self.msal_scope_name: self.msal_scope_desc}
         return self
 
     def pretty_print(self):

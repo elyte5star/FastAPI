@@ -13,7 +13,7 @@ class BaseResponse(BaseModel):
     req_id: str = Field(default="", serialization_alias="requestId")
     start_time: float = Field(default=0.0, serialization_alias="startTime")
     stop_time: float = Field(default=0.0, serialization_alias="stopTime")
-    process_time: float = Field(default=0.0, serialization_alias="processTime")
+    process_time: str = Field(default="0.0", serialization_alias="processTime")
     success: bool = False
     message: str = ""
 

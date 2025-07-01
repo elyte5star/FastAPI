@@ -13,8 +13,7 @@ from fastapi.encoders import jsonable_encoder
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from fastapi import Request, status
-from fastapi import FastAPI
+from fastapi import FastAPI, Security, Request, status
 from contextlib import asynccontextmanager
 from modules.middleware.base import (
     CustomHeaderMiddleware,
@@ -23,6 +22,7 @@ from modules.middleware.base import (
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 import time
+from typing import AsyncGenerator
 
 # from starlette.middleware.sessions import SessionMiddleware
 
@@ -44,7 +44,7 @@ logging.basicConfig(
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await handler.on_api_start()
     yield
     await handler.on_api_shuttdown()
@@ -61,6 +61,12 @@ app = FastAPI(
     license_info=cfg.license,
     proxy_headers=True,
     forwarded_allow_ips="[::1]",
+    swagger_ui_oauth2_redirect_url="/oauth2-redirect",
+    swagger_ui_init_oauth={
+        "clientId": cfg.msal_client_id,
+        "usePkceWithAuthorizationCodeGrant": True,
+        "scopes": cfg.msal_scope_name,
+    },
     swagger_ui_parameters={
         "syntaxHighlight.theme": "tomorrow-night",
         "tryItOutEnabled": True,
@@ -113,14 +119,13 @@ async def custom_http_exception_handler(
     start_time = time.perf_counter()
     _ = await request.body()
     stop_time = time.perf_counter()
-    process_time = stop_time - start_time
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder(
             {
-                "start_time": start_time,
-                "stop_time": stop_time,
-                "process_time": process_time,
+                "startTime": start_time,
+                "stopTime": stop_time,
+                "processTime": f"{(stop_time - start_time)* 1000:.4f} ms",
                 "message": str(exc.detail),
                 "success": False,
             }
@@ -150,9 +155,28 @@ def favicon():
     return StaticFiles(directory="./modules/static")
 
 
-@app.get("/", summary="Home page", include_in_schema=False)
-async def root():
-    return {"message": "Hello Bigger Applications!"}
+@app.get(
+    "/",
+    description="API root",
+    dependencies=[Security(handler.azure_scheme)],
+    response_class=JSONResponse,
+)
+async def root(request: Request):
+    start_time = time.perf_counter()
+    _ = await request.body()
+    stop_time = time.perf_counter()
+    return JSONResponse(
+        status_code=200,
+        content=jsonable_encoder(
+            {
+                "startTime": start_time,
+                "stopTime": stop_time,
+                "processTime": f"{(stop_time - start_time)* 1000:.4f} ms",
+                "message": "Hello Bigger Applications!",
+                "success": True,
+            }
+        ),
+    )
 
 
 if __name__ == "__main__":

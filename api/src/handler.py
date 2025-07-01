@@ -12,6 +12,7 @@ from modules.routers.system import SystemInfoRouter
 from fastapi import APIRouter
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
+from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer
 
 cfg = ApiConfig().from_toml_file().from_env_file()
 
@@ -49,10 +50,18 @@ routes: tuple[APIRouter, ...] = (
     job_router.router,
 )
 
+azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
+    app_client_id=cfg.msal_client_id,
+    tenant_id=cfg.msal_tenant_id,
+    scopes=cfg.msal_scopes,
+    # allow_guest_users=True,
+)
+
 
 async def on_api_start():
     await system_router.create_tables()
     await system_router.create_admin_account()
+    await azure_scheme.openid_config.load_config()
     logger.info(f"{cfg.name}: v{cfg.version} is starting.")
 
 
