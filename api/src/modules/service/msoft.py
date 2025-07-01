@@ -6,22 +6,10 @@ from jose import JWTError, jwk, jwt
 
 from modules.repository.request_models.auth import BaseResponse, MFALoginRequest
 from modules.service.auth import AuthenticationHandler
-from modules.settings.configuration import ApiConfig
 from modules.utils.misc import get_indent
 
 
 class MSOFTHandler(AuthenticationHandler):
-    def __init__(self, config: ApiConfig):
-        super().__init__(config)
-        self.TENANT_ID = config.msal_tenant_id
-        self.CLIENT_ID = config.msal_client_id
-        self.CLIENT_SECRET = config.msal_client_secret
-        self.PUBLIC_KEYS_URL = (
-            f"https://login.microsoftonline.com/{self.TENANT_ID}/discovery/v2.0/keys"
-        )
-        # A cache for Microsoft keys
-        self.public_keys = {}
-
     async def authenticate_msoft_user(
         self, req: MFALoginRequest, response: Response
     ) -> BaseResponse:
@@ -60,7 +48,7 @@ class MSOFTHandler(AuthenticationHandler):
 
     def get_public_keys(self) -> dict:
         if not self.public_keys:
-            response = requests.get(self.PUBLIC_KEYS_URL)
+            response = requests.get(self.cf.msal_pub_keys)
             response.raise_for_status()
             self.public_keys = response.json().get("keys", [])
         return self.public_keys
@@ -83,8 +71,8 @@ class MSOFTHandler(AuthenticationHandler):
                 token,
                 key=public_key,
                 algorithms=["RS256"],
-                audience=self.CLIENT_ID,
-                issuer=f"https://sts.windows.net/{self.TENANT_ID}/",
+                audience=self.cf.msal_client_id,
+                issuer=f"https://sts.windows.net/{self.cf.msal_tenant_id}/",
             )
             print(claims)
             return claims
@@ -97,5 +85,3 @@ class MSOFTHandler(AuthenticationHandler):
         except Exception as e:
             self.cf.logger.error(f"Internal server error: {str(e)}")
             return None
-
-        

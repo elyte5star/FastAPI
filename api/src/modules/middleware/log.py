@@ -32,7 +32,6 @@ class JSONFormatter(logging.Formatter):
             "logId": get_indent(),
             "filename": record.filename,
             "module": record.module,
-            "filePathName": record.pathname,
         }
         return json.dumps(log_record, sort_keys=True)
 
