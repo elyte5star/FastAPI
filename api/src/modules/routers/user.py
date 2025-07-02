@@ -27,7 +27,7 @@ from modules.repository.request_models.user import (
     ChangePassword,
     LockUserAccountRequest,
 )
-from modules.security.dependency import security, JWTPrincipal, RoleChecker
+from modules.security.dependency import security, JWTPrincipal, JWTBearer
 from pydantic import EmailStr
 
 
@@ -48,7 +48,6 @@ class UserRouter(UserHandler):
             status_code=status.HTTP_202_ACCEPTED,
             endpoint=self.create_verification_otp,
             response_model=BaseResponse,
-            dependencies=[Depends(RoleChecker(["ADMIN"]))],
             methods=["GET"],
             description="Admin send user verification code",
         )
@@ -58,7 +57,6 @@ class UserRouter(UserHandler):
             status_code=status.HTTP_202_ACCEPTED,
             endpoint=self.resend_verification_otp,
             response_model=BaseResponse,
-            dependencies=[Depends(RoleChecker(config.roles))],
             methods=["GET"],
             description="Send a new user verification code",
         )
@@ -67,7 +65,6 @@ class UserRouter(UserHandler):
             endpoint=self.get_user,
             response_model=GetUserResponse,
             methods=["GET"],
-            dependencies=[Depends(RoleChecker(config.roles))],
             description="Get User",
         )
 
@@ -76,7 +73,6 @@ class UserRouter(UserHandler):
             endpoint=self.delete_user,
             response_model=BaseResponse,
             methods=["DELETE"],
-            dependencies=[Depends(RoleChecker(config.roles))],
             description="Delete User",
         )
         self.router.add_api_route(
@@ -84,7 +80,6 @@ class UserRouter(UserHandler):
             endpoint=self.lock_user_account,
             response_model=BaseResponse,
             methods=["GET"],
-            dependencies=[Depends(RoleChecker(["ADMIN"]))],
             description="Lock User Account",
         )
         self.router.add_api_route(
@@ -92,7 +87,6 @@ class UserRouter(UserHandler):
             endpoint=self.get_users,
             response_model=GetUsersResponse,
             methods=["GET"],
-            dependencies=[Depends(RoleChecker(["ADMIN"]))],
             description="Get Users, Admin right required",
         )
 
@@ -144,14 +138,19 @@ class UserRouter(UserHandler):
         )
 
     async def get_users(
-        self, current_user: Annotated[JWTPrincipal, Depends(security)]
+        self,
+        current_user: Annotated[
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
+        ],
     ) -> BaseResponse:
         return await self._get_users(GetUsersRequest(credentials=current_user))
 
     async def lock_user_account(
         self,
         userId: str,
-        current_user: Annotated[JWTPrincipal, Depends(security)],
+        current_user: Annotated[
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
+        ],
     ) -> BaseResponse:
         return await self._lock_user(
             LockUserAccountRequest(
@@ -163,10 +162,7 @@ class UserRouter(UserHandler):
     async def get_user(
         self,
         userId: str,
-        current_user: Annotated[
-            JWTPrincipal,
-            Depends(security),
-        ],
+        current_user: Annotated[JWTPrincipal, Depends(security)],
     ) -> BaseResponse:
         return await self._get_user(
             GetUserRequest(credentials=current_user, userid=userId)
@@ -188,7 +184,9 @@ class UserRouter(UserHandler):
         self,
         email: EmailStr,
         request: Request,
-        current_user: Annotated[JWTPrincipal, Depends(security)],
+        current_user: Annotated[
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
+        ],
     ) -> BaseResponse:
         return await self._create_verification_otp(
             OtpRequest(credentials=current_user, email=email), request
@@ -198,9 +196,12 @@ class UserRouter(UserHandler):
         self,
         token: str,
         request: Request,
+        current_user: Annotated[
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
+        ],
     ) -> BaseResponse:
         return await self._generate_new_otp(
-            NewOtpRequest(token=token),
+            NewOtpRequest(token=token, credentials=current_user),
             request,
         )
 

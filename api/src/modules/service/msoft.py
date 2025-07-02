@@ -1,12 +1,11 @@
 import json
-
-import requests
 from fastapi import Response
 from jose import JWTError, jwk, jwt
 
 from modules.repository.request_models.auth import BaseResponse, MFALoginRequest
 from modules.service.auth import AuthenticationHandler
 from modules.utils.misc import get_indent
+from httpx import AsyncClient, HTTPError
 
 
 class MSOFTHandler(AuthenticationHandler):
@@ -14,7 +13,7 @@ class MSOFTHandler(AuthenticationHandler):
         self, req: MFALoginRequest, response: Response
     ) -> BaseResponse:
         token = req.token
-        claims = self.verify_msal_jwt(token)
+        claims = await self.verify_msal_jwt(token)
         if claims is None:
             return req.req_failure("Couldnt not verify audience.")
         email = claims["preferred_username"]
@@ -46,27 +45,32 @@ class MSOFTHandler(AuthenticationHandler):
             )
         return req.req_failure(f"User with email {email} is not authorized.")
 
-    def get_public_keys(self) -> dict:
+    async def get_public_keys(self) -> dict:
         if not self.public_keys:
-            response = requests.get(self.cf.msal_pub_keys)
+            async with AsyncClient(timeout=10) as client:
+                self.cf.logger.debug(
+                    f"Fetching public keyes from {self.cf.msal_pub_keys_url}"
+                )
+            response = await client.get(self.cf.msal_pub_keys_url)
             response.raise_for_status()
             self.public_keys = response.json().get("keys", [])
         return self.public_keys
 
     # Validate Token using Azure AD Public Keys
-    def verify_msal_jwt(self, token: str) -> dict | None:
+    async def verify_msal_jwt(self, token: str) -> dict | None:
         if not token:
             return None
         try:
             # Get Microsoft's public keys
-            public_keys = self.get_public_keys()
+            public_keys = await self.get_public_keys()
             # Decode JWT Header to get the key ID (kid)
             token_headers = jwt.get_unverified_header(token)
             token_kid = token_headers.get("kid")
             key_id = next(
                 (key for key in public_keys if key.get("kid") == token_kid), None
             )
-            public_key = jwk.construct(json.dumps(key_id), algorithm="RS256")
+            self.cf.logger.debug(f"Loading public key from certificate: {key_id}")
+            public_key = jwk.construct(key_data=json.dumps(key_id), algorithm="RS256")
             claims = jwt.decode(
                 token,
                 key=public_key,
@@ -76,8 +80,8 @@ class MSOFTHandler(AuthenticationHandler):
             )
             print(claims)
             return claims
-        except requests.RequestException as e:
-            self.cf.logger.error(f"Request error: {str(e)}")
+        except HTTPError as e:
+            self.cf.logger.error(f"HTTP Exception for {e.request.url} - {e}")
             return None
         except JWTError:
             self.cf.logger.error("Invalid token or expired token.")

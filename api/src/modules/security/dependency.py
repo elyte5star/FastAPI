@@ -11,6 +11,8 @@ cfg = ApiConfig().from_toml_file().from_env_file()
 
 queries = CommonQueries(cfg)
 
+ALLOWED_ROLES = ["ADMIN", "USER"]
+
 
 class JWTPrincipal(BaseModel):
     user_id: str = Field(serialization_alias="userId")
@@ -31,8 +33,14 @@ class JWTBearer(HTTPBearer):
     def __init__(
         self,
         auto_error: bool = True,
+        scheme_name: str = "Bearer",
+        description: str = "Bearer token",
+        allowed_roles: list = ALLOWED_ROLES,
     ):
-        super(JWTBearer, self).__init__(auto_error=auto_error)
+        super(JWTBearer, self).__init__(
+            auto_error=auto_error, scheme_name=scheme_name, description=description
+        )
+        self.allowed_roles = allowed_roles
 
     async def __call__(self, request: Request) -> JWTPrincipal:
         credentials: HTTPAuthorizationCredentials | None = await super(
@@ -57,13 +65,17 @@ class JWTBearer(HTTPBearer):
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="User session not found",
                 )
-
             if db_user.is_locked:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="User account locked",
                 )
-
+            role = "USER" if not db_user.admin else "ADMIN"
+            if role not in self.allowed_roles:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You don't have enough permissions",
+                )
             current_user = JWTPrincipal(
                 user_id=self.payload["userId"],
                 email=self.payload["email"],
@@ -102,22 +114,6 @@ class JWTBearer(HTTPBearer):
 security = JWTBearer()
 
 
-class RoleChecker:
-    def __init__(self, allowed_roles: list[str]):
-        self.allowed_roles = allowed_roles
-
-    def __call__(
-        self,
-        current_user: Annotated[JWTPrincipal, Depends(security)],
-    ):
-        if current_user.role in self.allowed_roles:
-            return current_user
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have enough permissions",
-        )
-
-
 class RefreshTokenChecker:
 
     async def __call__(self, request: Request) -> JWTPrincipal | HTTPException:
@@ -127,12 +123,13 @@ class RefreshTokenChecker:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No cookie found",
             )
-        if cookie.get("refresh-token") is None:
+        refresh_token = cookie.get("refresh-token")
+        if refresh_token is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Refresh token missing.",
             )
-        if self.verify_jwt(cookie.get("refresh-token")) is None:
+        if self.verify_jwt(refresh_token) is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token or expired token.",

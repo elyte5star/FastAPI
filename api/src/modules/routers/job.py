@@ -1,6 +1,6 @@
 from modules.service.job import JobHandler
 from fastapi import APIRouter, Depends, status
-from modules.security.dependency import security, JWTPrincipal, RoleChecker
+from modules.security.dependency import security, JWTPrincipal, JWTBearer
 from modules.repository.request_models.job import (
     GetJobRequest,
     GetJobsRequest,
@@ -42,12 +42,14 @@ class JobRouter(JobHandler):
             endpoint=self.get_jobs,
             response_model=GetJobsResponse,
             methods=["GET"],
-            dependencies=[Depends(RoleChecker(["ADMIN"]))],
             description="Get Jobs, Admin right required",
         )
 
     async def get_jobs(
-        self, current_user: Annotated[JWTPrincipal, Depends(security)]
+        self,
+        current_user: Annotated[
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
+        ],
     ) -> BaseResponse:
         return await self._get_jobs(GetJobsRequest(credentials=current_user))
 

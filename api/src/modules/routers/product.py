@@ -1,7 +1,7 @@
 from modules.service.product import ProductHandler
 from fastapi import APIRouter, Depends, status
 from typing import Annotated
-from modules.security.dependency import security, JWTPrincipal, RoleChecker
+from modules.security.dependency import security, JWTPrincipal, JWTBearer
 from modules.repository.request_models.product import (
     CreateProductRequest,
     CreateProductResponse,
@@ -35,7 +35,6 @@ class ProductRouter(ProductHandler):
             endpoint=self.create_product,
             response_model=CreateProductResponse,
             methods=["POST"],
-            dependencies=[Depends(RoleChecker(["ADMIN"]))],
             description="Create a product",
         )
         self.router.add_api_route(
@@ -88,7 +87,9 @@ class ProductRouter(ProductHandler):
     async def create_product(
         self,
         new_product: CreateProduct,
-        current_user: Annotated[JWTPrincipal, Depends(security)],
+        current_user: Annotated[
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
+        ],
     ) -> BaseResponse:
         return await self._create_product(
             CreateProductRequest(
@@ -105,7 +106,9 @@ class ProductRouter(ProductHandler):
     async def create_products(
         self,
         new_products: list[CreateProduct],
-        current_user: Annotated[JWTPrincipal, Depends(RoleChecker(["ADMIN"]))],
+        current_user: Annotated[
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
+        ],
     ) -> BaseResponse:
         return await self._create_many_products(
             CreateProductsRequest(

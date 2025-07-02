@@ -65,7 +65,7 @@ class ApiConfig:
         self.msal_scope_name: str = ""
         self.msal_scope_desc: str = "user_impersonation"
         self.msal_scopes: dict = {}
-        self.msal_pub_keys: str = ""
+        self.msal_pub_keys_url: str = ""
         # A cache for Microsoft keys
         self.public_keys = {}
 
@@ -197,7 +197,7 @@ class ApiConfig:
         self.msal_client_secret = str(getenv("MICROSOFT_CLIENT_SECRET"))
         self.msal_scope_name = f"api://{self.msal_client_id}/{self.msal_scope_desc}"
         self.msal_scopes = {self.msal_scope_name: self.msal_scope_desc}
-        self.msal_pub_keys = f"https://login.microsoftonline.com/{self.msal_tenant_id}/discovery/v2.0/keys"
+        self.msal_pub_keys_url = f"https://login.microsoftonline.com/{self.msal_tenant_id}/discovery/v2.0/keys"
         return self
 
     def pretty_print(self):
