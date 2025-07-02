@@ -138,8 +138,7 @@ class ProductRouter(ProductHandler):
         self,
         pid: str,
         current_user: Annotated[
-            JWTPrincipal,
-            Depends(security),
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
         ],
     ) -> BaseResponse:
         return await self._delete_product(
