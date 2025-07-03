@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Response
 from modules.service.google import GoogleHandler
 from modules.repository.response_models.auth import TokenResponse, BaseResponse
-from modules.repository.request_models.auth import MFALoginRequest
+from modules.repository.request_models.auth import GoogleMFALoginRequest
 
 
 class GoogleAuthRouter(GoogleHandler):
@@ -14,7 +14,7 @@ class GoogleAuthRouter(GoogleHandler):
         )
 
         self.router.add_api_route(
-            path="/login/{token}",
+            path="/login/{id_token}",
             endpoint=self.login,
             response_model=TokenResponse,
             methods=["GET"],
@@ -23,9 +23,9 @@ class GoogleAuthRouter(GoogleHandler):
 
     async def login(
         self,
-        token: str,
+        id_token: str,
         response: Response,
     ) -> BaseResponse:
         return await self.authenticate_google_user(
-            MFALoginRequest(token=token), response
+            GoogleMFALoginRequest(token=id_token), response
         )

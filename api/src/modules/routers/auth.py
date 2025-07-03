@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from modules.repository.response_models.auth import TokenResponse, BaseResponse
-from modules.service.auth import AuthenticationHandler
+from modules.service.auth import AuthenticationHandler,get_indent
 from modules.repository.request_models.auth import (
     LoginRequest,
     RefreshTokenRequest,
@@ -25,12 +25,14 @@ class AuthRouter(AuthenticationHandler):
             endpoint=self.login,
             response_model=TokenResponse,
             methods=["POST"],
+            description="JWTBearerGrant",
         )
         self.router.add_api_route(
             path="/refresh",
             endpoint=self.refresh_access_token,
             response_model=TokenResponse,
             methods=["POST"],
+            description="RefreshTokenGrant",
         )
         self.router.add_api_route(
             path="/enable-new-location/{token}",

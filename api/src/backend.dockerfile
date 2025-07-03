@@ -1,5 +1,5 @@
 
-FROM python:3.12
+FROM python:3.13.1-slim
 
 # Copy only requirements to cache them in docker layer:
 WORKDIR /usr

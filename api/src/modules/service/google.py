@@ -1,7 +1,7 @@
 from modules.service.auth import AuthenticationHandler
 from google.oauth2 import id_token
 from google.auth.transport import requests
-from modules.repository.request_models.auth import MFALoginRequest, BaseResponse
+from modules.repository.request_models.auth import GoogleMFALoginRequest, BaseResponse
 from modules.utils.misc import get_indent
 from fastapi import Response
 
@@ -9,7 +9,7 @@ from fastapi import Response
 class GoogleHandler(AuthenticationHandler):
 
     async def authenticate_google_user(
-        self, req: MFALoginRequest, response: Response
+        self, req: GoogleMFALoginRequest, response: Response
     ) -> BaseResponse:
         token = req.token
         user_dict = self.verify_gmail_jwt(token)

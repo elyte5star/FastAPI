@@ -1,4 +1,4 @@
-from modules.repository.response_models.auth import TokenResponse
+
 from modules.repository.request_models.auth import (
     LoginRequest,
     EnableLocationRequest,

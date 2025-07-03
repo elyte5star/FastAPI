@@ -18,11 +18,13 @@ from contextlib import asynccontextmanager
 from modules.middleware.base import (
     CustomHeaderMiddleware,
     RateLimiterMiddleware,
+    CustomHTTPExceptionMiddleware,
 )
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 import time
 from typing import AsyncGenerator
+from starlette.middleware.gzip import GZipMiddleware
 
 # from starlette.middleware.sessions import SessionMiddleware
 
@@ -102,6 +104,9 @@ app.add_middleware(
 
 # HEADER middleware
 app.add_middleware(CustomHeaderMiddleware)
+
+# for any request that includes "gzip" in the Accept-Encoding header
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=9)
 
 # Request limiter
 app.add_middleware(RateLimiterMiddleware, config=cfg)

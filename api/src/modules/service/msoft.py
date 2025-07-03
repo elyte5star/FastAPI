@@ -2,17 +2,18 @@ import json
 from fastapi import Response
 from jose import JWTError, jwk, jwt
 
-from modules.repository.request_models.auth import BaseResponse, MFALoginRequest
+from modules.repository.request_models.auth import BaseResponse, MSOFTMFALoginRequest
 from modules.service.auth import AuthenticationHandler
 from modules.utils.misc import get_indent
 from httpx import AsyncClient, HTTPError
 
 
 class MSOFTHandler(AuthenticationHandler):
+
     async def authenticate_msoft_user(
-        self, req: MFALoginRequest, response: Response
+        self, req: MSOFTMFALoginRequest, response: Response
     ) -> BaseResponse:
-        token = req.token
+        auth_code = req.code
         claims = await self.verify_msal_jwt(token)
         if claims is None:
             return req.req_failure("Couldnt not verify audience.")
@@ -49,9 +50,9 @@ class MSOFTHandler(AuthenticationHandler):
         if not self.public_keys:
             async with AsyncClient(timeout=10) as client:
                 self.cf.logger.debug(
-                    f"Fetching public keyes from {self.cf.msal_pub_keys_url}"
+                    f"Fetching public keyes from {self.cf.msal_jwks_url}"
                 )
-            response = await client.get(self.cf.msal_pub_keys_url)
+            response = await client.get(self.cf.msal_jwks_url)
             response.raise_for_status()
             self.public_keys = response.json().get("keys", [])
         return self.public_keys

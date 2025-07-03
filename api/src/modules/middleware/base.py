@@ -1,10 +1,17 @@
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction
 import time
 from typing import Callable
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from fastapi import status, FastAPI
+from fastapi import status
+from starlette.types import ASGIApp
 from modules.settings.configuration import ApiConfig
+from starlette.types import ASGIApp, Message, Scope, Receive, Send
+from starlette.responses import Response
+
+
+class CustomHTTPExceptionMiddleware:
+    pass
 
 
 class CustomHeaderMiddleware(BaseHTTPMiddleware):
@@ -38,7 +45,7 @@ class TokenBucket:
 
 
 class RateLimiterMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: FastAPI, config: ApiConfig):
+    def __init__(self, app, config: ApiConfig):
         super().__init__(app)
         self.bucket = TokenBucket(2, 2)  # 2 request per 2 second
         self.config = config

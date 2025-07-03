@@ -4,10 +4,12 @@ from jose import JWTError, jwt
 import time
 from pydantic import BaseModel, Field
 from modules.settings.configuration import ApiConfig
-from typing import Annotated
 from modules.repository.queries.common import CommonQueries
 
+from authlib.integrations.starlette_client import OAuth, OAuthError
+
 cfg = ApiConfig().from_toml_file().from_env_file()
+
 
 queries = CommonQueries(cfg)
 
@@ -28,7 +30,6 @@ class JWTPrincipal(BaseModel):
     token_id: str = Field(serialization_alias="tokenId")
 
 
-# https://testdriven.io/blog/fastapi-jwt-auth/
 class JWTBearer(HTTPBearer):
     def __init__(
         self,
@@ -173,3 +174,14 @@ class RefreshTokenChecker:
             return self.payload if self.payload["exp"] >= time.time() else None
         except JWTError:
             return None
+
+
+oauth = OAuth()
+oauth.register(
+    name="microsoft",
+    client_id=cfg.msal_client_id,
+    authorize_url=f"https://login.microsoftonline.com/{cfg.msal_tenant_id}/oauth2/v2.0/authorize",
+    client_kwargs={
+        "scope": "openid profile email",
+    },
+)
