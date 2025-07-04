@@ -102,7 +102,6 @@ app.add_middleware(
 )
 
 
-# HEADER middleware
 app.add_middleware(CustomHeaderMiddleware)
 
 # for any request that includes "gzip" in the Accept-Encoding header

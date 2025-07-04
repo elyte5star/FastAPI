@@ -10,20 +10,6 @@ from starlette.types import ASGIApp, Message, Scope, Receive, Send
 from starlette.responses import Response
 
 
-class CustomHTTPExceptionMiddleware:
-    pass
-
-
-class CustomHeaderMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: Callable):
-        start_time = time.perf_counter()
-        response = await call_next(request)
-        process_time = time.perf_counter() - start_time
-        response.headers["X-Process-Time"] = str(process_time)
-        response.headers["path"] = request.url.path
-        return response
-
-
 class TokenBucket:
     def __init__(self, tokens: int, refill_rate: int) -> None:
         self.tokens = tokens
@@ -44,21 +30,38 @@ class TokenBucket:
         return True
 
 
-class RateLimiterMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, config: ApiConfig):
-        super().__init__(app)
-        self.bucket = TokenBucket(2, 2)  # 2 request per 2 second
+class CustomHTTPExceptionMiddleware:
+    pass
+
+
+class RateLimiterMiddleware:
+
+    def __init__(self, app: ASGIApp, config: ApiConfig) -> None:
+        self.app = app
+        self.bucket = TokenBucket(3, 2)  # 3 request per 2 second
         self.config = config
 
-    async def dispatch(self, request, call_next):
-        if self.bucket.check():
-            response = await call_next(request)
-            return response
-        self.config.logger.warning("Request packet dropped")
-        return JSONResponse(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            content={
-                "message": "Too many Requests",
-                "success": False,
-            },
-        )
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if not self.bucket.check() and scope["type"] == "http":
+            response = JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content={
+                    "message": "Too many Requests",
+                    "success": False,
+                },
+            )
+            self.config.logger.warning("Request packet dropped")
+            await response(scope, receive, send)
+            return
+
+        await self.app(scope, receive, send)
+
+
+class CustomHeaderMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: Callable):
+        start_time = time.perf_counter()
+        response = await call_next(request)
+        process_time = time.perf_counter() - start_time
+        response.headers["X-Process-Time"] = str(process_time)
+        response.headers["path"] = request.url.path
+        return response
