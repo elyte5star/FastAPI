@@ -35,7 +35,6 @@ class CustomHTTPExceptionMiddleware:
 
 
 class RateLimiterMiddleware:
-
     def __init__(self, app: ASGIApp, config: ApiConfig) -> None:
         self.app = app
         self.bucket = TokenBucket(3, 2)  # 3 request per 2 second
@@ -51,8 +50,7 @@ class RateLimiterMiddleware:
                 },
             )
             self.config.logger.warning("Request packet dropped")
-            await response(scope, receive, send)
-            return
+            return await response(scope, receive, send)
 
         await self.app(scope, receive, send)
 
