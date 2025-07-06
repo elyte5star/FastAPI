@@ -14,7 +14,8 @@ class MSOFTHandler(AuthenticationHandler):
         self, req: MSOFTMFALoginRequest, response: Response
     ) -> BaseResponse:
         auth_code = req.code
-        claims = await self.verify_msal_jwt(token)
+        # token = await self.auth_code_to_id_token(auth_code)
+        claims = await self.verify_msal_jwt(auth_code)
         if claims is None:
             return req.req_failure("Couldnt not verify audience.")
         email = claims["preferred_username"]
@@ -47,15 +48,15 @@ class MSOFTHandler(AuthenticationHandler):
         return req.req_failure(f"User with email {email} is not authorized.")
 
     async def get_public_keys(self) -> dict:
-        if not self.public_keys:
+        if not self.cf.public_keys:
             async with AsyncClient(timeout=10) as client:
                 self.cf.logger.debug(
                     f"Fetching public keyes from {self.cf.msal_jwks_url}"
                 )
             response = await client.get(self.cf.msal_jwks_url)
             response.raise_for_status()
-            self.public_keys = response.json().get("keys", [])
-        return self.public_keys
+            self.cf.public_keys = response.json().get("keys", [])
+        return self.cf.public_keys
 
     # Validate Token using Azure AD Public Keys
     async def verify_msal_jwt(self, token: str) -> dict | None:
@@ -77,7 +78,7 @@ class MSOFTHandler(AuthenticationHandler):
                 key=public_key,
                 algorithms=["RS256"],
                 audience=self.cf.msal_client_id,
-                issuer=f"https://sts.windows.net/{self.cf.msal_tenant_id}/",
+                issuer=f"https://login.microsoftonline.com/{self.cf.msal_tenant_id}/v2.0",
             )
             print(claims)
             return claims
