@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from modules.repository.response_models.auth import TokenResponse, BaseResponse
-from modules.service.auth import AuthenticationHandler,get_indent
+from modules.service.auth import AuthenticationHandler, get_indent
 from modules.repository.request_models.auth import (
     LoginRequest,
     RefreshTokenRequest,
     EnableLocationRequest,
 )
-from modules.security.dependency import RefreshTokenChecker, JWTPrincipal
+from modules.security.dependency import security, JWTPrincipal
 from typing import Annotated
 from pydantic import SecretStr
 
@@ -59,10 +59,7 @@ class AuthRouter(AuthenticationHandler):
 
     async def refresh_access_token(
         self,
-        current_user: Annotated[
-            JWTPrincipal,
-            Depends(RefreshTokenChecker()),
-        ],
+        current_user: Annotated[JWTPrincipal, Depends(security)],
     ) -> BaseResponse:
         return await self._refresh_access_token(
             RefreshTokenRequest(credentials=current_user),

@@ -1,4 +1,3 @@
-
 from modules.repository.request_models.auth import (
     LoginRequest,
     EnableLocationRequest,
@@ -10,13 +9,11 @@ from modules.repository.validators.base import is_valid_email
 from typing import Optional
 from datetime import timedelta
 from jose import jwt
-from modules.utils.misc import time_delta, date_time_now_utc, get_indent
+from modules.utils.misc import time_delta, date_time_now_utc_tz, get_indent
 from modules.database.schema.user import User
 from fastapi import Request, Response
 from modules.security.login_attempt import LoginAttemptChecker
-
-# from starlette.config import Config
-# from authlib.integrations.starlette_client import OAuth, OAuthError
+import time
 
 
 class AuthenticationHandler(LoginAttemptChecker):
@@ -103,7 +100,7 @@ class AuthenticationHandler(LoginAttemptChecker):
             refreshToken=refresh_token,
             accountNonLocked=not user.is_locked,
             tokenId=data["jti"],
-            tokenType="bearer",
+            tokenType="Bearer",
         )
 
     def verify_password(
@@ -123,9 +120,9 @@ class AuthenticationHandler(LoginAttemptChecker):
     ):
         to_encode = data.copy()
         if expires_delta:
-            _expire = date_time_now_utc() + expires_delta
+            _expire = date_time_now_utc_tz() + expires_delta
         else:
-            _expire = date_time_now_utc() + time_delta(
+            _expire = date_time_now_utc_tz() + time_delta(
                 self.cf.token_expire_min,
             )
         to_encode.update({"exp": _expire})

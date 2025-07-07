@@ -39,7 +39,7 @@ class MSOFTHandler(AuthenticationHandler):
                 "discount": user_in_db.discount,
                 "accountNonLocked": not user_in_db.is_locked,
             }
-            token_data = await self.create_token_response(user_in_db, data)
+            token_data = await self.create_token_response(user_in_db, data)  
             self.create_cookie(token_data.pop("refreshToken"), response)
             req.result.data = token_data
             return req.req_success(

@@ -31,7 +31,7 @@ class ApiConfig:
         self.roles: list[str] = [""]
         self.pwd_len: int = 0
         self.encoding: str = ""
-        self.sql_url: str = ""
+        self.db_url: str = ""
         self.logger: logging.Logger = logging.getLogger(__name__)
         self.max_login_attempt: int = 0
         self.lock_duration: int = 0
@@ -52,7 +52,6 @@ class ApiConfig:
         self.rounds: int = 0
         self.token_expire_min: int = 0
         self.refresh_token_expire_min: int = 0
-        self.token_url: str = ""
         self.grant_type: str = ""
 
         # Google AUTH
@@ -165,7 +164,7 @@ class ApiConfig:
         self.db_url = str(getenv("DB_URL"))
         self.rabbit_connect_string = str(getenv("RQ_URL"))
         self.token_expire_min = int(
-            getenv("API_JWT_TOKEN_EXPIRE_MINUTES", self.token_expire_min)
+            getenv("API_JWT_EXPIRE_MINUTES", self.token_expire_min)
         )
         self.mail_password = str(getenv("MAIL_PASSWORD"))
         self.email_config = ConnectionConfig(

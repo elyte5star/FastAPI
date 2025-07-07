@@ -1,13 +1,13 @@
 from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction
 import time
-from typing import Callable
+from typing import Callable, Mapping
 from starlette.requests import Request
-from starlette.responses import JSONResponse
 from fastapi import status
-from starlette.types import ASGIApp
 from modules.settings.configuration import ApiConfig
 from starlette.types import ASGIApp, Message, Scope, Receive, Send
-from starlette.responses import Response
+from starlette.responses import JSONResponse, RedirectResponse
+from starlette.datastructures import URL
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 class TokenBucket:
@@ -30,8 +30,41 @@ class TokenBucket:
         return True
 
 
-class CustomHTTPExceptionMiddleware:
-    pass
+# redirections = {
+#     "/v1/resource/": "/v2/resource/",
+#     # ...
+# }
+
+
+class RedirectsMiddleware:
+    def __init__(self, app, path_mapping: dict):
+        self.app = app
+        self.path_mapping = path_mapping
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        url = URL(scope=scope)
+
+        if url.path in self.path_mapping:
+            url = url.replace(path=self.path_mapping[url.path])
+            response = RedirectResponse(url, status_code=301)
+            await response(scope, receive, send)
+            return
+
+        await self.app(scope, receive, send)
+
+
+class CustomHTTPExceptionMiddleware(StarletteHTTPException):
+    def __init__(
+        self,
+        status_code: int,
+        detail: str | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> None:
+        super().__init__(status_code, detail, headers)
 
 
 class RateLimiterMiddleware:
@@ -51,7 +84,6 @@ class RateLimiterMiddleware:
             )
             self.config.logger.warning("Request packet dropped")
             return await response(scope, receive, send)
-
         await self.app(scope, receive, send)
 
 
