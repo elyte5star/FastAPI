@@ -10,19 +10,15 @@ from modules.middleware.log import (
     error_file_handler,
 )
 from fastapi.encoders import jsonable_encoder
-from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from fastapi import FastAPI, Security, Request, status
+from fastapi import FastAPI, Security, Request
 from contextlib import asynccontextmanager
 from modules.middleware.base import (
     CustomHeaderMiddleware,
     RateLimiterMiddleware,
-    CustomHTTPExceptionMiddleware,
 )
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
-import time
 from typing import AsyncGenerator
 from starlette.middleware.gzip import GZipMiddleware
 
@@ -74,6 +70,7 @@ app = FastAPI(
         "tryItOutEnabled": True,
         "displayRequestDuration": True,
     },
+    exception_handlers=handler.exception_handlers,
 )
 
 # Include routes
@@ -83,7 +80,6 @@ for route in handler.routes:
 
 # Add events middleware
 app.add_middleware(EventHandlerASGIMiddleware, handlers=[APIEvents(cfg)])
-
 
 # Include Session
 # app.add_middleware(SessionMiddleware, secret_key=cfg.secret_key, max_age=None)
@@ -102,7 +98,7 @@ app.add_middleware(
 )
 
 
-app.add_middleware(CustomHeaderMiddleware)
+app.add_middleware(CustomHeaderMiddleware, config=cfg)
 
 # for any request that includes "gzip" in the Accept-Encoding header
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=9)
@@ -113,45 +109,6 @@ app.add_middleware(RateLimiterMiddleware, config=cfg)
 
 # Static files
 app.mount("/static", StaticFiles(directory="./modules/static"), name="static")
-
-
-@app.exception_handler(StarletteHTTPException)
-async def custom_http_exception_handler(
-    request: Request, exc: StarletteHTTPException
-) -> JSONResponse:
-    log.warning(f"{repr(exc.detail)}!!")
-    start_time = time.perf_counter()
-    _ = await request.body()
-    stop_time = time.perf_counter()
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder(
-            {
-                "startTime": start_time,
-                "stopTime": stop_time,
-                "processTime": f"{(stop_time - start_time)* 1000:.4f} ms",
-                "message": str(exc.detail),
-                "success": False,
-            }
-        ),
-    )
-
-
-# Override request validation exceptions
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=jsonable_encoder(
-            {
-                "message": " ".join(exc.errors()),
-                "body": exc.body,
-                "success": False,
-            }
-        ),
-    )
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -166,20 +123,13 @@ def favicon():
     response_class=JSONResponse,
 )
 async def root(request: Request):
-    start_time = time.perf_counter()
     _ = await request.body()
-    stop_time = time.perf_counter()
     return JSONResponse(
         status_code=200,
-        content=jsonable_encoder(
-            {
-                "startTime": start_time,
-                "stopTime": stop_time,
-                "processTime": f"{(stop_time - start_time)* 1000:.4f} ms",
-                "message": "Hello Bigger Applications!",
-                "success": True,
-            }
-        ),
+        content={
+            "message": "Hello Bigger Applications!",
+            "success": True,
+        },
     )
 
 

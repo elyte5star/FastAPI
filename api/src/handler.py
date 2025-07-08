@@ -9,11 +9,16 @@ from modules.routers.product import ProductRouter
 from modules.routers.booking import BookingRouter
 from modules.routers.job import JobRouter
 from modules.routers.system import SystemInfoRouter
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.interfaces import DBAPIConnection
 from sqlalchemy import event
 from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+
 
 cfg = ApiConfig().from_toml_file().from_env_file()
 
@@ -57,6 +62,38 @@ azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
     scopes=cfg.msal_scopes,
     # allow_guest_users=True,
 )
+
+
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> JSONResponse:
+    logger.error(f"{repr(exc.detail)}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "message": str(exc.detail),
+            "success": False,
+        },
+    )
+
+
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "message": " ".join(exc.errors()),
+            "body": exc.body,
+            "success": False,
+        },
+    )
+
+
+exception_handlers = {
+    StarletteHTTPException: http_exception_handler,
+    RequestValidationError: validation_exception_handler,
+}
 
 
 async def on_api_start():

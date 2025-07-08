@@ -1,13 +1,11 @@
-from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction
 import time
-from typing import Callable, Mapping
+from typing import Mapping
 from starlette.requests import Request
 from fastapi import status
 from modules.settings.configuration import ApiConfig
 from starlette.types import ASGIApp, Message, Scope, Receive, Send
 from starlette.responses import JSONResponse, RedirectResponse
-from starlette.datastructures import URL
-from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.datastructures import URL, MutableHeaders
 
 
 class TokenBucket:
@@ -57,16 +55,6 @@ class RedirectsMiddleware:
         await self.app(scope, receive, send)
 
 
-class CustomHTTPExceptionMiddleware(StarletteHTTPException):
-    def __init__(
-        self,
-        status_code: int,
-        detail: str | None = None,
-        headers: Mapping[str, str] | None = None,
-    ) -> None:
-        super().__init__(status_code, detail, headers)
-
-
 class RateLimiterMiddleware:
     def __init__(self, app: ASGIApp, config: ApiConfig) -> None:
         self.app = app
@@ -87,11 +75,40 @@ class RateLimiterMiddleware:
         await self.app(scope, receive, send)
 
 
-class CustomHeaderMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: Callable):
-        start_time = time.perf_counter()
-        response = await call_next(request)
-        process_time = time.perf_counter() - start_time
-        response.headers["X-Process-Time"] = str(process_time)
-        response.headers["path"] = request.url.path
-        return response
+class CustomHeaderMiddleware:
+
+    def __init__(self, app: ASGIApp, config: ApiConfig) -> None:
+        self.app = app
+        self.config = config
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] not in ("http", "websocket"):
+            return await self.app(scope, receive, send)
+
+        request = Request(scope)
+
+        http_status_code: int | None = None
+
+        async def send_with_extra_headers(message: Message) -> None:
+            nonlocal http_status_code
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                http_status_code = message["status"]
+                headers["path"] = request.url.path
+                headers["httpStatus"] = f"{http_status_code }"
+            await send(message)
+
+        body_size = 0
+
+        async def receive_logging_request_body_size():
+            nonlocal body_size
+            message = await receive()
+            assert message["type"] == "http.request"
+            body_size += len(message.get("body", b""))
+            if not message.get("more_body", False):
+                self.config.logger.debug(f"Size of request body was: {body_size} bytes")
+            return message
+
+        await self.app(
+            scope, receive_logging_request_body_size, send_with_extra_headers
+        )

@@ -15,6 +15,7 @@ from multiprocessing import cpu_count
 from asyncpg.exceptions import PostgresError
 from collections.abc import Sequence
 import bcrypt
+from pydantic import AnyHttpUrl
 
 
 class CommonQueries(AsyncDatabaseSession):
@@ -252,7 +253,7 @@ class CommonQueries(AsyncDatabaseSession):
             self.logger.error("Failed to update user:", e)
             raise
 
-    def get_app_url(self, request: Request) -> str:
+    def get_app_url(self, request: Request) -> str | AnyHttpUrl:
         client_url = self.get_client_url()
         if client_url is None:
             heading_dict = dict(request.scope["headers"])
@@ -260,7 +261,7 @@ class CommonQueries(AsyncDatabaseSession):
             return origin_url
         return client_url
 
-    def get_client_url(self) -> str | None:
+    def get_client_url(self) -> str | AnyHttpUrl | None:
         client_urls = self.cf.origins
         return next(iter(client_urls)) if client_urls else None
 
