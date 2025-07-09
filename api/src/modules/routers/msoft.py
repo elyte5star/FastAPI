@@ -1,7 +1,12 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, Depends
 from modules.service.msoft import MSOFTHandler
 from modules.repository.response_models.auth import TokenResponse, BaseResponse
 from modules.repository.request_models.auth import MSOFTMFALoginRequest
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from typing import Annotated
+
+
+security = HTTPBearer()
 
 
 class MSOFTAuthRouter(MSOFTHandler):
@@ -14,7 +19,7 @@ class MSOFTAuthRouter(MSOFTHandler):
         )
 
         self.router.add_api_route(
-            path="/login/{auth_code}",
+            path="/login",
             endpoint=self.login,
             response_model=TokenResponse,
             methods=["GET"],
@@ -23,9 +28,9 @@ class MSOFTAuthRouter(MSOFTHandler):
 
     async def login(
         self,
-        auth_code: str,
+        credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
         response: Response,
     ) -> BaseResponse:
         return await self.authenticate_msoft_user(
-            MSOFTMFALoginRequest(code=auth_code), response
+            MSOFTMFALoginRequest(access_token=credentials.credentials), response
         )

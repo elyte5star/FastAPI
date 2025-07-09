@@ -24,10 +24,10 @@ class EnableLocationRequest(BaseReq):
 
 
 class MSOFTMFALoginRequest(BaseReq):
-    code: str
+    access_token: str
     result: TokenResponse = TokenResponse()
 
 
 class GoogleMFALoginRequest(BaseReq):
-    token: str
+    id_token: str
     result: TokenResponse = TokenResponse()

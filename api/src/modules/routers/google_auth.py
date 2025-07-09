@@ -27,5 +27,5 @@ class GoogleAuthRouter(GoogleHandler):
         response: Response,
     ) -> BaseResponse:
         return await self.authenticate_google_user(
-            GoogleMFALoginRequest(token=id_token), response
+            GoogleMFALoginRequest(id_token=id_token), response
         )

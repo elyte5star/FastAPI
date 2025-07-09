@@ -66,7 +66,7 @@ class ApiConfig:
         self.msal_scopes: dict = {}
         self.msal_jwks_url: str = ""
         # A cache for Microsoft keys
-        self.public_keys = {}
+        self.public_keys: list = []
 
         # EMAIL CONFIG
         self.email: str = ""

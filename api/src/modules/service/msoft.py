@@ -1,7 +1,6 @@
 import json
 from fastapi import Response
 from jose import JWTError, jwk, jwt
-
 from modules.repository.request_models.auth import BaseResponse, MSOFTMFALoginRequest
 from modules.service.auth import AuthenticationHandler
 from modules.utils.misc import get_indent
@@ -13,9 +12,8 @@ class MSOFTHandler(AuthenticationHandler):
     async def authenticate_msoft_user(
         self, req: MSOFTMFALoginRequest, response: Response
     ) -> BaseResponse:
-        auth_code = req.code
-        # token = await self.auth_code_to_id_token(auth_code)
-        claims = await self.verify_msal_jwt(auth_code)
+        token = req.access_token
+        claims = await self.verify_msal_jwt(token)
         if claims is None:
             return req.req_failure("Couldnt not verify audience.")
         email = claims["preferred_username"]
@@ -39,7 +37,7 @@ class MSOFTHandler(AuthenticationHandler):
                 "discount": user_in_db.discount,
                 "accountNonLocked": not user_in_db.is_locked,
             }
-            token_data = await self.create_token_response(user_in_db, data)  
+            token_data = await self.create_token_response(user_in_db, data)
             self.create_cookie(token_data.pop("refreshToken"), response)
             req.result.data = token_data
             return req.req_success(
@@ -47,14 +45,14 @@ class MSOFTHandler(AuthenticationHandler):
             )
         return req.req_failure(f"User with email {email} is not authorized.")
 
-    async def get_public_keys(self) -> dict:
+    async def get_public_keys(self) -> list:
         if not self.cf.public_keys:
             async with AsyncClient(timeout=10) as client:
                 self.cf.logger.debug(
                     f"Fetching public keyes from {self.cf.msal_jwks_url}"
                 )
-            response = await client.get(self.cf.msal_jwks_url)
-            response.raise_for_status()
+                response = await client.get(self.cf.msal_jwks_url)
+                response.raise_for_status()  # Raises an error for non-200 responses
             self.cf.public_keys = response.json().get("keys", [])
         return self.cf.public_keys
 
@@ -68,11 +66,12 @@ class MSOFTHandler(AuthenticationHandler):
             # Decode JWT Header to get the key ID (kid)
             token_headers = jwt.get_unverified_header(token)
             token_kid = token_headers.get("kid")
-            key_id = next(
+            rsa_key = next(
                 (key for key in public_keys if key.get("kid") == token_kid), None
             )
-            self.cf.logger.debug(f"Loading public key from certificate: {key_id}")
-            public_key = jwk.construct(key_data=json.dumps(key_id), algorithm="RS256")
+            self.cf.logger.debug(f"Loading public key from certificate: {rsa_key}")
+            public_key = jwk.construct(key_data=json.dumps(rsa_key), algorithm="RS256")
+            print(public_key)
             claims = jwt.decode(
                 token,
                 key=public_key,
@@ -80,7 +79,7 @@ class MSOFTHandler(AuthenticationHandler):
                 audience=self.cf.msal_client_id,
                 issuer=f"https://login.microsoftonline.com/{self.cf.msal_tenant_id}/v2.0",
             )
-            print(claims)
+            # print(claims)
             return claims
         except HTTPError as e:
             self.cf.logger.error(f"HTTP Exception for {e.request.url} - {e}")

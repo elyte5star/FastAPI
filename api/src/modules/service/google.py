@@ -11,7 +11,7 @@ class GoogleHandler(AuthenticationHandler):
     async def authenticate_google_user(
         self, req: GoogleMFALoginRequest, response: Response
     ) -> BaseResponse:
-        token = req.token
+        token = req.id_token
         user_dict = self.verify_gmail_jwt(token)
         if user_dict is None:
             return req.req_failure("Couldnt not verify the audience.")

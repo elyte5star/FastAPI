@@ -5,7 +5,7 @@ import time
 from pydantic import BaseModel, Field
 from modules.settings.configuration import ApiConfig
 from modules.repository.queries.common import CommonQueries
-
+from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer
 
 cfg = ApiConfig().from_toml_file().from_env_file()
 
@@ -132,3 +132,11 @@ class JWTBearer(HTTPBearer):
 
 
 security = JWTBearer()
+
+
+azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
+    app_client_id=cfg.msal_client_id,
+    tenant_id=cfg.msal_tenant_id,
+    scopes=cfg.msal_scopes,
+    # allow_guest_users=True,
+)
