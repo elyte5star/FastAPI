@@ -57,14 +57,14 @@ class MSOFTHandler(AuthenticationHandler):
         return self.cf.public_keys
 
     # Validate Token using Azure AD Public Keys
-    async def verify_msal_jwt(self, token: str) -> dict | None:
-        if not token:
+    async def verify_msal_jwt(self, access_token: str) -> dict | None:
+        if not access_token:
             return None
         try:
             # Get Microsoft's public keys
             public_keys = await self.get_public_keys()
             # Decode JWT Header to get the key ID (kid)
-            token_headers = jwt.get_unverified_header(token)
+            token_headers = jwt.get_unverified_header(access_token)
             token_kid = token_headers.get("kid")
             rsa_key = next(
                 (key for key in public_keys if key.get("kid") == token_kid), None
@@ -73,7 +73,7 @@ class MSOFTHandler(AuthenticationHandler):
             public_key = jwk.construct(key_data=json.dumps(rsa_key), algorithm="RS256")
             print(public_key)
             claims = jwt.decode(
-                token,
+                access_token,
                 key=public_key,
                 algorithms=["RS256"],
                 audience=self.cf.msal_client_id,
