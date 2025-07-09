@@ -61,7 +61,12 @@ class RateLimiterMiddleware:
         self.bucket = TokenBucket(3, 2)  # 3 request per 2 second
         self.config = config
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
         if not self.bucket.check() and scope["type"] == "http":
             response = JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -81,7 +86,12 @@ class CustomHeaderMiddleware:
         self.app = app
         self.config = config
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
         if scope["type"] not in ("http", "websocket"):
             return await self.app(scope, receive, send)
 
@@ -95,7 +105,7 @@ class CustomHeaderMiddleware:
                 headers = MutableHeaders(scope=message)
                 http_status_code = message["status"]
                 headers["path"] = request.url.path
-                headers["httpStatus"] = f"{http_status_code }"
+                headers["httpStatus"] = f"{http_status_code}"
             await send(message)
 
         body_size = 0
@@ -112,3 +122,13 @@ class CustomHeaderMiddleware:
         await self.app(
             scope, receive_logging_request_body_size, send_with_extra_headers
         )
+
+
+# class CustomHeaderMiddleware(BaseHTTPMiddleware):
+#     async def dispatch(self, request: Request, call_next: Callable):
+#         start_time = time.perf_counter()
+#         response = await call_next(request)
+#         process_time = time.perf_counter() - start_time
+#         response.headers["X-Process-Time"] = str(process_time)
+#         response.headers["path"] = request.url.path
+#         return response
