@@ -5,6 +5,11 @@ from modules.repository.request_models.auth import BaseResponse, MSOFTMFALoginRe
 from modules.service.auth import AuthenticationHandler
 from modules.utils.misc import get_indent
 from httpx import AsyncClient, HTTPError
+from typing import Any
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+import base64
 
 
 class MSOFTHandler(AuthenticationHandler):
@@ -64,14 +69,18 @@ class MSOFTHandler(AuthenticationHandler):
             # Get Microsoft's public keys
             public_keys = await self.get_public_keys()
             # Decode JWT Header to get the key ID (kid)
-            token_headers = jwt.get_unverified_header(access_token)
+            token_headers: dict[str, Any] = jwt.get_unverified_header(
+                access_token,
+            )
+            # unverified_claims: dict[str, Any] = jwt.get_unverified_claims(
+            #     access_token,
+            # )
             token_kid = token_headers.get("kid")
-            rsa_key = next(
+            signing_key = next(
                 (key for key in public_keys if key.get("kid") == token_kid), None
             )
-            self.cf.logger.debug(f"Loading public key from certificate: {rsa_key}")
-            public_key = jwk.construct(key_data=json.dumps(rsa_key), algorithm="RS256")
-            print(public_key)
+            self.cf.logger.debug(f"Loading public key: {signing_key}")
+            public_key = self.pem_public_key(signing_key)
             claims = jwt.decode(
                 access_token,
                 key=public_key,
@@ -79,7 +88,6 @@ class MSOFTHandler(AuthenticationHandler):
                 audience=self.cf.msal_client_id,
                 issuer=f"https://login.microsoftonline.com/{self.cf.msal_tenant_id}/v2.0",
             )
-            # print(claims)
             return claims
         except HTTPError as e:
             self.cf.logger.error(f"HTTP Exception for {e.request.url} - {e}")
@@ -90,3 +98,25 @@ class MSOFTHandler(AuthenticationHandler):
         except Exception as e:
             self.cf.logger.error(f"Internal server error: {str(e)}")
             return None
+
+    def pem_public_key(self, signing_key):
+        return (
+            rsa.RSAPublicNumbers(
+                n=self.decode_value(signing_key["n"]),
+                e=self.decode_value(signing_key["e"]),
+            )
+            .public_key(default_backend())
+            .public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+        )
+
+    def ensure_bytes(self, key: Any):
+        if isinstance(key, str):
+            key = key.encode("utf-8")
+        return key
+
+    def decode_value(self, val):
+        decoded = base64.urlsafe_b64decode(self.ensure_bytes(val) + b"==")
+        return int.from_bytes(decoded, "big")
