@@ -61,8 +61,18 @@ class MSOFTHandler(AuthenticationHandler):
             self.cf.public_keys = response.json().get("keys", [])
         return self.cf.public_keys
 
-    # Validate Token using Azure AD Public Keys
+    # Validate Azure Entra ID token using Azure AD Public Keys
     async def verify_msal_jwt(self, access_token: str) -> dict | None:
+
+        # This verifies:
+
+        # Signature using Azure AD’s public key
+
+        # Expiration (exp)
+
+        # Issuer (iss)
+
+        # Audience (aud)
         if not access_token:
             return None
         try:
@@ -88,6 +98,7 @@ class MSOFTHandler(AuthenticationHandler):
                 audience=self.cf.msal_client_id,
                 issuer=f"https://login.microsoftonline.com/{self.cf.msal_tenant_id}/v2.0",
             )
+            # ID token claims would at least contain: "iss", "sub", "aud", "exp", "iat",
             return claims
         except HTTPError as e:
             self.cf.logger.error(f"HTTP Exception for {e.request.url} - {e}")
@@ -117,6 +128,6 @@ class MSOFTHandler(AuthenticationHandler):
             key = key.encode("utf-8")
         return key
 
-    def decode_value(self, val):
+    def decode_value(self, val) -> int:
         decoded = base64.urlsafe_b64decode(self.ensure_bytes(val) + b"==")
         return int.from_bytes(decoded, "big")

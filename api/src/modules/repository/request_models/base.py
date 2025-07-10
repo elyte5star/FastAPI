@@ -5,7 +5,7 @@ from modules.repository.response_models.base import (
     GetInfoResponse,
 )
 from pydantic import BaseModel, ConfigDict
-from modules.security.dependency import JWTPrincipal
+from modules.security.current_user import JWTPrincipal
 from typing import Optional
 
 

@@ -7,7 +7,8 @@ from modules.repository.request_models.auth import (
     RefreshTokenRequest,
     EnableLocationRequest,
 )
-from modules.security.dependency import security, JWTPrincipal
+from modules.security.dependency import security
+from modules.security.current_user import JWTPrincipal
 from typing import Annotated
 from pydantic import SecretStr
 

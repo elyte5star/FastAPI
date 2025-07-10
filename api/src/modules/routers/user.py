@@ -27,7 +27,8 @@ from modules.repository.request_models.user import (
     ChangePassword,
     LockUserAccountRequest,
 )
-from modules.security.dependency import security, JWTPrincipal, JWTBearer
+from modules.security.dependency import security, JWTBearer
+from modules.security.current_user import JWTPrincipal
 from pydantic import EmailStr
 
 

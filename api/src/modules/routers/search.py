@@ -6,7 +6,8 @@ from modules.repository.request_models.search import (
     CreateSearchRequest,
     SearchResultRequest,
 )
-from modules.security.dependency import security, JWTPrincipal
+from modules.security.dependency import security
+from modules.security.current_user import JWTPrincipal
 from modules.repository.response_models.base import BaseResponse
 from modules.repository.response_models.job import (
     GetJobRequestResponse,

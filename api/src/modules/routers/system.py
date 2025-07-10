@@ -1,4 +1,5 @@
-from modules.security.dependency import JWTBearer, JWTPrincipal, security
+from modules.security.dependency import JWTBearer
+from modules.security.current_user import JWTPrincipal
 from fastapi import APIRouter, Depends
 from modules.repository.request_models.base import (
     GetInfoResponse,

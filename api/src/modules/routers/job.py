@@ -1,6 +1,7 @@
 from modules.service.job import JobHandler
 from fastapi import APIRouter, Depends, status
-from modules.security.dependency import security, JWTPrincipal, JWTBearer
+from modules.security.dependency import security, JWTBearer
+from modules.security.current_user import JWTPrincipal
 from modules.repository.request_models.job import (
     GetJobRequest,
     GetJobsRequest,

@@ -8,6 +8,7 @@ import bcrypt
 from decimal import Decimal
 from json import JSONEncoder
 import random
+import sys
 
 
 def date_time_now_local_tz() -> datetime:
@@ -36,6 +37,11 @@ def time_delta(min: int) -> timedelta:
 
 def obj_as_json(obj):
     return jsonable_encoder(obj)
+
+
+def debug_var(var):
+    sys.stderr.write(str(var))
+    sys.stderr.write("\n")
 
 
 def _get_x_correlation_id() -> str:
