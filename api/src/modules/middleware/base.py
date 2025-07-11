@@ -8,6 +8,7 @@ from starlette.responses import JSONResponse, RedirectResponse
 from starlette.datastructures import URL, MutableHeaders
 
 
+# Request limiter algorithm
 class TokenBucket:
     def __init__(self, tokens: int, refill_rate: int) -> None:
         self.tokens = tokens
@@ -67,7 +68,9 @@ class RateLimiterMiddleware:
         receive: Receive,
         send: Send,
     ) -> None:
-        if not self.bucket.check() and scope["type"] == "http":
+        if scope["type"] not in ("http", "websocket"):
+            return await self.app(scope, receive, send)
+        if not self.bucket.check():
             response = JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 content={
@@ -77,27 +80,19 @@ class RateLimiterMiddleware:
             )
             self.config.logger.warning("Request packet dropped")
             return await response(scope, receive, send)
-        await self.app(scope, receive, send)
 
-
-class CustomHeaderMiddleware:
-
-    def __init__(self, app: ASGIApp, config: ApiConfig) -> None:
-        self.app = app
-        self.config = config
-
-    async def __call__(
-        self,
-        scope: Scope,
-        receive: Receive,
-        send: Send,
-    ) -> None:
-        if scope["type"] not in ("http", "websocket"):
-            return await self.app(scope, receive, send)
-
-        request = Request(scope)
-
+        body_size = 0
+        request = Request(scope, receive)
         http_status_code: int | None = None
+
+        async def receive_logging_request_body_size():
+            nonlocal body_size
+            message = await receive()
+            assert message["type"] == "http.request"
+            body_size += len(message.get("body", b""))
+            if not message.get("more_body", False):
+                self.config.logger.info(f"Size of request body was: {body_size} bytes")
+            return message
 
         async def send_with_extra_headers(message: Message) -> None:
             nonlocal http_status_code
@@ -106,18 +101,9 @@ class CustomHeaderMiddleware:
                 http_status_code = message["status"]
                 headers["path"] = request.url.path
                 headers["httpStatus"] = f"{http_status_code}"
+                headers["method"] = f"{request.method}"
+
             await send(message)
-
-        body_size = 0
-
-        async def receive_logging_request_body_size():
-            nonlocal body_size
-            message = await receive()
-            assert message["type"] == "http.request"
-            body_size += len(message.get("body", b""))
-            if not message.get("more_body", False):
-                self.config.logger.debug(f"Size of request body was: {body_size} bytes")
-            return message
 
         await self.app(
             scope, receive_logging_request_body_size, send_with_extra_headers

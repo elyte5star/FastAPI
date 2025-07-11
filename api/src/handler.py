@@ -13,7 +13,6 @@ from fastapi import APIRouter, status
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.interfaces import DBAPIConnection
 from sqlalchemy import event
-from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -56,13 +55,6 @@ routes: tuple[APIRouter, ...] = (
     job_router.router,
 )
 
-azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
-    app_client_id=cfg.msal_client_id,
-    tenant_id=cfg.msal_tenant_id,
-    scopes=cfg.msal_scopes,
-    # allow_guest_users=True,
-)
-
 
 async def http_exception_handler(
     request: Request, exc: StarletteHTTPException
@@ -99,7 +91,6 @@ exception_handlers = {
 async def on_api_start():
     await system_router.create_tables()
     await system_router.create_admin_account()
-    await azure_scheme.openid_config.load_config()
     logger.info(f"{cfg.name}: v{cfg.version} is starting.")
 
 

@@ -6,7 +6,6 @@ from modules.repository.response_models.base import (
 )
 from pydantic import BaseModel, ConfigDict
 from modules.security.current_user import JWTPrincipal
-from typing import Optional
 
 
 class BaseReq(BaseModel):
@@ -14,7 +13,7 @@ class BaseReq(BaseModel):
         validate_assignment=True,
         str_strip_whitespace=True,
     )
-    credentials: Optional[JWTPrincipal] = None
+    credentials: JWTPrincipal | None = None
 
     def model_post_init(self, ctx):
         self.result: BaseResponse = BaseResponse()

@@ -9,18 +9,17 @@ from modules.middleware.log import (
     smtp_log_handler,
     error_file_handler,
 )
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI, Security, Request
 from contextlib import asynccontextmanager
 from modules.middleware.base import (
-    CustomHeaderMiddleware,
     RateLimiterMiddleware,
 )
 from modules.security.events.base import APIEvents
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 from typing import AsyncGenerator
 from starlette.middleware.gzip import GZipMiddleware
+
 
 # from starlette.middleware.sessions import SessionMiddleware
 
@@ -98,8 +97,6 @@ app.add_middleware(
 )
 
 
-app.add_middleware(CustomHeaderMiddleware, config=cfg)
-
 # for any request that includes "gzip" in the Accept-Encoding header
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=9)
 
@@ -116,14 +113,10 @@ def favicon():
     return StaticFiles(directory="./modules/static")
 
 
-@app.get(
-    "/",
-    description="API root",
-    dependencies=[Security(handler.azure_scheme)],
-    response_class=JSONResponse,
-)
+@app.get("/", description="API root", response_class=JSONResponse)
 async def root(request: Request):
-    _ = await request.body()
+    client_ip = request.client.host if request.client else ""
+    log.info(f"client ip: {client_ip}")
     return JSONResponse(
         status_code=200,
         content={
