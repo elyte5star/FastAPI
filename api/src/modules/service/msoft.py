@@ -1,6 +1,6 @@
 import json
 from fastapi import Response
-from jose import JWTError, jwk, jwt
+from jose import JWTError, jwt
 from modules.repository.request_models.auth import BaseResponse, MSOFTMFALoginRequest
 from modules.service.auth import AuthenticationHandler
 from modules.utils.misc import get_indent

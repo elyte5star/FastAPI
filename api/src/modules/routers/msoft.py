@@ -3,10 +3,10 @@ from modules.service.msoft import MSOFTHandler
 from modules.repository.response_models.auth import TokenResponse, BaseResponse
 from modules.repository.request_models.auth import MSOFTMFALoginRequest
 from typing import Annotated
-from modules.security.mfa import MFABearer
+from modules.security.mfa import AuthCodeBearer
 
 
-security = MFABearer()
+security = AuthCodeBearer()
 
 
 class MSOFTAuthRouter(MSOFTHandler):
