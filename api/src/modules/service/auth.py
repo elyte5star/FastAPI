@@ -47,10 +47,9 @@ class AuthenticationHandler(LoginAttemptChecker):
                     "admin": user.admin,
                     "enabled": user.enabled,
                     "active": user.active,
-                    "role": "USER" if not user.admin else "ADMIN",
+                    "roles": ["USER"] if not user.admin else ["USER", "ADMIN"],
                     "jti": get_indent(),
                     "discount": user.discount,
-                    "accountNonLocked": not user.is_locked,
                 }
                 token_data = await self.create_token_response(user, data)
                 self.create_cookie(token_data.pop("refreshToken"), response)
@@ -166,10 +165,10 @@ class AuthenticationHandler(LoginAttemptChecker):
                 "admin": current_user.admin,
                 "enabled": current_user.enabled,
                 "active": current_user.active,
-                "role": current_user.role,
+                "roles": current_user.roles,
                 "jti": get_indent(),
                 "discount": current_user.discount,
-                "accountNonLocked": not current_user.is_locked,
+                
             }
             access_token_expiry = time_delta(self.cf.token_expire_min)
             access_token = self.create_token(

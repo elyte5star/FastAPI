@@ -67,6 +67,10 @@ class LockUserAccountRequest(BaseReq):
     result: BaseResponse = BaseResponse()
 
 
+class UnLockUserRequest(LockUserAccountRequest):
+    pass
+
+
 class GetUserRequest(BaseReq):
     userid: ValidateUUID
     result: GetUserResponse = GetUserResponse()

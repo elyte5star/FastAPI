@@ -19,23 +19,24 @@ cfg = ApiConfig().from_toml_file().from_env_file()
 
 queries = CommonQueries(cfg)
 
-ALLOWED_ROLES = ["ADMIN", "USER"]
-
 
 class JWTBearer(SecurityBase):
+
     def __init__(
         self,
         scheme_name: str | None = None,
         auto_error: bool = True,
-        allowed_roles: list = ALLOWED_ROLES,
+        allowed_roles: list = cfg.roles,
+        auth_type: str | None = None,
     ) -> None:
         super().__init__()
         self.auto_error = auto_error
         self.scheme_name = scheme_name or self.__class__.__name__
         self.allowed_roles = allowed_roles
-        self.model = HTTPBearerModel(
-            description="Bearer token",
-        )
+        if not auth_type:
+            self.model = HTTPBearerModel(
+                description="Bearer token",
+            )
 
     async def __call__(self, request: Request) -> JWTPrincipal | None:
         authorization = request.headers.get("Authorization", None)
@@ -55,9 +56,6 @@ class JWTBearer(SecurityBase):
                 )
             else:
                 return None
-        return await self.check_user_token(token=token)
-
-    async def check_user_token(self, token: str):
         if self.verify_jwt(token) is None:
             if self.auto_error:
                 raise HTTPException(
@@ -67,18 +65,20 @@ class JWTBearer(SecurityBase):
                 )
             else:
                 return None
-        db_user = await queries.find_user_by_id(self.payload["userId"])
+        current_user = await self.check_user(self.payload["userId"])
+        return current_user
+
+    async def check_user(self, user_id: str) -> JWTPrincipal:
+        db_user = await queries.find_user_by_id(user_id)
         if db_user is None:
             raise HTTPException(
                 status_code=HTTP_404_NOT_FOUND,
                 detail="User session not found",
             )
-
         role = "USER" if not db_user.admin else "ADMIN"
         if role not in self.allowed_roles:
             raise HTTPException(
-                status_code=HTTP_403_FORBIDDEN,
-                detail="You don't have enough permissions",
+                status_code=HTTP_403_FORBIDDEN, detail="Not enough permissions"
             )
         current_user = JWTPrincipal(
             user_id=self.payload["userId"],
@@ -88,10 +88,9 @@ class JWTBearer(SecurityBase):
             enabled=self.payload["enabled"],
             expires=self.payload["exp"],
             admin=self.payload["admin"],
-            role=self.payload["role"],
+            roles=self.payload["roles"],
             discount=self.payload["discount"],
             token_id=self.payload["jti"],
-            is_locked=self.payload["accountNonLocked"],
         )
         return current_user
 
@@ -107,6 +106,3 @@ class JWTBearer(SecurityBase):
             return self.payload if self.payload["exp"] >= time.time() else None
         except JWTError:
             return None
-
-
-security = JWTBearer()

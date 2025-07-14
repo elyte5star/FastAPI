@@ -8,7 +8,7 @@ from fastapi_events.registry.payload_schema import registry as payload_schema
 from datetime import datetime
 from modules.repository.request_models.user import EmailRequestSchema
 from modules.utils.misc import date_time_now_utc_tz
-
+from pydantic import AnyHttpUrl
 
 class UserEvents(Enum):
     SIGNED_UP = "USER_SIGNED_UP"
@@ -33,7 +33,7 @@ class SignUpPayload(BaseModel):
     email: EmailStr
     expiry: datetime
     token: str
-    app_url: str
+    app_url: str | AnyHttpUrl
     # locale:str future?
 
 
@@ -62,7 +62,7 @@ class NewDeviceLogin(BaseModel):
     device_details: str
     ip: str
     location: str
-    app_url: str
+    app_url: str | AnyHttpUrl
     # locale:str future?
 
 
@@ -72,7 +72,7 @@ class ClientEnquiry(BaseModel):
     client_name: str
     email: EmailStr
     message: str
-    app_url: str
+    app_url: str | AnyHttpUrl
     expiry: datetime
 
 @payload_schema.register(event_name=UserEvents.BLOCKED)
@@ -87,7 +87,7 @@ class BlockedUserAccount(BaseModel):
 class ResetUserPassword(BaseModel):
     username: str
     email: EmailStr
-    app_url: str
+    app_url: str | AnyHttpUrl
     token: str
     expiry: datetime
 
@@ -123,11 +123,7 @@ class APIEventsHandler(EmailService):
         subject = "Registration confirmation"
         expiry = event_payload.expiry
         body = {
-            "confirmationUrl": (
-                event_payload.app_url
-                + "/user/signup/verify-otp?token="
-                + event_payload.token
-            ),
+            "confirmationUrl": f"{event_payload.app_url}/user/signup/verify-otp?token={event_payload.token}",
             "otp": event_payload.token,
             "username": event_payload.username,
             "message": event_payload.userid,
@@ -154,9 +150,7 @@ class APIEventsHandler(EmailService):
             "username": event_payload.username,
             "ip": event_payload.ip,
             "time": date_time_now_utc_tz().strftime("%d-%m-%Y, %H:%M:%S"),
-            "enableLocationLink": event_payload.app_url
-            + "/auth/enable-new-location?token="
-            + event_payload.token,
+            "enableLocationLink": f"{event_payload.app_url}/auth/enable-new-location?token={event_payload.token}",
             "changePassUri": event_payload.app_url + "/user/update-password",
 
         }
@@ -200,9 +194,7 @@ class APIEventsHandler(EmailService):
         body = {
             "home": event_payload.app_url,
             "username": event_payload.username,
-            "resetLink": event_payload.app_url
-            + "/user/change-password?token="
-            + event_payload.token,
+            "resetLink": f"{event_payload.app_url}/user/change-password?token={event_payload.token}",
             "expiry": expiry.strftime("%d/%m/%Y,%H:%M"),
             "token": event_payload.token,
         }

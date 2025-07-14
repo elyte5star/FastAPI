@@ -11,6 +11,7 @@ from modules.repository.request_models.user import (
     UpdateUserPasswordRequest,
     SaveUserPassswordRequest,
     LockUserAccountRequest,
+    UnLockUserRequest,
 )
 from modules.repository.response_models.user import (
     BaseResponse,
@@ -211,7 +212,6 @@ class UserHandler(UserQueries):
             return True
         return False
 
-
     async def _get_user(self, req: GetUserRequest) -> BaseResponse:
         if req.credentials is None:
             return req.req_failure("No valid user session found")
@@ -236,6 +236,25 @@ class UserHandler(UserQueries):
         ]
         req.result.users = users
         return req.req_success(f"Total number of users: {len(users)}")
+
+    async def _unblock_user(self, req: UnLockUserRequest) -> BaseResponse:
+        if req.credentials is None:
+            return req.req_failure("No valid user session found")
+        current_user = req.credentials
+        if current_user.user_id != req.userid:
+            self.logger.warning(
+                f"illegal operation by {current_user.user_id}",
+            )
+            return req.req_failure("Forbidden: Access is denied")
+        user_in_db = await self.find_user_by_id(req.userid)
+        if user_in_db is None:
+            return req.req_failure(f"User with id {req.userid} not found")
+        await self.update_user_info(user_in_db.id, dict(failed_attempts=0))
+        self.logger.warning(
+            f"""account with id: {req.userid} was unlocked by
+            admin with userId: {current_user.user_id}"""
+        )
+        return req.req_success(f"User with id:{req.userid} unlocked")
 
     async def _delete_user(self, req: DeleteUserRequest) -> BaseResponse:
         if req.credentials is None:

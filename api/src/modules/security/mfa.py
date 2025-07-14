@@ -42,6 +42,7 @@ queries = CommonQueries(cfg)
 
 
 class AuthCodeBearer(OAuth2):
+
     def __init__(
         self,
         authorizationUrl: str | None = None,
@@ -57,16 +58,6 @@ class AuthCodeBearer(OAuth2):
         flows = OAuthFlowsModel(
             authorizationCode=OAuthFlowAuthorizationCode(
                 authorizationUrl=authorizationUrl or AUTH_URL,
-                tokenUrl=tokenUrl or TOKEN_URL,
-                refreshUrl=refreshUrl,
-                scopes=scopes,
-            ),
-            password=OAuthFlowPassword(
-                tokenUrl=tokenUrl or TOKEN_URL,
-                refreshUrl=refreshUrl,
-                scopes=scopes,
-            ),
-            clientCredentials=OAuthFlowClientCredentials(
                 tokenUrl=tokenUrl or TOKEN_URL,
                 refreshUrl=refreshUrl,
                 scopes=scopes,

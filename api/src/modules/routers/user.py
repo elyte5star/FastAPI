@@ -26,6 +26,7 @@ from modules.repository.request_models.user import (
     SaveUserPassswordRequest,
     ChangePassword,
     LockUserAccountRequest,
+    UnLockUserRequest,
 )
 from modules.security.dependency import security, JWTBearer
 from modules.security.current_user import JWTPrincipal
@@ -82,6 +83,13 @@ class UserRouter(UserHandler):
             response_model=BaseResponse,
             methods=["GET"],
             description="Lock User Account",
+        )
+        self.router.add_api_route(
+            path="/unlock-account/{userId}",
+            endpoint=self.unlock_user_account,
+            response_model=BaseResponse,
+            methods=["GET"],
+            description="Unlock User Account",
         )
         self.router.add_api_route(
             path="",
@@ -155,6 +163,20 @@ class UserRouter(UserHandler):
     ) -> BaseResponse:
         return await self._lock_user(
             LockUserAccountRequest(
+                credentials=current_user,
+                userid=userId,
+            )
+        )
+
+    async def unlock_user_account(
+        self,
+        userId: str,
+        current_user: Annotated[
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
+        ],
+    ) -> BaseResponse:
+        return await self._unblock_user(
+            UnLockUserRequest(
                 credentials=current_user,
                 userid=userId,
             )

@@ -65,6 +65,7 @@ class User(Audit):
             f"<{self.__class__.__name__}("
             f" id:{self.id}, "
             f" failed_attempts:{self.failed_attempts}, "
+            f" is_locked:{self.is_locked}, "
             f" lock_time:{self.lock_time},"
             f" locations:{self.locations},"
             f" username:{self.username},"

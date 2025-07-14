@@ -6,11 +6,16 @@ from modules.repository.request_models.auth import (
     LoginRequest,
     RefreshTokenRequest,
     EnableLocationRequest,
+    MSOFTMFALoginRequest,
 )
 from modules.security.dependency import security
 from modules.security.current_user import JWTPrincipal
 from typing import Annotated
 from pydantic import SecretStr
+from modules.security.mfa import AuthCodeBearer
+
+
+security = AuthCodeBearer()
 
 
 class AuthRouter(AuthenticationHandler):
@@ -41,6 +46,29 @@ class AuthRouter(AuthenticationHandler):
             response_model=BaseResponse,
             methods=["GET"],
             description="Verify new location Login",
+        )
+        self.router.add_api_route(
+            path="/msal/login",
+            endpoint=self.get_token,
+            response_model=TokenResponse,
+            methods=["GET"],
+            description="Verify MSOFT token",
+        )
+        self.router.add_api_route(
+            path="/google/login",
+            endpoint=self.get_token,
+            response_model=TokenResponse,
+            methods=["GET"],
+            description="Verify google token",
+        )
+
+    async def get_token(
+        self,
+        token: Annotated[str, Depends(security)],
+        response: Response,
+    ) -> BaseResponse:
+        return await self.authenticate_msoft_user(
+            MSOFTMFALoginRequest(access_token=token), response
         )
 
     async def login(
