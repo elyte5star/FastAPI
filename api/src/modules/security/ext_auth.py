@@ -21,6 +21,7 @@ from jose import JWTError, jwt
 import time
 from modules.repository.queries.common import CommonQueries
 from httpx import AsyncClient, HTTPError
+from fastapi.openapi.models import OAuth2 as OAuth2Model
 
 
 cfg = ApiConfig().from_toml_file().from_env_file()
@@ -49,6 +50,18 @@ class OAuth2CodeBearer(SecurityBase):
         auto_error: bool = True,
     ):
         super().__init__()
+        flows = OAuthFlowsModel(
+            authorizationCode=OAuthFlowAuthorizationCode(
+                authorizationUrl=authorizationUrl or AUTH_URL,
+                tokenUrl=tokenUrl or TOKEN_URL,
+                refreshUrl=refreshUrl,
+                scopes=scopes or SCOPES,
+            ),
+        )
+        self.model = OAuth2Model(
+            flows=cast(OAuthFlowsModel, flows), description=description
+        )
+        self.scheme_name = scheme_name or self.__class__.__name__
         self.auto_error = auto_error
 
     async def __call__(

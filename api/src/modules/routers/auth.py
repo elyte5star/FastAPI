@@ -6,7 +6,7 @@ from modules.repository.request_models.auth import (
     LoginRequest,
     RefreshTokenRequest,
     EnableLocationRequest,
-    MSOFTMFALoginRequest,
+    MFALoginRequest
 )
 from modules.security.dependency import security
 from modules.security.current_user import JWTPrincipal
@@ -69,7 +69,7 @@ class AuthRouter(MFAHandler):
         response: Response,
     ) -> BaseResponse:
         return await self.authenticate_msoft_user(
-            MSOFTMFALoginRequest(access_token=token), response
+            MFALoginRequest(access_token=token), response
         )
 
     async def login(
