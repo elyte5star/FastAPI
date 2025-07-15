@@ -12,7 +12,7 @@ from cryptography.hazmat.backends import default_backend
 import base64
 
 
-class MSOFTHandler(AuthenticationHandler):
+class MFAHandler(AuthenticationHandler):
 
     async def authenticate_msoft_user(
         self, req: MSOFTMFALoginRequest, response: Response

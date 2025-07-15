@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from modules.repository.response_models.auth import TokenResponse, BaseResponse
-from modules.service.auth import AuthenticationHandler, get_indent
+from modules.service.mfa_auth import MFAHandler
 from modules.repository.request_models.auth import (
     LoginRequest,
     RefreshTokenRequest,
@@ -12,13 +12,14 @@ from modules.security.dependency import security
 from modules.security.current_user import JWTPrincipal
 from typing import Annotated
 from pydantic import SecretStr
-from modules.security.mfa import AuthCodeBearer
+
+from modules.security.mfa import OAuth2CodeBearer
 
 
-security = AuthCodeBearer()
+security = OAuth2CodeBearer()
 
 
-class AuthRouter(AuthenticationHandler):
+class AuthRouter(MFAHandler):
 
     def __init__(self, config):
         super().__init__(config)

@@ -56,6 +56,7 @@ class ApiConfig:
 
         # Google AUTH
         self.google_client_id: str = ""
+        self.google_jwks_url: str = ""
 
         # MSOFT AUTH
         self.msal_tenant_id: str = ""
@@ -65,6 +66,8 @@ class ApiConfig:
         self.msal_scope_desc: str = "user_impersonation"
         self.msal_scopes: dict = {}
         self.msal_jwks_url: str = ""
+        self.msal_auth_url: str = ""
+        self.msal_token_url: str = ""
         # A cache for Microsoft keys
         self.public_keys: list = []
 
@@ -190,13 +193,36 @@ class ApiConfig:
                 self.refresh_token_expire_min,
             )
         )
-        self.google_client_id = str(getenv("GOOGLE_CLIENT_ID"))
         self.msal_tenant_id = str(getenv("MICROSOFT_TENANT_ID"))
         self.msal_client_id = str(getenv("MICROSOFT_CLIENT_ID"))
         self.msal_client_secret = str(getenv("MICROSOFT_CLIENT_SECRET"))
+        self.msal_scope_desc = str(getenv("MICROSOFT_SCOPE_DESC", self.msal_scope_desc))
         self.msal_scope_name = f"api://{self.msal_client_id}/{self.msal_scope_desc}"
         self.msal_scopes = {self.msal_scope_name: self.msal_scope_desc}
         self.msal_jwks_url = f"https://login.microsoftonline.com/{self.msal_tenant_id}/discovery/v2.0/keys"
+        self.msal_auth_url = f"https://login.microsoftonline.com/{self.msal_tenant_id}/oauth2/v2.0/authorize"
+        self.msal_token_url = (
+            f"https://login.microsoftonline.com/{self.msal_tenant_id}/oauth2/v2.0/token"
+        )
+        self.msal_config = dict(
+            MICROSOFT_TENANT_ID=self.msal_tenant_id,
+            MICROSOFT_CLIENT_ID=self.msal_client_id,
+            MICROSOFT_CLIENT_SECRET=self.msal_client_secret,
+            MICROSOFT_SCOPES=self.msal_scopes,
+            MICROSOFT_JWKS_URL=self.msal_jwks_url,
+            MICROSOFT_SCOPE_NAME=self.msal_scope_name,
+            MICROSOFT_SCOPE_DESC=self.msal_scope_desc,
+        )
+        self.google_jwks_url = "https://www.googleapis.com/oauth2/v3/certs"
+        self.google_client_id = str(getenv("GOOGLE_CLIENT_ID"))
+        self.google_audience = f"{self.google_client_id}.apps.googleusercontent.com"
+        self.google_issuer = "https://accounts.google.com"
+        self.google_config = dict(
+            GOOGLE_CLIENT_ID=self.google_client_id,
+            GOOGLE_JWKS_URL=self.google_jwks_url,
+            GOOGLE_ISSUER=self.google_issuer,
+            GOOGLE_AUDIENCE=self.google_audience,
+        )
         return self
 
     def pretty_print(self):

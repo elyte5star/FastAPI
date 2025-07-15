@@ -14,6 +14,7 @@ from modules.security.current_user import JWTPrincipal
 from fastapi.security.base import SecurityBase
 from fastapi.exceptions import HTTPException
 
+
 cfg = ApiConfig().from_toml_file().from_env_file()
 
 
@@ -33,10 +34,9 @@ class JWTBearer(SecurityBase):
         self.auto_error = auto_error
         self.scheme_name = scheme_name or self.__class__.__name__
         self.allowed_roles = allowed_roles
-        if not auth_type:
-            self.model = HTTPBearerModel(
-                description="Bearer token",
-            )
+        self.model = HTTPBearerModel(
+            description="Bearer token",
+        )
 
     async def __call__(self, request: Request) -> JWTPrincipal | None:
         authorization = request.headers.get("Authorization", None)
