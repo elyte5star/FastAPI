@@ -95,7 +95,7 @@ class MFAHandler(AuthenticationHandler):
                 issuer=f"https://login.microsoftonline.com/{self.cf.msal_tenant_id}/v2.0",
             )
             # ID token claims would at least contain: "iss", "sub", "aud", "exp", "iat",
-            print(unverified_claims)
+            # print(unverified_claims)
             return claims
         except HTTPError as e:
             self.cf.logger.error(f"HTTP Exception for {e.request.url} - {e}")
