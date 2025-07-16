@@ -75,8 +75,9 @@ class JWTBearer(SecurityBase):
                 status_code=HTTP_404_NOT_FOUND,
                 detail="User session not found",
             )
-        role = "USER" if not db_user.admin else "ADMIN"
-        if role not in self.allowed_roles:
+        roles = ["USER"] if not db_user.admin else ["ADMIN"]
+        matches = set(self.allowed_roles).intersection(set(roles))
+        if len(matches) == 0:
             raise HTTPException(
                 status_code=HTTP_403_FORBIDDEN, detail="Not enough permissions"
             )

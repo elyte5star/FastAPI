@@ -62,7 +62,10 @@ app = FastAPI(
     swagger_ui_init_oauth={
         "clientId": cfg.msal_client_id,
         "usePkceWithAuthorizationCodeGrant": True,
-        "scopes": cfg.msal_scope_name,
+        "additionalQueryStringParams": {"prompt": "consent"},
+        "scopes": f"{cfg.msal_scope_name} ",
+        "appName": cfg.name,
+        "scopeSeparator": " ",
     },
     swagger_ui_parameters={
         "syntaxHighlight.theme": "tomorrow-night",

@@ -1,7 +1,7 @@
 import json
 from fastapi import Response
 from jose import JWTError, jwt
-from modules.repository.request_models.auth import BaseResponse, MSOFTMFALoginRequest
+from modules.repository.request_models.auth import BaseResponse, MFALoginRequest
 from modules.service.auth import AuthenticationHandler
 from modules.utils.misc import get_indent
 from httpx import AsyncClient, HTTPError
@@ -15,7 +15,7 @@ import base64
 class MFAHandler(AuthenticationHandler):
 
     async def authenticate_msoft_user(
-        self, req: MSOFTMFALoginRequest, response: Response
+        self, req: MFALoginRequest, response: Response
     ) -> BaseResponse:
         token = req.access_token
         claims = await self.verify_msal_jwt(token)
@@ -51,15 +51,11 @@ class MFAHandler(AuthenticationHandler):
         return req.req_failure(f"User with email {email} is not authorized.")
 
     async def get_public_keys(self) -> list:
-        if not self.cf.public_keys:
-            async with AsyncClient(timeout=10) as client:
-                self.cf.logger.debug(
-                    f"Fetching public keyes from {self.cf.msal_jwks_url}"
-                )
-                response = await client.get(self.cf.msal_jwks_url)
-                response.raise_for_status()  # Raises an error for non-200 responses
-            self.cf.public_keys = response.json().get("keys", [])
-        return self.cf.public_keys
+        async with AsyncClient(timeout=10) as client:
+            self.cf.logger.debug(f"Fetching public keyes from {self.cf.msal_jwks_url}")
+            response = await client.get(self.cf.msal_jwks_url)
+            response.raise_for_status()  # Raises an error for non-200 responses
+        return response.json().get("keys", [])
 
     # Validate Azure Entra ID token using Azure AD Public Keys
     async def verify_msal_jwt(self, access_token: str) -> dict | None:
@@ -82,9 +78,9 @@ class MFAHandler(AuthenticationHandler):
             token_headers: dict[str, Any] = jwt.get_unverified_header(
                 access_token,
             )
-            # unverified_claims: dict[str, Any] = jwt.get_unverified_claims(
-            #     access_token,
-            # )
+            unverified_claims: dict[str, Any] = jwt.get_unverified_claims(
+                access_token,
+            )
             token_kid = token_headers.get("kid")
             signing_key = next(
                 (key for key in public_keys if key.get("kid") == token_kid), None
@@ -99,6 +95,7 @@ class MFAHandler(AuthenticationHandler):
                 issuer=f"https://login.microsoftonline.com/{self.cf.msal_tenant_id}/v2.0",
             )
             # ID token claims would at least contain: "iss", "sub", "aud", "exp", "iat",
+            print(unverified_claims)
             return claims
         except HTTPError as e:
             self.cf.logger.error(f"HTTP Exception for {e.request.url} - {e}")

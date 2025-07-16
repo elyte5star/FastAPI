@@ -8,7 +8,7 @@ import logging
 from typing import Self
 from fastapi_mail import ConnectionConfig
 from pydantic import SecretStr, AnyHttpUrl
-
+from enum import Enum
 
 load_dotenv()
 
@@ -26,7 +26,7 @@ class ApiConfig:
         self.log_file_path: str = ""
         self.host_url: str = ""
         self.debug: bool = False
-        self.auth_types: str = ""
+        self.auth_methods: list = []
         self.origins: list[str | AnyHttpUrl] = ["http://localhost:8000"]
         self.roles: list[str] = [""]
         self.pwd_len: int = 0
@@ -56,6 +56,7 @@ class ApiConfig:
 
         # Google AUTH
         self.google_client_id: str = ""
+        self.google_client_secret: str = ""
         self.google_jwks_url: str = ""
 
         # MSOFT AUTH
@@ -68,8 +69,6 @@ class ApiConfig:
         self.msal_jwks_url: str = ""
         self.msal_auth_url: str = ""
         self.msal_token_url: str = ""
-        # A cache for Microsoft keys
-        self.public_keys: list = []
 
         # EMAIL CONFIG
         self.email: str = ""
@@ -112,7 +111,7 @@ class ApiConfig:
         self.log_file_path = config.api["log_file_path"]
         self.host_url = config.api["host_url"]
         self.debug = config.api["debug"]
-        self.auth_types = config.api["auth_types"]
+        self.auth_methods = config.api["auth_methods"]
         self.max_login_attempt = config.api["login_attempts"]
         self.lock_duration = config.api["lock_duration"]
         self.is_geo_ip_enabled = config.api["enabled_geoip"]
@@ -204,25 +203,17 @@ class ApiConfig:
         self.msal_token_url = (
             f"https://login.microsoftonline.com/{self.msal_tenant_id}/oauth2/v2.0/token"
         )
-        self.msal_config = dict(
-            MICROSOFT_TENANT_ID=self.msal_tenant_id,
-            MICROSOFT_CLIENT_ID=self.msal_client_id,
-            MICROSOFT_CLIENT_SECRET=self.msal_client_secret,
-            MICROSOFT_SCOPES=self.msal_scopes,
-            MICROSOFT_JWKS_URL=self.msal_jwks_url,
-            MICROSOFT_SCOPE_NAME=self.msal_scope_name,
-            MICROSOFT_SCOPE_DESC=self.msal_scope_desc,
-        )
+
         self.google_jwks_url = "https://www.googleapis.com/oauth2/v3/certs"
         self.google_client_id = str(getenv("GOOGLE_CLIENT_ID"))
+        self.google_scope_name = "https://www.googleapis.com/auth/userinfo.email"
+        self.google_client_secret = str(getenv("GOOGLE_CLIENT_SECRET"))
         self.google_audience = f"{self.google_client_id}.apps.googleusercontent.com"
         self.google_issuer = "https://accounts.google.com"
-        self.google_config = dict(
-            GOOGLE_CLIENT_ID=self.google_client_id,
-            GOOGLE_JWKS_URL=self.google_jwks_url,
-            GOOGLE_ISSUER=self.google_issuer,
-            GOOGLE_AUDIENCE=self.google_audience,
-        )
+        self.google_auth_url = "https://accounts.google.com/o/oauth2/auth"
+        self.google_token_url = "https://oauth2.googleapis.com/token"
+        self.google_scopes = {"https://www.googleapis.com/auth/userinfo.email": ""}
+
         return self
 
     def pretty_print(self):

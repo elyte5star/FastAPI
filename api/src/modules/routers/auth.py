@@ -6,14 +6,14 @@ from modules.repository.request_models.auth import (
     LoginRequest,
     RefreshTokenRequest,
     EnableLocationRequest,
-    MFALoginRequest
+    MFALoginRequest,
 )
 from modules.security.dependency import security
 from modules.security.current_user import JWTPrincipal
 from typing import Annotated
 from pydantic import SecretStr
 
-from modules.security.mfa import OAuth2CodeBearer
+from modules.security.ext_auth import OAuth2CodeBearer
 
 
 security = OAuth2CodeBearer()
@@ -53,14 +53,14 @@ class AuthRouter(MFAHandler):
             endpoint=self.get_token,
             response_model=TokenResponse,
             methods=["GET"],
-            description="Verify MSOFT token",
+            description="Verify msal access token",
         )
         self.router.add_api_route(
             path="/google/login",
             endpoint=self.get_token,
             response_model=TokenResponse,
             methods=["GET"],
-            description="Verify google token",
+            description="Verify google access token",
         )
 
     async def get_token(

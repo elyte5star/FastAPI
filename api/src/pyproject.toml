@@ -25,7 +25,7 @@ classifiers = [
 
 [api]
 debug = false
-auth_types = ["LOCAL", "MSOFT","GOOGLE","GITHUB","FACEBOOK","XTWITTER","LINKEDIN"]
+auth_methods = ["LOCAL", "MSAL","GOOGLE","GITHUB","FACEBOOK","XTWITTER","LINKEDIN"]
 host_url = "http://localhost:8000/"
 log_level = "INFO"
 log_file_path="../extreme_api.log"
