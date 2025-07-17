@@ -1,4 +1,3 @@
-import time
 from starlette.requests import Request
 from fastapi import status
 from modules.settings.configuration import ApiConfig
@@ -80,7 +79,9 @@ class RateLimiterMiddleware:
             lock_time = self.cf.blocked_ips[ip]
             if lock_time < refresh_time_delta:
                 removed_ip = self.cf.blocked_ips.pop(ip)
-                self.cf.logger.warning(f"Ip: {removed_ip} removed from blacklist ")
+                self.cf.logger.warning(
+                    f"Ip: {removed_ip} removed from blacklist ",
+                )
             else:
                 wait_duration = lock_time - refresh_time_delta
                 seconds = wait_duration.total_seconds()
@@ -92,7 +93,8 @@ class RateLimiterMiddleware:
                 response = JSONResponse(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                     content={
-                        "message": f"Too many failed attempts, IP address blocked. Retry after {hrs} hours, {mins} minutes",
+                        "message": f"""Too many failed attempts,
+                                Retry after {hrs} hours, {mins} minutes""",
                         "success": False,
                     },
                     headers={
@@ -129,5 +131,3 @@ class RateLimiterMiddleware:
         await self.app(
             scope, receive_logging_request_body_size, send_with_extra_headers
         )
-
-
