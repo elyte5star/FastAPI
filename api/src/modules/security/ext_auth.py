@@ -72,9 +72,9 @@ class OAuth2CodeBearer(SecurityBase):
         )
         self.auto_error = auto_error
         self.auth_method = auth_method
-        # A cache for Microsoft keys {'LOCAL': [], 'MSAL': [], 'GOOGLE': []}
+        # A cache for Microsoft/Google public keys {'LOCAL': [], 'MSAL': [], 'GOOGLE': []}
         self.public_keys: dict[str, list] = {method: [] for method in cfg.auth_methods}
-        self.refresh_public_keys_time: datetime | None = None
+        
 
     async def __call__(self, request: Request) -> str | None:
         authorization = request.headers.get("Authorization", None)
@@ -144,8 +144,7 @@ class OAuth2CodeBearer(SecurityBase):
             )
 
     async def get_public_keys(self, jwks_uri: str, auth_method: str) -> list:
-        self.refresh_public_keys_time = date_time_now_utc() - time_delta(60)
-        print("later", self.refresh_public_keys_time)
+        
         if not self.public_keys[auth_method]:
             async with AsyncClient(timeout=10) as client:
                 cfg.logger.debug(f"Fetching public keyes from {jwks_uri}")

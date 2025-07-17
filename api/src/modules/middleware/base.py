@@ -1,32 +1,19 @@
 import time
-from typing import Mapping
 from starlette.requests import Request
 from fastapi import status
 from modules.settings.configuration import ApiConfig
 from starlette.types import ASGIApp, Message, Scope, Receive, Send
 from starlette.responses import JSONResponse, RedirectResponse
 from starlette.datastructures import URL, MutableHeaders
+from modules.utils.misc import (
+    TokenBucket,
+    get_client_ip_address,
+    time_delta,
+    date_time_now_utc_tz,
+)
 
 
 # Request limiter algorithm
-class TokenBucket:
-    def __init__(self, tokens: int, refill_rate: int) -> None:
-        self.tokens = tokens
-        self.refill_rate = refill_rate
-        self.bucket = tokens
-        self.last_refill = time.perf_counter()
-
-    def check(self) -> bool:
-        current = time.perf_counter()
-        time_passed = current - self.last_refill
-        self.last_refill = current
-        self.bucket = self.bucket + time_passed * (self.tokens / self.refill_rate)
-        if self.bucket > self.tokens:
-            self.bucket = self.tokens
-        if self.bucket < 1:
-            return False
-        self.bucket = self.bucket - 1
-        return True
 
 
 # redirections = {
@@ -60,7 +47,7 @@ class RateLimiterMiddleware:
     def __init__(self, app: ASGIApp, config: ApiConfig) -> None:
         self.app = app
         self.bucket = TokenBucket(3, 2)  # 3 request per 2 second
-        self.config = config
+        self.cf = config
 
     async def __call__(
         self,
@@ -70,19 +57,53 @@ class RateLimiterMiddleware:
     ) -> None:
         if scope["type"] not in ("http", "websocket"):
             return await self.app(scope, receive, send)
+
+        request = Request(scope, receive)
+
         if not self.bucket.check():
             response = JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={"Path": request.url.path, "Method": request.method},
                 content={
                     "message": "Too many Requests",
                     "success": False,
                 },
             )
-            self.config.logger.warning("Request packet dropped")
+            self.cf.logger.warning("Request packet dropped")
             return await response(scope, receive, send)
 
+        ip = get_client_ip_address(request)
+        # ip unblocked ip after 1hr
+        refresh_time_delta = date_time_now_utc_tz() - time_delta(min=60)
+
+        if ip in self.cf.blocked_ips:
+            lock_time = self.cf.blocked_ips[ip]
+            if lock_time < refresh_time_delta:
+                removed_ip = self.cf.blocked_ips.pop(ip)
+                self.cf.logger.warning(f"Ip: {removed_ip} removed from blacklist ")
+            else:
+                wait_duration = lock_time - refresh_time_delta
+                seconds = wait_duration.total_seconds()
+                hrs, mins, _ = (
+                    int(seconds // 3600),
+                    int(seconds % 3600) // 60,
+                    seconds % 60,
+                )
+                response = JSONResponse(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    content={
+                        "message": f"Too many failed attempts, IP address blocked. Retry after {hrs} hours, {mins} minutes",
+                        "success": False,
+                    },
+                    headers={
+                        "Retry-After": f"{hrs} hours, {mins} minutes",
+                        "Path": request.url.path,
+                        "Method": request.method,
+                    },
+                )
+                return await response(scope, receive, send)
+
         body_size = 0
-        request = Request(scope, receive)
         http_status_code: int | None = None
 
         async def receive_logging_request_body_size():
@@ -91,7 +112,7 @@ class RateLimiterMiddleware:
             assert message["type"] == "http.request"
             body_size += len(message.get("body", b""))
             if not message.get("more_body", False):
-                self.config.logger.info(f"Size of request body was: {body_size} bytes")
+                self.cf.logger.debug(f"Size of request body was: {body_size} bytes")
             return message
 
         async def send_with_extra_headers(message: Message) -> None:
@@ -110,11 +131,3 @@ class RateLimiterMiddleware:
         )
 
 
-# class CustomHeaderMiddleware(BaseHTTPMiddleware):
-#     async def dispatch(self, request: Request, call_next: Callable):
-#         start_time = time.perf_counter()
-#         response = await call_next(request)
-#         process_time = time.perf_counter() - start_time
-#         response.headers["X-Process-Time"] = str(process_time)
-#         response.headers["path"] = request.url.path
-#         return response

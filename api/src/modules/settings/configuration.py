@@ -9,6 +9,7 @@ from typing import Self
 from fastapi_mail import ConnectionConfig
 from pydantic import SecretStr, AnyHttpUrl
 from enum import Enum
+from datetime import datetime
 
 load_dotenv()
 
@@ -34,7 +35,9 @@ class ApiConfig:
         self.db_url: str = ""
         self.logger: logging.Logger = logging.getLogger(__name__)
         self.max_login_attempt: int = 0
+        self.failed_login_attempt_count: int = 0
         self.lock_duration: int = 0
+        self.blocked_ips: dict[str, datetime] = {}
         self.is_geo_ip_enabled: bool = False
         self.otp_expiry: int = 0
 

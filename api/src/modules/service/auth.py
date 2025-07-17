@@ -63,8 +63,8 @@ class AuthenticationHandler(LoginAttemptChecker):
         )
 
     async def on_login_success(self, user: User, request: Request) -> bool:
-        if user.failed_attempts > 0:
-            await self.reset_user_failed_attempts(user)
+        if user.failed_attempts > 0 or self.cf.failed_login_attempt_count > 0:
+            await self.reset_failed_attempts(user)
         is_strange = await self.check_strange_location(user, request)
         if is_strange:
             return True
@@ -73,8 +73,7 @@ class AuthenticationHandler(LoginAttemptChecker):
 
     async def on_login_failure(self, user: User | None, request: Request):
         if user is None:
-            await self.temp_block_ip_address(request)
-            self.cf.logger.warning("Potential brute-force attack")
+            await self.increase_unknown_user_failed_attempts(request)
         else:
             await self.increase_user_failed_attempts(user)
 
@@ -168,7 +167,6 @@ class AuthenticationHandler(LoginAttemptChecker):
                 "roles": current_user.roles,
                 "jti": get_indent(),
                 "discount": current_user.discount,
-                
             }
             access_token_expiry = time_delta(self.cf.token_expire_min)
             access_token = self.create_token(

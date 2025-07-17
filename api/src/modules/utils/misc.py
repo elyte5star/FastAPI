@@ -7,8 +7,31 @@ import secrets
 import bcrypt
 from decimal import Decimal
 from json import JSONEncoder
+from starlette.requests import Request
 import random
 import sys
+import time
+
+
+# Request limiter algorithm
+class TokenBucket:
+    def __init__(self, tokens: int, refill_rate: int) -> None:
+        self.tokens = tokens
+        self.refill_rate = refill_rate
+        self.bucket = tokens
+        self.last_refill = time.perf_counter()
+
+    def check(self) -> bool:
+        current = time.perf_counter()
+        time_passed = current - self.last_refill
+        self.last_refill = current
+        self.bucket = self.bucket + time_passed * (self.tokens / self.refill_rate)
+        if self.bucket > self.tokens:
+            self.bucket = self.tokens
+        if self.bucket < 1:
+            return False
+        self.bucket = self.bucket - 1
+        return True
 
 
 def date_time_now_local_tz() -> datetime:
@@ -42,6 +65,15 @@ def obj_as_json(obj):
 def debug_var(var):
     sys.stderr.write(str(var))
     sys.stderr.write("\n")
+
+
+def get_client_ip_address(request: Request) -> str:
+    xf_header = request.headers.get("X-Forwarded-For")
+    if xf_header is not None:
+        return xf_header.split(",")[0]
+    # return "128.101.101.101"  # for testing Richfield,United States
+    # return "41.238.0.198"  # for testing Giza, Egypt
+    return request.client.host if request.client else ""
 
 
 def _get_x_correlation_id() -> str:
