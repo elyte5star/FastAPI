@@ -73,7 +73,7 @@ class RateLimiterMiddleware:
 
         ip = get_client_ip_address(request)
         # ip unblocked ip after 1hr
-        refresh_time_delta = date_time_now_utc_tz() - time_delta(min=60)
+        refresh_time_delta = date_time_now_utc_tz() - time_delta(minutes=60)
 
         if ip in self.cf.blocked_ips:
             lock_time = self.cf.blocked_ips[ip]

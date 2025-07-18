@@ -16,15 +16,11 @@ from starlette.status import (
 from fastapi.exceptions import HTTPException
 from jose import JWTError, jwt
 from modules.repository.queries.common import CommonQueries
-from httpx import AsyncClient, HTTPError
+from httpx import AsyncClient, HTTPError, Response
 from fastapi.openapi.models import OAuth2 as OAuth2Model
-import base64
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
-from datetime import datetime
 from modules.utils.misc import date_time_now_utc, time_delta
-
+from fastapi.security import SecurityScopes
+from datetime import datetime
 
 cfg: ApiConfig = ApiConfig().from_toml_file().from_env_file()
 
@@ -54,7 +50,10 @@ class OAuth2CodeBearer(SecurityBase):
         auth_method: str = "MSAL",
     ):
 
+        if not scopes:
+            scopes = {}
         # ADD MORE OAUTHFLOWS AS NEEDED
+
         if not flows:
             flows = OAuthFlowsModel(
                 authorizationCode=OAuthFlowAuthorizationCode(
@@ -73,10 +72,15 @@ class OAuth2CodeBearer(SecurityBase):
         self.auto_error = auto_error
         self.auth_method = auth_method
         # A cache for Microsoft/Google public keys {'LOCAL': [], 'MSAL': [], 'GOOGLE': []}
-        self.public_keys: dict[str, list] = {method: [] for method in cfg.auth_methods}
-        
+        self.public_keys_cache: dict[str, list] = {
+            method: [] for method in cfg.auth_methods
+        }
 
-    async def __call__(self, request: Request) -> str | None:
+        self.next_ext_api_call_time: datetime | None = None
+
+    async def __call__(
+        self, security_scopes: SecurityScopes, request: Request
+    ) -> str | None:
         authorization = request.headers.get("Authorization", None)
         scheme, token = get_authorization_scheme_param(authorization)
         if not (authorization and scheme and token):
@@ -94,12 +98,102 @@ class OAuth2CodeBearer(SecurityBase):
                 )
             else:
                 return None
-        await self.verify_msal_jwt(token, JWKS_URL, self.auth_method)
+        verified_claims = await self.verify_msal_jwt(
+            token, security_scopes.scopes, self.auth_method
+        )
+        print(verified_claims)
         return token
 
-    def check_scope(self, unverified_claims: dict, required_scopes: list[str]):
+    # Validate Azure Entra ID token using Azure AD Public Keys
+    async def verify_msal_jwt(
+        self, access_token: str, required_scopes: list[str], auth_method: str = "MSAL"
+    ) -> dict:
+        """
+        This verifies:
+
+        # Scopes
+
+        # Signature using Azure AD’s public key
+
+        # Expiration (exp)
+
+        # Issuer (iss)
+
+        # Audience (aud)
+
+        """
+        if not access_token:
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Authorization token missing or invalid",
+            )
+        try:
+            unverified_claims: dict[str, Any] = jwt.get_unverified_claims(
+                access_token,
+            )
+
+            self.validate_scope(unverified_claims, required_scopes)
+
+            # Get Microsoft's public keys
+            public_keys = await self.get_public_keys(cfg.msal_jwks_url, auth_method)
+
+            # Decode JWT Header to get the key ID (kid)
+            token_headers: dict[str, Any] = jwt.get_unverified_header(
+                access_token,
+            )
+
+            token_kid = token_headers.get("kid")
+
+            rsa_key = next(
+                (key for key in public_keys if key.get("kid") == token_kid), None
+            )
+            if rsa_key is None:
+                raise HTTPException(
+                    status_code=HTTP_401_UNAUTHORIZED,
+                    detail="Invalid header error: Unable to find appropriate key",
+                )
+            cfg.logger.debug(f"Loading public key: {rsa_key}")
+
+            claims = jwt.decode(
+                access_token,
+                key=rsa_key,
+                algorithms=["RS256"],
+                audience=cfg.msal_client_id,
+                issuer=f"https://login.microsoftonline.com/{cfg.msal_tenant_id}/v2.0",
+            )
+            # ID token claims would at least contain: "iss", "sub", "aud", "exp", "iat",
+            # print(unverified_claims)
+            return claims
+        except HTTPError as e:
+            cfg.logger.error(f"HTTP Exception for {e.request.url} - {e}")
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND,
+                detail=f"HTTP Exception for {e.request.url} - {e}",
+            )
+        except JWTError:
+            cfg.logger.error("Invalid token or expired token.")
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Invalid token or expired token.",
+            )
+        except Exception as e:
+            cfg.logger.error(f"Internal server error: {str(e)}")
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Token error: Unable to parse authentication",
+            )
+
+    def validate_scope(self, unverified_claims: dict, required_scopes: list[str]):
+        if not required_scopes:
+            raise HTTPException(
+                status_code=HTTP_403_FORBIDDEN,
+                detail="No required scope specified",
+            )
+
         required_scopes = [s.lower() for s in required_scopes]
+
         has_valid_scope = False
+
         if (
             unverified_claims.get("scp") is None
             and unverified_claims.get("roles") is None
@@ -108,9 +202,11 @@ class OAuth2CodeBearer(SecurityBase):
                 status_code=HTTP_403_FORBIDDEN,
                 detail="No scope or app permission (role) claim was found in the bearer token",
             )
+
         is_app_permission = (
             True if unverified_claims.get("roles") is not None else False
         )
+
         if is_app_permission:
             roles = unverified_claims.get("roles", [])
             if not roles:
@@ -127,6 +223,7 @@ class OAuth2CodeBearer(SecurityBase):
                 # the scp claim is a space delimited string
                 token_scopes = unverified_claims["scp"].split()
                 matches = set(required_scopes).intersection(set(token_scopes))
+
                 if len(matches) > 0:
                     has_valid_scope = True
             else:
@@ -144,96 +241,17 @@ class OAuth2CodeBearer(SecurityBase):
             )
 
     async def get_public_keys(self, jwks_uri: str, auth_method: str) -> list:
-        
-        if not self.public_keys[auth_method]:
-            async with AsyncClient(timeout=10) as client:
-                cfg.logger.debug(f"Fetching public keyes from {jwks_uri}")
-                response = await client.get(jwks_uri)
-                response.raise_for_status()  # Raises an error for non-200 responses
-            self.public_keys[auth_method] = response.json().get("keys", [])
-            # self.refresh_public_keys_time = date_time_now_utc()
-        return self.public_keys[auth_method]
-
-    # Validate Azure Entra ID token using Azure AD Public Keys
-    async def verify_msal_jwt(
-        self, access_token: str, jwks_uri: str, auth_method: str
-    ) -> dict:
-
-        # This verifies:
-
-        # Signature using Azure AD’s public key
-
-        # Expiration (exp)
-
-        # Issuer (iss)
-
-        # Audience (aud)
-        if not access_token:
-            raise HTTPException(
-                status_code=HTTP_401_UNAUTHORIZED,
-                detail="Authorization token missing or invalid",
-            )
-        try:
-            # Get Microsoft's public keys
-            public_keys = await self.get_public_keys(jwks_uri, auth_method)
-
-            if not public_keys:
-                raise HTTPException(
-                    status_code=HTTP_404_NOT_FOUND,
-                    detail="Public key not found",
-                )
-
-            # Decode JWT Header to get the key ID (kid)
-            token_headers: dict[str, Any] = jwt.get_unverified_header(
-                access_token,
-            )
-            unverified_claims: dict[str, Any] = jwt.get_unverified_claims(
-                access_token,
-            )
-            token_kid = token_headers.get("kid")
-            signing_key = next(
-                (key for key in public_keys if key.get("kid") == token_kid), None
-            )
-            cfg.logger.debug(f"Loading public key: {signing_key}")
-            public_key = self.pem_public_key(signing_key)
-            claims = jwt.decode(
-                access_token,
-                key=public_key,
-                algorithms=["RS256"],
-                audience=cfg.msal_client_id,
-                issuer=f"https://login.microsoftonline.com/{cfg.msal_tenant_id}/v2.0",
-            )
-            # ID token claims would at least contain: "iss", "sub", "aud", "exp", "iat",
-            # print(unverified_claims)
-            return claims
-        except HTTPError as e:
-            cfg.logger.error(f"HTTP Exception for {e.request.url} - {e}")
-            return None
-        except JWTError:
-            cfg.logger.error("Invalid token or expired token.")
-            return None
-        except Exception as e:
-            cfg.logger.error(f"Internal server error: {str(e)}")
-            return None
-
-    def pem_public_key(self, signing_key):
-        return (
-            rsa.RSAPublicNumbers(
-                n=self.decode_value(signing_key["n"]),
-                e=self.decode_value(signing_key["e"]),
-            )
-            .public_key(default_backend())
-            .public_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo,
-            )
+        make_api_call = (
+            self.next_ext_api_call_time is None
+            or date_time_now_utc() > self.next_ext_api_call_time
         )
-
-    def ensure_bytes(self, key: Any):
-        if isinstance(key, str):
-            key = key.encode("utf-8")
-        return key
-
-    def decode_value(self, val) -> int:
-        decoded = base64.urlsafe_b64decode(self.ensure_bytes(val) + b"==")
-        return int.from_bytes(decoded, "big")
+        if not self.public_keys_cache[auth_method] or make_api_call:
+            async with AsyncClient(timeout=10) as client:
+                cfg.logger.debug(f"Fetching public keys from {jwks_uri}")
+                response: Response = await client.get(jwks_uri)
+                response.raise_for_status()  # Raises an error for non-200 responses
+                self.public_keys_cache[auth_method] = response.json().get("keys", [])
+                self.next_ext_api_call_time = date_time_now_utc() + time_delta(
+                    minutes=60
+                )  # Fetch keys every 1hr
+        return self.public_keys_cache[auth_method]

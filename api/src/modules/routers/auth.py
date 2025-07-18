@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Request, Response, Security, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from modules.repository.response_models.auth import TokenResponse, BaseResponse
 from modules.service.mfa_auth import MFAHandler
@@ -65,7 +65,7 @@ class AuthRouter(MFAHandler):
 
     async def get_token(
         self,
-        token: Annotated[str, Depends(security)],
+        token: Annotated[str, Security(security, scopes=["user_impersonation"])],
         response: Response,
     ) -> BaseResponse:
         return await self.authenticate_msoft_user(

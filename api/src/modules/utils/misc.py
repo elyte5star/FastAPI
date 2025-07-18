@@ -54,8 +54,8 @@ def get_indent() -> str:
     return str(uuid.uuid4())
 
 
-def time_delta(min: int) -> timedelta:
-    return timedelta(minutes=min)
+def time_delta(minutes: int) -> timedelta:
+    return timedelta(minutes=minutes)
 
 
 def obj_as_json(obj):
