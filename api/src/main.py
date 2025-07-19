@@ -63,7 +63,7 @@ app = FastAPI(
         "clientId": cfg.msal_client_id,
         "usePkceWithAuthorizationCodeGrant": True,
         "additionalQueryStringParams": {"prompt": "consent"},
-        "scopes": f"{cfg.msal_scope_name} ",
+        # "scopes": f"{cfg.msal_scope_name} User.Read",
         "appName": cfg.name,
         "scopeSeparator": " ",
     },

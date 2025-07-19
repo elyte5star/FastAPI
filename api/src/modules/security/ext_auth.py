@@ -27,7 +27,7 @@ cfg: ApiConfig = ApiConfig().from_toml_file().from_env_file()
 TOKEN_URL = cfg.msal_token_url
 AUTH_URL = cfg.msal_auth_url
 SCHEME_NAME = "OAuthorization2CodePKCEBearer"
-SCOPES = cfg.msal_scopes
+SCOPES: dict = cfg.msal_scopes
 DESC = "Authorization code with PKCE "
 JWKS_URL = cfg.msal_jwks_url
 
@@ -52,8 +52,8 @@ class OAuth2CodeBearer(SecurityBase):
 
         if not scopes:
             scopes = {}
-        # ADD MORE OAUTHFLOWS AS NEEDED
 
+        # ADD MORE OAUTHFLOWS AS NEEDED
         if not flows:
             flows = OAuthFlowsModel(
                 authorizationCode=OAuthFlowAuthorizationCode(
@@ -153,7 +153,6 @@ class OAuth2CodeBearer(SecurityBase):
                     detail="Invalid header error: Unable to find appropriate key",
                 )
             cfg.logger.debug(f"Loading public key: {rsa_key}")
-
             claims = jwt.decode(
                 access_token,
                 key=rsa_key,
@@ -189,7 +188,7 @@ class OAuth2CodeBearer(SecurityBase):
                 status_code=HTTP_403_FORBIDDEN,
                 detail="No required scope specified",
             )
-
+        # To small letters
         required_scopes = [s.lower() for s in required_scopes]
 
         has_valid_scope = False
@@ -215,15 +214,16 @@ class OAuth2CodeBearer(SecurityBase):
                     detail="No scope or app permission (role) claim was found in the bearer token",
                 )
             else:
+                roles = [s.lower() for s in roles]
                 matches = set(required_scopes).intersection(set(roles))
                 if len(matches) > 0:
                     has_valid_scope = True
         else:
             if unverified_claims.get("scp"):
                 # the scp claim is a space delimited string
-                token_scopes = unverified_claims["scp"].split()
+                token_scopes = unverified_claims["scp"].lower().split()
+                print(token_scopes, required_scopes)
                 matches = set(required_scopes).intersection(set(token_scopes))
-
                 if len(matches) > 0:
                     has_valid_scope = True
             else:

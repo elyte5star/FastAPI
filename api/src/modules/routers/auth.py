@@ -65,7 +65,13 @@ class AuthRouter(MFAHandler):
 
     async def get_token(
         self,
-        token: Annotated[str, Security(security, scopes=["user_impersonation"])],
+        token: Annotated[
+            str,
+            Security(
+                security,
+                scopes=["user_impersonation"],
+            ),
+        ],
         response: Response,
     ) -> BaseResponse:
         return await self.authenticate_msoft_user(
