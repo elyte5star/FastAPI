@@ -15,7 +15,6 @@ from starlette.status import (
 )
 from fastapi.exceptions import HTTPException
 from jose import JWTError, jwt
-from modules.repository.queries.common import CommonQueries
 from httpx import AsyncClient, HTTPError, Response
 from fastapi.openapi.models import OAuth2 as OAuth2Model
 from modules.utils.misc import date_time_now_utc, time_delta
@@ -24,43 +23,36 @@ from datetime import datetime
 
 cfg: ApiConfig = ApiConfig().from_toml_file().from_env_file()
 
-TOKEN_URL = cfg.msal_token_url
-AUTH_URL = cfg.msal_auth_url
+
 SCHEME_NAME = "OAuthorization2CodePKCEBearer"
-SCOPES: dict = cfg.msal_scopes
 DESC = "Authorization code with PKCE "
 JWKS_URL = cfg.msal_jwks_url
-
-
-queries = CommonQueries(cfg)
 
 
 class OAuth2CodeBearer(SecurityBase):
 
     def __init__(
         self,
+        authorization_url: str,
+        token_url: str,
+        auth_method: str,
+        scopes: dict[str, str],
         flows: OAuthFlowsModel | dict[str, dict[str, Any]] | None = None,
-        authorization_url: str | None = None,
-        token_url: str | None = None,
-        scopes: dict[str, str] | None = None,
         scheme_name: str | None = SCHEME_NAME,
         description: str | None = DESC,
         refresh_url: str | None = None,
         auto_error: bool = True,
-        auth_method: str = "MSAL",
     ):
-
-        if not scopes:
-            scopes = {}
+        self.auth_method = auth_method
 
         # ADD MORE OAUTHFLOWS AS NEEDED
         if not flows:
             flows = OAuthFlowsModel(
                 authorizationCode=OAuthFlowAuthorizationCode(
-                    authorizationUrl=authorization_url or AUTH_URL,
-                    tokenUrl=token_url or TOKEN_URL,
+                    authorizationUrl=authorization_url,
+                    tokenUrl=token_url,
                     refreshUrl=refresh_url,
-                    scopes=scopes or SCOPES,
+                    scopes=scopes,
                 ),
             )
         self.model = OAuth2Model(
@@ -75,7 +67,6 @@ class OAuth2CodeBearer(SecurityBase):
         self.public_keys_cache: dict[str, list] = {
             method: [] for method in cfg.auth_methods
         }
-
         self.next_ext_api_call_time: datetime | None = None
 
     async def __call__(
@@ -98,15 +89,25 @@ class OAuth2CodeBearer(SecurityBase):
                 )
             else:
                 return None
-        verified_claims = await self.verify_msal_jwt(
-            token, security_scopes.scopes, self.auth_method
-        )
-        print(verified_claims)
+        if self.auth_method == "MSAL":
+            verified_claims = await self.verify_msal_jwt(
+                token, security_scopes.scopes, self.auth_method
+            )
+            print(verified_claims)
+        else:
+            verified_claims = await self.verify_google_jwt(
+                token, security_scopes.scopes, self.auth_method
+            )
         return token
+
+    async def verify_google_jwt(
+        self, access_token: str, required_scopes: list[str], auth_method: str
+    ):
+        pass
 
     # Validate Azure Entra ID token using Azure AD Public Keys
     async def verify_msal_jwt(
-        self, access_token: str, required_scopes: list[str], auth_method: str = "MSAL"
+        self, access_token: str, required_scopes: list[str], auth_method: str
     ) -> dict:
         """
         This verifies:
@@ -135,7 +136,10 @@ class OAuth2CodeBearer(SecurityBase):
             self.validate_scope(unverified_claims, required_scopes)
 
             # Get Microsoft's public keys
-            public_keys = await self.get_public_keys(cfg.msal_jwks_url, auth_method)
+            public_keys = await self.get_public_keys(
+                cfg.msal_jwks_url,
+                auth_method,
+            )
 
             # Decode JWT Header to get the key ID (kid)
             token_headers: dict[str, Any] = jwt.get_unverified_header(
@@ -222,7 +226,6 @@ class OAuth2CodeBearer(SecurityBase):
             if unverified_claims.get("scp"):
                 # the scp claim is a space delimited string
                 token_scopes = unverified_claims["scp"].lower().split()
-                print(token_scopes, required_scopes)
                 matches = set(required_scopes).intersection(set(token_scopes))
                 if len(matches) > 0:
                     has_valid_scope = True

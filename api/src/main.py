@@ -10,7 +10,7 @@ from modules.middleware.log import (
     error_file_handler,
 )
 from fastapi.responses import JSONResponse
-from fastapi import FastAPI, Security, Request
+from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 from modules.middleware.base import (
     RateLimiterMiddleware,
@@ -60,10 +60,9 @@ app = FastAPI(
     forwarded_allow_ips="[::1]",
     swagger_ui_oauth2_redirect_url="/oauth2-redirect",
     swagger_ui_init_oauth={
-        "clientId": cfg.msal_client_id,
+        "clientId": "",
         "usePkceWithAuthorizationCodeGrant": True,
         "additionalQueryStringParams": {"prompt": "consent"},
-        # "scopes": f"{cfg.msal_scope_name} User.Read",
         "appName": cfg.name,
         "scopeSeparator": " ",
     },

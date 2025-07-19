@@ -8,15 +8,10 @@ from modules.repository.request_models.auth import (
     EnableLocationRequest,
     MFALoginRequest,
 )
-from modules.security.dependency import security
+from modules.security.dependency import msal_security, google_security, security
 from modules.security.current_user import JWTPrincipal
 from typing import Annotated
 from pydantic import SecretStr
-
-from modules.security.ext_auth import OAuth2CodeBearer
-
-
-security = OAuth2CodeBearer()
 
 
 class AuthRouter(MFAHandler):
@@ -50,25 +45,40 @@ class AuthRouter(MFAHandler):
         )
         self.router.add_api_route(
             path="/msal/login",
-            endpoint=self.get_token,
+            endpoint=self.get_token_msal,
             response_model=TokenResponse,
             methods=["GET"],
             description="Verify msal access token",
         )
         self.router.add_api_route(
             path="/google/login",
-            endpoint=self.get_token,
+            endpoint=self.get_token_google,
             response_model=TokenResponse,
             methods=["GET"],
             description="Verify google access token",
         )
 
-    async def get_token(
+    async def get_token_msal(
         self,
         token: Annotated[
             str,
             Security(
-                security,
+                msal_security,
+                scopes=["user_impersonation"],
+            ),
+        ],
+        response: Response,
+    ) -> BaseResponse:
+        return await self.authenticate_msoft_user(
+            MFALoginRequest(access_token=token), response
+        )
+
+    async def get_token_google(
+        self,
+        token: Annotated[
+            str,
+            Security(
+                google_security,
                 scopes=["user_impersonation"],
             ),
         ],
