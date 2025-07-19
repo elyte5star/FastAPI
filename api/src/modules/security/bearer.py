@@ -28,7 +28,7 @@ class JWTBearer(SecurityBase):
         scheme_name: str | None = None,
         auto_error: bool = True,
         allowed_roles: list = cfg.roles,
-        auth_type: str | None = None,
+        auth_method: str = "LOCAL",
     ) -> None:
         super().__init__()
         self.auto_error = auto_error
