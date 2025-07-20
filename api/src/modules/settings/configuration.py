@@ -72,6 +72,7 @@ class ApiConfig:
         self.msal_jwks_url: str = ""
         self.msal_auth_url: str = ""
         self.msal_token_url: str = ""
+        self.msal_issuer: str = ""
 
         # EMAIL CONFIG
         self.email: str = ""
@@ -205,6 +206,9 @@ class ApiConfig:
         self.msal_auth_url = f"https://login.microsoftonline.com/{self.msal_tenant_id}/oauth2/v2.0/authorize"
         self.msal_token_url = (
             f"https://login.microsoftonline.com/{self.msal_tenant_id}/oauth2/v2.0/token"
+        )
+        self.msal_issuer = (
+            f"https://login.microsoftonline.com/{self.msal_tenant_id}/v2.0"
         )
 
         self.google_jwks_url = "https://www.googleapis.com/oauth2/v3/certs"

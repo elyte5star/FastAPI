@@ -26,7 +26,6 @@ cfg: ApiConfig = ApiConfig().from_toml_file().from_env_file()
 
 SCHEME_NAME = "OAuthorization2CodePKCEBearer"
 DESC = "Authorization code with PKCE "
-JWKS_URL = cfg.msal_jwks_url
 
 
 class OAuth2CodeBearer(SecurityBase):
@@ -140,7 +139,6 @@ class OAuth2CodeBearer(SecurityBase):
                 cfg.msal_jwks_url,
                 auth_method,
             )
-
             # Decode JWT Header to get the key ID (kid)
             token_headers: dict[str, Any] = jwt.get_unverified_header(
                 access_token,
@@ -162,7 +160,7 @@ class OAuth2CodeBearer(SecurityBase):
                 key=rsa_key,
                 algorithms=["RS256"],
                 audience=cfg.msal_client_id,
-                issuer=f"https://login.microsoftonline.com/{cfg.msal_tenant_id}/v2.0",
+                issuer=cfg.msal_issuer,
             )
             # ID token claims would at least contain: "iss", "sub", "aud", "exp", "iat",
             # print(unverified_claims)
@@ -243,7 +241,9 @@ class OAuth2CodeBearer(SecurityBase):
                 status_code=HTTP_403_FORBIDDEN, detail="Not enough permissions"
             )
 
-    async def get_public_keys(self, jwks_uri: str, auth_method: str) -> list:
+    async def get_public_keys(
+        self, jwks_uri: str, auth_method: str, params: dict | None = None
+    ) -> list:
         make_api_call = (
             self.next_ext_api_call_time is None
             or date_time_now_utc() > self.next_ext_api_call_time
@@ -251,7 +251,7 @@ class OAuth2CodeBearer(SecurityBase):
         if not self.public_keys_cache[auth_method] or make_api_call:
             async with AsyncClient(timeout=10) as client:
                 cfg.logger.debug(f"Fetching public keys from {jwks_uri}")
-                response: Response = await client.get(jwks_uri)
+                response: Response = await client.get(jwks_uri, params=params)
                 response.raise_for_status()  # Raises an error for non-200 responses
                 self.public_keys_cache[auth_method] = response.json().get("keys", [])
                 self.next_ext_api_call_time = date_time_now_utc() + time_delta(

@@ -60,7 +60,7 @@ app = FastAPI(
     forwarded_allow_ips="[::1]",
     swagger_ui_oauth2_redirect_url="/oauth2-redirect",
     swagger_ui_init_oauth={
-        "clientId": "",
+        "clientId": "enter client_id",
         "usePkceWithAuthorizationCodeGrant": True,
         "additionalQueryStringParams": {"prompt": "consent"},
         "appName": cfg.name,
