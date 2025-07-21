@@ -12,6 +12,7 @@ from starlette.status import (
     HTTP_401_UNAUTHORIZED,
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
+    HTTP_400_BAD_REQUEST,
 )
 from fastapi.exceptions import HTTPException
 from jose import JWTError, jwt
@@ -20,10 +21,7 @@ from fastapi.openapi.models import OAuth2 as OAuth2Model
 from modules.utils.misc import date_time_now_utc, time_delta
 from fastapi.security import SecurityScopes
 from datetime import datetime
-from google.oauth2 import id_token
-from google.auth.transport import requests
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
+
 
 cfg: ApiConfig = ApiConfig().from_toml_file().from_env_file()
 
@@ -44,11 +42,11 @@ class OAuth2CodeBearer(SecurityBase):
         scheme_name: str | None = SCHEME_NAME,
         description: str | None = DESC,
         refresh_url: str | None = None,
-        auto_error: bool = True,
     ):
         self.auth_method = auth_method
 
         # ADD MORE OAUTHFLOWS AS NEEDED
+
         if not flows:
             flows = OAuthFlowsModel(
                 authorizationCode=OAuthFlowAuthorizationCode(
@@ -64,9 +62,9 @@ class OAuth2CodeBearer(SecurityBase):
         self.scheme_name = (
             f"{auth_method.capitalize()}{scheme_name}" or self.__class__.__name__
         )
-        self.auto_error = auto_error
+
         self.auth_method = auth_method
-        # A cache for Microsoft/Google public keys {'LOCAL': [], 'MSAL': [], 'GOOGLE': []}
+        # A cache for Microsoft public keys {'LOCAL': [], 'MSAL': []}
         self.public_keys_cache: dict[str, list] = {
             method: [] for method in cfg.auth_methods
         }
@@ -78,47 +76,62 @@ class OAuth2CodeBearer(SecurityBase):
         authorization = request.headers.get("Authorization", None)
         scheme, token = get_authorization_scheme_param(authorization)
         if not (authorization and scheme and token):
-            if self.auto_error:
-                raise HTTPException(
-                    status_code=HTTP_403_FORBIDDEN, detail="Not authenticated"
-                )
-            else:
-                return None
+            raise HTTPException(
+                status_code=HTTP_403_FORBIDDEN, detail="Not authenticated"
+            )
         if scheme.lower() != "bearer":
-            if self.auto_error:
-                raise HTTPException(
-                    status_code=HTTP_401_UNAUTHORIZED,
-                    detail="Invalid authentication credentials",
-                )
-            else:
-                return None
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+            )
+
         if self.auth_method == "MSAL":
             verified_claims = await self.verify_msal_jwt(
                 token, security_scopes.scopes, self.auth_method
             )
-
         else:
             verified_claims = await self.verify_google_jwt(
-                token, security_scopes.scopes, self.auth_method
+                token,
+                security_scopes.scopes,
             )
         return verified_claims
 
     async def verify_google_jwt(
-        self, access_token: str, required_scopes: list[str], auth_method: str
+        self,
+        access_token: str,
+        required_scopes: list[str],
     ):
-        token_data = {
-            "token": access_token,
-            "token_uri": cfg.google_token_url,
-            "client_id": cfg.google_client_id,
-            "client_secret": cfg.google_client_secret,
-            "scopes": "https://www.googleapis.com/auth/userinfo.email",
-        }
-        creds = Credentials(**token_data)
-        print(required_scopes)
-        oauth2_client = build("oauth2", "v2", credentials=creds)
-        userinfo = oauth2_client.userinfo().get().execute()
-        print(userinfo)
-        return {}
+        if not access_token:
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Authorization token missing or invalid",
+            )
+        try:
+            TOKEN_INFO_URL = cfg.google_token_info_url
+            PARAMS = {"access_token": access_token}
+            async with AsyncClient(timeout=10) as client:
+                cfg.logger.debug(f"Fetching token info from {TOKEN_INFO_URL}")
+                response: Response = await client.get(
+                    TOKEN_INFO_URL,
+                    params=PARAMS,
+                )
+                response.raise_for_status()
+                token_info: dict[str, Any] = response.json()
+            token_info["scp"] = token_info.pop("scope")
+            self.validate_scope(token_info, required_scopes)
+            return token_info
+        except HTTPError as e:
+            raise HTTPException(
+                status_code=HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired token",
+                headers=f"{e.request.headers}",
+            )
+        except Exception as e:
+            cfg.logger.error(f"Internal server error: {str(e)}")
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Token error: Unable to parse authentication",
+            )
 
     # Validate Azure Entra ID token using Azure AD Public Keys
     async def verify_msal_jwt(
@@ -178,8 +191,7 @@ class OAuth2CodeBearer(SecurityBase):
                 audience=cfg.msal_client_id,
                 issuer=cfg.msal_issuer,
             )
-            # ID token claims would at least contain: "iss", "sub", "aud", "exp", "iat",
-            # print(unverified_claims)
+
             return claims
         except HTTPError as e:
             cfg.logger.error(f"HTTP Exception for {e.request.url} - {e}")

@@ -8,7 +8,6 @@ import logging
 from typing import Self
 from fastapi_mail import ConnectionConfig
 from pydantic import SecretStr, AnyHttpUrl
-from enum import Enum
 from datetime import datetime
 
 load_dotenv()
@@ -211,7 +210,6 @@ class ApiConfig:
             f"https://login.microsoftonline.com/{self.msal_tenant_id}/v2.0"
         )
 
-        self.google_jwks_url = "https://www.googleapis.com/oauth2/v3/certs"
         self.google_client_id = str(getenv("GOOGLE_CLIENT_ID"))
         self.google_scope_name = "https://www.googleapis.com/auth/userinfo.email"
         self.google_client_secret = str(getenv("GOOGLE_CLIENT_SECRET"))
@@ -219,6 +217,7 @@ class ApiConfig:
         self.google_issuer = "https://accounts.google.com"
         self.google_auth_url = "https://accounts.google.com/o/oauth2/auth"
         self.google_token_url = "https://oauth2.googleapis.com/token"
+        self.google_token_info_url = "https://www.googleapis.com/oauth2/v3/tokeninfo"
         self.google_scopes = {"https://www.googleapis.com/auth/userinfo.email": ""}
 
         return self
