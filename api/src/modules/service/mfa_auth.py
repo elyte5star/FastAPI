@@ -1,27 +1,18 @@
 import json
 from fastapi import Response
-from jose import JWTError, jwt
 from modules.repository.request_models.auth import BaseResponse, MFALoginRequest
 from modules.service.auth import AuthenticationHandler
 from modules.utils.misc import get_indent
-from httpx import AsyncClient, HTTPError
-from typing import Any
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
-import base64
 
 
 class MFAHandler(AuthenticationHandler):
 
-    async def authenticate_msoft_user(
+    async def authenticate_ext_user(
         self, req: MFALoginRequest, response: Response
     ) -> BaseResponse:
-        token = req.access_token
-        # claims = await self.verify_msal_jwt(token)
-        # if claims is None:
-        #     return req.req_failure("Couldnt not verify audience.")
-        email = "checkuti@live.com"
+        if not (req.claims and req.auth_method):
+            return req.req_failure("Couldnt not verify audience.")
+        email = self.get_email_from_claims(req.claims, req.auth_method)
         user_in_db = await self.find_user_by_email(email)
         if user_in_db is not None:
             if not user_in_db.enabled or user_in_db.is_locked:
@@ -37,10 +28,9 @@ class MFAHandler(AuthenticationHandler):
                 "admin": user_in_db.admin,
                 "enabled": user_in_db.enabled,
                 "active": user_in_db.active,
-                "role": "USER" if not user_in_db.admin else "ADMIN",
+                "role": ["USER"] if not user_in_db.admin else ["USER", "ADMIN"],
                 "jti": get_indent(),
                 "discount": user_in_db.discount,
-                "accountNonLocked": not user_in_db.is_locked,
             }
             token_data = await self.create_token_response(user_in_db, data)
             self.create_cookie(token_data.pop("refreshToken"), response)
@@ -49,3 +39,8 @@ class MFAHandler(AuthenticationHandler):
                 f"User with username/email: {user_in_db.username} is authorized"
             )
         return req.req_failure(f"User with email {email} is not authorized.")
+
+    def get_email_from_claims(self, verified_claims: dict, auth_method: str) -> str:
+        if auth_method == "MSAL":
+            return verified_claims["preferred_username"]
+        return verified_claims["email"]

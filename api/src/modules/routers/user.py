@@ -27,6 +27,7 @@ from modules.repository.request_models.user import (
     ChangePassword,
     LockUserAccountRequest,
     UnLockUserRequest,
+    EnableMFALoginRequest,
 )
 from modules.security.dependency import security, JWTBearer
 from modules.security.current_user import JWTPrincipal
@@ -76,6 +77,13 @@ class UserRouter(UserHandler):
             response_model=BaseResponse,
             methods=["DELETE"],
             description="Delete User",
+        )
+        self.router.add_api_route(
+            path="/enable-mfa/{userId}",
+            endpoint=self.enable_ext_login,
+            response_model=BaseResponse,
+            methods=["GET"],
+            description="Enable External Login",
         )
         self.router.add_api_route(
             path="/lock-account/{userId}",
@@ -167,6 +175,16 @@ class UserRouter(UserHandler):
                 userid=userId,
             )
         )
+
+    async def enable_ext_login(
+        self,
+        userId: str,
+        current_user: Annotated[JWTPrincipal, Depends(security)],
+    ) -> BaseResponse:
+        return await self._enable_ext_login(
+            EnableMFALoginRequest(userid=userId, credentials=current_user)
+        )
+        pass
 
     async def unlock_user_account(
         self,

@@ -188,3 +188,8 @@ class UpdateUserPasswordRequest(BaseReq):
 class SaveUserPassswordRequest(BaseReq):
     data: ChangePassword
     result: BaseResponse = BaseResponse()
+
+
+class EnableMFALoginRequest(BaseReq):
+    userid: ValidateUUID
+    result: BaseResponse = BaseResponse()

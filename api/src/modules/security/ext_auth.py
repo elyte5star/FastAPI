@@ -20,6 +20,10 @@ from fastapi.openapi.models import OAuth2 as OAuth2Model
 from modules.utils.misc import date_time_now_utc, time_delta
 from fastapi.security import SecurityScopes
 from datetime import datetime
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 
 cfg: ApiConfig = ApiConfig().from_toml_file().from_env_file()
 
@@ -70,7 +74,7 @@ class OAuth2CodeBearer(SecurityBase):
 
     async def __call__(
         self, security_scopes: SecurityScopes, request: Request
-    ) -> str | None:
+    ) -> dict[str, Any] | None:
         authorization = request.headers.get("Authorization", None)
         scheme, token = get_authorization_scheme_param(authorization)
         if not (authorization and scheme and token):
@@ -92,17 +96,29 @@ class OAuth2CodeBearer(SecurityBase):
             verified_claims = await self.verify_msal_jwt(
                 token, security_scopes.scopes, self.auth_method
             )
-            print(verified_claims)
+
         else:
             verified_claims = await self.verify_google_jwt(
                 token, security_scopes.scopes, self.auth_method
             )
-        return token
+        return verified_claims
 
     async def verify_google_jwt(
         self, access_token: str, required_scopes: list[str], auth_method: str
     ):
-        pass
+        token_data = {
+            "token": access_token,
+            "token_uri": cfg.google_token_url,
+            "client_id": cfg.google_client_id,
+            "client_secret": cfg.google_client_secret,
+            "scopes": "https://www.googleapis.com/auth/userinfo.email",
+        }
+        creds = Credentials(**token_data)
+        print(required_scopes)
+        oauth2_client = build("oauth2", "v2", credentials=creds)
+        userinfo = oauth2_client.userinfo().get().execute()
+        print(userinfo)
+        return {}
 
     # Validate Azure Entra ID token using Azure AD Public Keys
     async def verify_msal_jwt(
@@ -184,6 +200,7 @@ class OAuth2CodeBearer(SecurityBase):
                 detail="Token error: Unable to parse authentication",
             )
 
+    # check if guest user is allowed?
     def validate_scope(self, unverified_claims: dict, required_scopes: list[str]):
         if not required_scopes:
             raise HTTPException(

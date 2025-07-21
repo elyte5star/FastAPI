@@ -12,6 +12,7 @@ from modules.repository.request_models.user import (
     SaveUserPassswordRequest,
     LockUserAccountRequest,
     UnLockUserRequest,
+    EnableMFALoginRequest,
 )
 from modules.repository.response_models.user import (
     BaseResponse,
@@ -249,7 +250,14 @@ class UserHandler(UserQueries):
         user_in_db = await self.find_user_by_id(req.userid)
         if user_in_db is None:
             return req.req_failure(f"User with id {req.userid} not found")
-        await self.update_user_info(user_in_db.id, dict(failed_attempts=0))
+        await self.update_user_info(
+            user_in_db.id,
+            dict(
+                failed_attempts=0,
+                modified_at=date_time_now_utc(),
+                modified_by=current_user.user_id,
+            ),
+        )
         self.logger.warning(
             f"""account with id: {req.userid} was unlocked by
             admin with userId: {current_user.user_id}"""
@@ -353,6 +361,28 @@ class UserHandler(UserQueries):
                 f"New password reset token sent to: {user.email}",
             )
         return req.req_failure("User doesn't exist")
+
+    async def _enable_ext_login(self, req: EnableMFALoginRequest):
+        if req.credentials is None:
+            return req.req_failure("No valid user session found")
+        current_user = req.credentials
+        if current_user.user_id != req.userid:
+            self.logger.warning(
+                f"illegal operation by {req.credentials.username}",
+            )
+            return req.req_failure("Forbidden: Access is denied")
+        user_in_db = await self.find_user_by_id(req.userid)
+        if user_in_db is None:
+            return req.req_failure(f"No user with id: {req.userid}")
+        await self.update_user_info(
+            user_in_db.id,
+            dict(
+                is_using_mfa=True,
+                modified_at=date_time_now_utc(),
+                modified_by=current_user.user_id,
+            ),
+        )
+        return req.req_success("External login enabled successfully")
 
     # Change user password
     async def _save_user_password(self, req: SaveUserPassswordRequest):

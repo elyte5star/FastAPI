@@ -10,7 +10,7 @@ from modules.repository.request_models.auth import (
 )
 from modules.security.dependency import msal_security, google_security, security
 from modules.security.current_user import JWTPrincipal
-from typing import Annotated
+from typing import Annotated, Any
 from pydantic import SecretStr
 
 
@@ -60,8 +60,8 @@ class AuthRouter(MFAHandler):
 
     async def get_token_msal(
         self,
-        token: Annotated[
-            str,
+        verified_claims: Annotated[
+            dict[str, Any],
             Security(
                 msal_security,
                 scopes=["user_impersonation"],
@@ -69,23 +69,23 @@ class AuthRouter(MFAHandler):
         ],
         response: Response,
     ) -> BaseResponse:
-        return await self.authenticate_msoft_user(
-            MFALoginRequest(access_token=token), response
+        return await self.authenticate_ext_user(
+            MFALoginRequest(claims=verified_claims, auth_method="MSAL"), response
         )
 
     async def get_token_google(
         self,
-        token: Annotated[
-            str,
+        verified_claims: Annotated[
+            dict[str, Any],
             Security(
                 google_security,
-                scopes=["user_impersonation"],
+                scopes=["https://www.googleapis.com/auth/userinfo.email"],
             ),
         ],
         response: Response,
     ) -> BaseResponse:
-        return await self.authenticate_msoft_user(
-            MFALoginRequest(access_token=token), response
+        return await self.authenticate_ext_user(
+            MFALoginRequest(claims=verified_claims, auth_method="GOOGLE"), response
         )
 
     async def login(

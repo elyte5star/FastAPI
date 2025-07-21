@@ -138,7 +138,12 @@ class CommonQueries(AsyncDatabaseSession):
         return inspector.get_table_names()
 
     async def lock_user_account_query(self, user: User) -> None:
-        changes = dict(lock_time=date_time_now_utc(), is_locked=True)
+        changes = dict(
+            lock_time=date_time_now_utc(),
+            is_locked=True,
+            modified_at=date_time_now_utc(),
+            modified_by=user.id,
+        )
         await self.update_user_info(user.id, changes)
         self.logger.warning(f"User with id: {user.id} is locked")
 
@@ -168,7 +173,6 @@ class CommonQueries(AsyncDatabaseSession):
             "rabbitMQParameters": self.cf.rabbit_connect_string,
             "cpuCount": cpu_count(),
             "apiVersion": self.cf.version,
-            "env": str(vars(self.cf)),
         }
 
     async def check_if_user_exist(
@@ -213,6 +217,7 @@ class CommonQueries(AsyncDatabaseSession):
                     username=admin_username,
                     password=password,
                     active=True,
+                    is_using_mfa=True,
                     telephone=tel,
                     admin=True,
                     enabled=True,
