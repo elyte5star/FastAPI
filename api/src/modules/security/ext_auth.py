@@ -116,7 +116,7 @@ class OAuth2CodeBearer(SecurityBase):
                 )
                 response.raise_for_status()
                 token_info: dict[str, Any] = response.json()
-                
+
             token_info["scp"] = token_info.pop("scope")
 
             # check scope
@@ -130,7 +130,7 @@ class OAuth2CodeBearer(SecurityBase):
         except HTTPError as e:
             raise HTTPException(
                 status_code=HTTP_400_BAD_REQUEST,
-                detail="Invalid or expired token",
+                detail=f"Invalid or expired token: {e}",
             )
         except ValueError as e:
             cfg.logger.error(f"Could not verify audience: {e}")
