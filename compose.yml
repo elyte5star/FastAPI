@@ -24,7 +24,7 @@ services:
     image: fast-api
     platform: linux/amd64 # <- Only one working for Apple M1
     build:
-      context: ./api
+      context: .
       dockerfile: ./api.dev.dockerfile
     networks:
       - elyte_net
@@ -41,8 +41,8 @@ services:
     env_file:
       - .env
     volumes:
-      - ./api/src:/code/app
-      - ./logs/api.log:/code/app/api.log
+      - ./api/src:/usr/src
+      - ./logs:/usr/src/logs
 
   rabbitQ:
     hostname: rabbitQ

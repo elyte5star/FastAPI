@@ -59,7 +59,7 @@ class ApiConfig:
         # Google AUTH
         self.google_client_id: str = ""
         self.google_client_secret: str = ""
-        self.google_jwks_url: str = ""
+        
 
         # MSOFT AUTH
         self.msal_tenant_id: str = ""

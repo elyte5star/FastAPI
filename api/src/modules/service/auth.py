@@ -13,7 +13,6 @@ from modules.utils.misc import time_delta, date_time_now_utc_tz, get_indent
 from modules.database.schema.user import User
 from fastapi import Request, Response
 from modules.security.login_attempt import LoginAttemptChecker
-import time
 
 
 class AuthenticationHandler(LoginAttemptChecker):

@@ -1,7 +1,6 @@
 from typing import cast, Any
 from starlette.requests import Request
 from modules.settings.configuration import ApiConfig
-from modules.security.current_user import JWTPrincipal
 from fastapi.security.utils import get_authorization_scheme_param
 from fastapi.openapi.models import (
     OAuthFlows as OAuthFlowsModel,
@@ -100,7 +99,7 @@ class OAuth2CodeBearer(SecurityBase):
         self,
         access_token: str,
         required_scopes: list[str],
-    ):
+    ) -> dict:
         if not access_token:
             raise HTTPException(
                 status_code=HTTP_401_UNAUTHORIZED,
@@ -117,15 +116,29 @@ class OAuth2CodeBearer(SecurityBase):
                 )
                 response.raise_for_status()
                 token_info: dict[str, Any] = response.json()
+                
             token_info["scp"] = token_info.pop("scope")
+
+            # check scope
             self.validate_scope(token_info, required_scopes)
+
+            # check audience
+            if token_info["aud"] not in cfg.google_client_id:
+                raise ValueError("Could not verify audience.")
+
             return token_info
         except HTTPError as e:
             raise HTTPException(
                 status_code=HTTP_400_BAD_REQUEST,
                 detail="Invalid or expired token",
-                headers=f"{e.request.headers}",
             )
+        except ValueError as e:
+            cfg.logger.error(f"Could not verify audience: {e}")
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Could not verify audience",
+            )
+            return None
         except Exception as e:
             cfg.logger.error(f"Internal server error: {str(e)}")
             raise HTTPException(

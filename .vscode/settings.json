@@ -4,7 +4,7 @@
             "previewLimit": 50,
             "server": "localhost",
             "port": 5432,
-            "askForPassword": true,
+            "askForPassword": false,
             "driver": "PostgreSQL",
             "database": "elyte",
             "username": "userExample",

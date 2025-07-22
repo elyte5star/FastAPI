@@ -58,9 +58,11 @@ app = FastAPI(
     license_info=cfg.license,
     proxy_headers=True,
     forwarded_allow_ips="[::1]",
+    # https://swagger.io/docs/open-source-tools/swagger-ui/usage/oauth2/
     swagger_ui_oauth2_redirect_url="/oauth2-redirect",
     swagger_ui_init_oauth={
-        "clientId": cfg.google_client_id,
+        "clientId": "",
+        "clientSecret": "",
         "usePkceWithAuthorizationCodeGrant": True,
         "additionalQueryStringParams": {"prompt": "consent"},
         "appName": cfg.name,
