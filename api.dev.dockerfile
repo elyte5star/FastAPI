@@ -2,7 +2,7 @@ FROM python:3.12
 
 WORKDIR /usr/src
 
-RUN mkdir /logs 
+RUN mkdir -p /logs 
 
 
 # Copy only requirements to cache them in docker layer:

@@ -1,5 +1,5 @@
 import logging
-import sys
+import sys, os
 from logging.handlers import (
     TimedRotatingFileHandler,
     SMTPHandler,
@@ -15,6 +15,12 @@ from multiprocessing import Queue
 base_dir = Path(__file__).parent.parent.parent.parent.parent
 logs_target = path.join(base_dir / "logs", "api.log")
 logs_error_target = path.join(base_dir / "logs", "error.log")
+
+# Ensure log directory exists
+os.makedirs(os.path.dirname(logs_target), exist_ok=True)
+# Ensure log directory exists
+os.makedirs(os.path.dirname(logs_error_target), exist_ok=True)
+
 
 
 fmt = "%(levelname)s::%(asctime)s::%(name)s::%(funcName)s:%(module)s:currentUser:%(currentUser)s::logId:%(logId)s::%(message)s"

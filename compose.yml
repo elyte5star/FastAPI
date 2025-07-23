@@ -10,12 +10,14 @@ services:
     environment:
       - POSTGRES_PASSWORD=54321
       - POSTGRES_USER=userExample
-      - POSTGRES_DB=elyteDB
+      - POSTGRES_DB=elyte
     ports:
       - "5432:5432"
     volumes:
       # folder to hold the actual db data
       - ./persistence/data:/var/lib/postgresql/data 
+      # folder to put the other files for import / whatever
+      - ./data:/home/demo_data
     networks:
       - elyte_net
 
@@ -42,7 +44,7 @@ services:
       - .env
     volumes:
       - ./api/src:/usr/src
-      - ./logs:/usr/src/logs
+      - ./logs:/logs
 
   rabbitQ:
     hostname: rabbitQ
