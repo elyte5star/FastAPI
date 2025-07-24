@@ -9,16 +9,22 @@ from modules.database.schema.base import (
     str_500,
     timestamp,
     JSONEncodedDict,
+    required_30,
 )
 from modules.queue.models import JobStatus
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-from modules.queue.enums import (
-    JobType,
-    ResultState,
-    ResultType,
-)
+from modules.queue.enums import JobType, ResultState, ResultType, WorkerType
 from sqlalchemy.ext.mutable import MutableDict
 from datetime import datetime
+
+
+class Worker(Base):
+    id: Mapped[str_pk_60]
+    worker_type: Mapped[WorkerType] = mapped_column(Enum(WorkerType), nullable=False)
+    created_at: Mapped[timestamp]
+    queue_name: Mapped[required_30]
+    queue_host: Mapped[required_30]
+    process_id: Mapped[required_30 | None] = mapped_column(default=None)
 
 
 class Job(Audit):

@@ -1,6 +1,12 @@
 from enum import Enum
 
 
+class WorkerType(str, Enum):
+    NONE = "0"
+    BOOKING = "1"
+    SEARCH = "2"
+
+
 class JobType(str, Enum):
     Empty = "0"
     CreateSearch = "10"

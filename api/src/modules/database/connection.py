@@ -25,7 +25,7 @@ from modules.database.schema.product import (
 )  # noqa: F401
 
 # noqa: F401
-from modules.queue.schema import Job, Task, Result  # noqa: F401
+from modules.queue.schema import Job, Task, Result, Worker  # noqa: F401
 from modules.settings.configuration import ApiConfig
 
 
