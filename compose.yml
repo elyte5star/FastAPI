@@ -56,8 +56,11 @@ services:
     restart: on-failure
     networks:
       - elyte_net
-    env_file:
-      - .env
+    environment:
+      - "RABBITMQ_DEFAULT_USER=rabbitUser"
+      - "RABBITMQ_DEFAULT_PASS=elyteRQ"
+      
+      
     
   worker:
     image: worker

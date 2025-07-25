@@ -1,10 +1,9 @@
 from multiprocessing import Process
-from config.settings import AppConfig
-from models.enums import WorkerType
-from models.misc import get_indent
-from models.base import Worker,QueueItem
+from modules.config.settings import AppConfig
+from modules.models.enums import WorkerType
+from modules.models.misc import get_indent
+from modules.models.base import Worker, QueueItem
 import psycopg
-from psycopg.connection import Connection
 
 
 class BaseWorker(Process):
@@ -55,13 +54,18 @@ class BaseWorker(Process):
                 # Make the changes to the database persistent
                 conn.commit()
 
-    def update_on_going_tasks_in_db(self,):
+    def update_on_going_tasks_in_db(
+        self,
+    ):
 
         pass
 
     def update_finished_asks_in_db(self):
 
         pass
-    def do_work(self,queue_item:QueueItem)
+
+    def do_work(self, queue_item: QueueItem):
+        pass
+
     def run(self) -> None:
         return

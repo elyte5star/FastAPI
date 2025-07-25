@@ -48,7 +48,3 @@ class AppConfig(BaseSettings):
         env_file_encoding="utf-8",
         env_file=".env",
     )
-
-
-config = AppConfig()
-print(config.model_dump())
