@@ -95,16 +95,15 @@ class SearchModel(BaseModel):
 
 
 class JobStatus(BaseModel):
-    state: JobState = JobState.NotSet
+    state: JobState = JobState.NOTSET
     success: bool = False
     is_finished: bool = Field(default=False, serialization_alias="isFinished")
-    model_config = ConfigDict(serialize_by_alias=True)
 
 
 class Result(BaseModel):
     id: str = Field(default="", serialization_alias="resultId")
-    result_type: ResultType = ResultType.Database
-    result_state: ResultState = ResultState.NotSet
+    result_type: ResultType = ResultType.DATABASE
+    result_state: ResultState = ResultState.NOTSET
     task_id: str = Field(default="", serialization_alias="taskId")
     data: dict = {}
     data_checksum: str | None = Field(
@@ -133,7 +132,7 @@ class Job(BaseModel):
     id: str = Field(default="", serialization_alias="jobId")
     user_id: str = Field(default="", serialization_alias="userId")
     job_type: JobType = Field(
-        default=JobType.Empty,
+        default=JobType.EMPTY,
         serialization_alias="jobType",
     )
     created_at: datetime = Field(

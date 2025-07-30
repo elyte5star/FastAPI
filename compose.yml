@@ -46,7 +46,7 @@ services:
       - ./api/src:/usr/src
       - ./logs:/logs
 
-  rabbitQ:
+  rabbitmq:
     hostname: rabbitQ
     image: rabbitmq:3-management
     container_name: rabbit
@@ -77,4 +77,4 @@ services:
       - ./api/src:/usr/src
     links:
       - db
-      - rabbitQ
+      - rabbitmq

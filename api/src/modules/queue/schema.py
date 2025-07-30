@@ -10,6 +10,7 @@ from modules.database.schema.base import (
     timestamp,
     JSONEncodedDict,
     required_30,
+    required_100,
 )
 from modules.queue.models import JobStatus
 from sqlalchemy.orm import mapped_column, Mapped, relationship
@@ -23,7 +24,7 @@ class Worker(Base):
     worker_type: Mapped[WorkerType] = mapped_column(Enum(WorkerType), nullable=False)
     created_at: Mapped[timestamp]
     queue_name: Mapped[required_30]
-    queue_host: Mapped[required_30]
+    queue_host: Mapped[required_100]
     process_id: Mapped[required_30 | None] = mapped_column(default=None)
 
 
@@ -97,7 +98,7 @@ class Task(Base):
 class Result(Base):
     id: Mapped[str_pk_60]
     result_type: Mapped[ResultType] = mapped_column(
-        Enum(ResultType), default=ResultType.Database
+        Enum(ResultType), default=ResultType.DATABASE
     )
     result_state: Mapped[ResultState] = mapped_column(Enum(ResultState), nullable=False)
     task_id: Mapped[str_60] = mapped_column(

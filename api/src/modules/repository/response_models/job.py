@@ -13,7 +13,7 @@ class JobResponse(BaseModel):
     stop_time: datetime = Field(default=time_then(), serialization_alias="stopTime")
     process_time: float = Field(default=0.0, serialization_alias="processTime")
     job_type: JobType = Field(
-        default=JobType.Empty,
+        default=JobType.EMPTY,
         serialization_alias="jobType",
     )
     job_id: str = Field(default="", serialization_alias="jobId")

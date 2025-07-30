@@ -39,10 +39,9 @@ class BookingHandler(RQHandler):
             return req.req_failure("Forbidden: Access is denied")
         cart = new_order.cart
         check_cart = await self.check_products(cart)
-        _, unavaliable_prods = check_cart
+        avaliable_prods, unavaliable_prods = check_cart
         if unavaliable_prods:
-            req.result = unavaliable_prods
-            return req.req_failure("Product(s) out of stock")
+            return req.req_failure(f"Product(s):{unavaliable_prods} out of stock")
         sum_of_items = sum(Decimal(item.calculated_price) for item in cart)
         amount_to_pay = "{:.2f}".format(sum_of_items)
         check_payment = await self.make_payment(
@@ -51,8 +50,9 @@ class BookingHandler(RQHandler):
         )
         if not check_payment:
             return req.req_failure("Problem with payment")
+        await self.update_products_in_db(avaliable_prods)
         job = await self._create_job(
-            JobType.CreateBooking,
+            JobType.BOOKING,
             current_user.user_id,
         )
         booking_model = BookingModel(
@@ -67,11 +67,11 @@ class BookingHandler(RQHandler):
             task = Task(
                 id=get_indent(),
                 job_id=job.id,
-                status=JobStatus(state=JobState.Received),
+                status=JobStatus(state=JobState.RECEIVED),
                 created_at=date_time_now_utc(),
                 finished=time_then(),
             )
-            result = self.create_task_result(ResultType.Database, task.id)
+            result = self.create_task_result(ResultType.DATABASE, task.id)
             tasks.append(task)
             tasks_result.append(result)
             queue_items.append(QueueItem(job=job, task=task, result=result))
@@ -89,6 +89,10 @@ class BookingHandler(RQHandler):
             return req.req_success(message)
         return req.req_failure(message)
 
+    async def update_products_in_db(self, avaliable_prods: list[CartItem]):
+        for item in avaliable_prods:
+            pass
+
     async def _get_bookings(
         self,
         req: CreateBookingRequest,
@@ -104,7 +108,7 @@ class BookingHandler(RQHandler):
         if job_in_db is None:
             return req.req_failure(f"No job with id::{req.job_id}")
         job = Job.model_validate(job_in_db)
-        if job.job_type != JobType.CreateBooking:
+        if job.job_type != JobType.BOOKING:
             return req.req_failure("Wrong job type")
         req.result.job = await self.get_job_response(job)
         if not self.is_job_result_available(job):
@@ -132,15 +136,12 @@ class BookingHandler(RQHandler):
         # TODO implement card payment
         return True
 
-    async def check_products(self, cart: list[CartItem]) -> tuple:
+    async def check_products(self, cart: list[CartItem]) -> tuple[list, list]:
         avaliable_prods, unavaliable_prods = [], []
         for item in cart:
             product_in_db = await self.find_product_by_id(item.pid)
-            if product_in_db is None:
-                continue
-            pydantic_model = ProductDisplay.model_validate(product_in_db)
-            if pydantic_model.stock_quantity >= item.quantity:
-                avaliable_prods.append(pydantic_model)
+            if product_in_db is None or product_in_db.stock_quantity < item.quantity:
+                unavaliable_prods.append(item)
             else:
-                unavaliable_prods.append(pydantic_model)
+                avaliable_prods.append(item)
         return (avaliable_prods, unavaliable_prods)

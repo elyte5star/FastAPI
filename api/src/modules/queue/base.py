@@ -14,7 +14,7 @@ class RQHandler(JobHandler):
         job.user_id = user_id
         job.job_type = job_type
         job.id = get_indent()
-        job.job_status.state = JobState.Pending
+        job.job_status.state = JobState.PENDING
         job.created_at = date_time_now_utc()
         job.created_by = user_id
         return job
@@ -34,7 +34,7 @@ class RQHandler(JobHandler):
             id=get_indent(),
             task_id=task_id,
             result_type=result_type,
-            result_state=ResultState.Pending,
+            result_state=ResultState.PENDING,
         )
 
     async def _add_job_tasks_to_queue(
@@ -60,11 +60,21 @@ class RQHandler(JobHandler):
 
             # Perform connection
             connection = await connect(self.cf.rabbit_connect_string)
+
             async with connection:
                 # Creating a channel
                 channel = await connection.channel()
+
+                # Declaring exchange
+                exchange = await channel.declare_exchange(
+                    "elyteExchange", auto_delete=True
+                )
                 # Declaring queue
-                _ = await channel.declare_queue(queue_name, durable=True)
+                queue = await channel.declare_queue(queue_name, durable=True)
+
+                # Binding queue
+                await queue.bind(exchange, queue_name)
+
                 for queue_item in queue_items:
                     # Sending the message
                     await channel.default_exchange.publish(
@@ -89,7 +99,7 @@ class RQHandler(JobHandler):
         task = models.Task(
             id=get_indent(),
             job_id=job.id,
-            status=models.JobStatus(state=JobState.Received),
+            status=models.JobStatus(state=JobState.RECEIVED),
             created_at=date_time_now_utc(),
             finished=time_then(),
         )
