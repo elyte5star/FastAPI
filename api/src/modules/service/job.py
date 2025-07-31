@@ -46,21 +46,23 @@ class JobHandler(CommonQueries):
 
         stops.sort()
         success = True
-        state = JobState.Finished
+        state = JobState.FINISHED.name
         is_finished = True
-        if JobState.Timeout in states:
-            state = JobState.Timeout
+        
+        if JobState.TIMEOUT in states:
+            state = JobState.TIMEOUT.name
             success = False
             is_finished = True
-        elif JobState.NotSet in states:
-            state = JobState.NotSet
+        elif JobState.NOTSET in states:
+            state = JobState.NOTSET.name
             success = False
             is_finished = False
-        elif JobState.Received in states:
+        elif JobState.RECEIVED in states:
+            state = JobState.PENDING.name
             success = False
             is_finished = False
-        elif JobState.Pending in states:
-            state = JobState.Pending
+        elif JobState.PENDING in states:
+            state = JobState.PENDING.name
             success = False
             is_finished = False
 
@@ -85,6 +87,6 @@ class JobHandler(CommonQueries):
     def is_job_result_available(self, job: Job) -> bool:
         if job.job_status.is_finished is False:
             return False
-        if job.job_status.state != JobState.Finished:
+        if job.job_status.state != JobState.FINISHED:
             return False
         return job.job_status.success

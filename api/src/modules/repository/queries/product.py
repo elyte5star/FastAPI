@@ -60,14 +60,4 @@ class ProductQueries(CommonQueries):
         else:
             await self.async_session.commit()
 
-    async def update_product_info_query(self, pid: str, changes: dict):
-        try:
-            user = await self.async_session.get(Product, pid)
-            for key, value in changes.items():
-                if hasattr(user, key):
-                    setattr(user, key, value)
-            await self.async_session.commit()
-        except PostgresError as e:
-            await self.async_session.rollback()
-            self.logger.error("Failed to update user:", e)
-            raise
+    

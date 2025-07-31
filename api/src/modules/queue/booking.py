@@ -1,3 +1,4 @@
+from modules.database.schema.product import Product
 from modules.repository.request_models.booking import (
     CreateBookingRequest,
     PaymentDetails,
@@ -37,11 +38,11 @@ class BookingHandler(RQHandler):
                 f"illegal operation by {current_user.user_id}",
             )
             return req.req_failure("Forbidden: Access is denied")
-        cart = new_order.cart
+        cart :list[CartItem] = new_order.cart
         check_cart = await self.check_products(cart)
-        avaliable_prods, unavaliable_prods = check_cart
-        if unavaliable_prods:
-            return req.req_failure(f"Product(s):{unavaliable_prods} out of stock")
+        avaliable_prods, unavaliable_items = check_cart
+        if unavaliable_items:
+            return req.req_failure(f"Product(s):{unavaliable_items} out of stock")
         sum_of_items = sum(Decimal(item.calculated_price) for item in cart)
         amount_to_pay = "{:.2f}".format(sum_of_items)
         check_payment = await self.make_payment(
@@ -89,9 +90,13 @@ class BookingHandler(RQHandler):
             return req.req_success(message)
         return req.req_failure(message)
 
-    async def update_products_in_db(self, avaliable_prods: list[CartItem]):
+    async def update_products_in_db(self, avaliable_prods: list[tuple[Product,int]]):
         for item in avaliable_prods:
-            pass
+            product_in_db,quantity_requested= item
+            pid = product_in_db.id
+            new_quantity = product_in_db.stock_quantity - quantity_requested
+            await self.update_product_info_query(pid,dict(stock_quantity=new_quantity))
+            
 
     async def _get_bookings(
         self,
@@ -143,5 +148,5 @@ class BookingHandler(RQHandler):
             if product_in_db is None or product_in_db.stock_quantity < item.quantity:
                 unavaliable_prods.append(item)
             else:
-                avaliable_prods.append(item)
+                avaliable_prods.append((product_in_db,item.quantity))
         return (avaliable_prods, unavaliable_prods)

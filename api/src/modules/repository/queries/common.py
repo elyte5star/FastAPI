@@ -257,6 +257,19 @@ class CommonQueries(AsyncDatabaseSession):
             await self.async_session.rollback()
             self.logger.error("Failed to update user:", e)
             raise
+        
+    async def update_product_info_query(self, pid: str, changes: dict):
+        try:
+            user = await self.async_session.get(Product, pid)
+            for key, value in changes.items():
+                if hasattr(user, key):
+                    setattr(user, key, value)
+            await self.async_session.commit()
+        except PostgresError as e:
+            await self.async_session.rollback()
+            self.logger.error("Failed to update user:", e)
+            raise
+
 
     def get_app_url(self, request: Request) -> str | AnyHttpUrl:
         client_url = self.get_client_url()
