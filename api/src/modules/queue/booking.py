@@ -9,7 +9,7 @@ from modules.repository.response_models.booking import (
 )
 from modules.repository.response_models.job import BaseResponse
 from decimal import Decimal
-from modules.queue.base import RQHandler, JobType, ResultType, JobState
+from modules.queue.enums import JobType, ResultType, JobState
 from modules.queue.models import (
     BookingModel,
     CartItem,
@@ -20,9 +20,10 @@ from modules.queue.models import (
     Job,
 )
 from modules.utils.misc import get_indent, date_time_now_utc, time_then
+from modules.service.job import JobHandler
 
 
-class BookingHandler(RQHandler):
+class BookingHandler(JobHandler):
 
     async def _create_booking(
         self,
@@ -37,11 +38,11 @@ class BookingHandler(RQHandler):
                 f"illegal operation by {current_user.user_id}",
             )
             return req.req_failure("Forbidden: Access is denied")
-        cart: list[CartItem] = new_order.cart
-        check_cart = await self.check_products(cart)
-        avaliable_prods, unavaliable_items = check_cart
+        cart = new_order.cart
+        avaliable_prods, unavaliable_items = await self.check_products(cart)
         if unavaliable_items:
-            return req.req_failure(f"Product(s):{unavaliable_items} out of stock")
+            items_pid = "".join([item.pid for item in unavaliable_items])
+            return req.req_failure(f"Item(s):{items_pid} out of stock")
         sum_of_items = sum(Decimal(item.calculated_price) for item in cart)
         amount_to_pay = "{:.2f}".format(sum_of_items)
         check_payment = await self.make_payment(
@@ -88,6 +89,19 @@ class BookingHandler(RQHandler):
             req.result.job_id = job.id
             return req.req_success(message)
         return req.req_failure(message)
+
+    async def check_products(
+        self,
+        cart: list[CartItem],
+    ) -> tuple[list[Product], list[CartItem]]:
+        avaliable_prods, unavaliable_items = [], []
+        for item in cart:
+            product_in_db = await self.find_product_by_id(item.pid)
+            if product_in_db is None or product_in_db.stock_quantity < item.quantity:
+                unavaliable_items.append(item)
+            else:
+                avaliable_prods.append((product_in_db, item.quantity))
+        return avaliable_prods, unavaliable_items
 
     async def update_products_in_db(
         self,
@@ -144,13 +158,3 @@ class BookingHandler(RQHandler):
     ) -> bool:
         # TODO implement card payment
         return True
-
-    async def check_products(self, cart: list[CartItem]) -> tuple[list, list]:
-        avaliable_prods, unavaliable_prods = [], []
-        for item in cart:
-            product_in_db = await self.find_product_by_id(item.pid)
-            if product_in_db is None or product_in_db.stock_quantity < item.quantity:
-                unavaliable_prods.append(item)
-            else:
-                avaliable_prods.append((product_in_db, item.quantity))
-        return (avaliable_prods, unavaliable_prods)

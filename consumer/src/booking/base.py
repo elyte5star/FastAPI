@@ -1,7 +1,7 @@
-from worker.src.models.base import Worker, QueueItem, Task, Job, BookingModel
+from models.base import QueueItem, BookingModel
 from psycopg.connection import Connection
-from worker.src.models.misc import get_indent, date_time_now_utc
-import pickle
+from models.misc import get_indent, date_time_now_utc
+from psycopg.types.json import Jsonb
 
 
 class BookingHandler:
@@ -13,22 +13,21 @@ class BookingHandler:
     def handle(self) -> tuple[bool, dict]:
         booking_request: BookingModel = self.queue_item.job.booking
         num_of_tasks = self.queue_item.job.number_of_tasks
+        cart = [cart_item.model_dump_json() for cart_item in booking_request.cart]
         with self.db_conn.cursor() as cur:
-            stm = "INSERT INTO booking (id, user_id,cart,address,created_at,total_price) VALUES (%s, %s,%s, %s,%s, %s)"
-            # Serialize the list using pickle
-            pickled_data = pickle.dumps(booking_request.cart)
+            stm = """INSERT INTO booking (id, user_id,cart,address,created_at,
+            total_price) VALUES (%s, %s,%s, %s,%s, %s)"""
             data = (
                 get_indent(),
                 booking_request.user_id,
-                pickled_data,
-                booking_request.shipping_address.model_dump_json(),
+                cart,
+                booking_request.shipping_address.model_dump_json(by_alias=True),
                 date_time_now_utc(),
                 booking_request.total_price,
             )
             cur.execute(stm, data)
             # Make the changes to the database persistent
             self.db_conn.commit()
-            print(f"Rows updated: {cur.rowcount}")
 
         return (False, {})
 

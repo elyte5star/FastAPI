@@ -20,13 +20,10 @@ class AddressDisplay(BaseModel):
 class BookingDisplay(BaseModel):
     id: str = Field(serialization_alias="userId")
     user_id: str = Field(serialization_alias="userId")
-    cart: list[Json]
-    total_price: Decimal = Field(
-        serialization_alias="totalPrice",
-        repr=True,
-    )
+    cart: list[dict]
+    total_price: float
     created_at: datetime = Field(serialization_alias="createdAt")
-    shipping_address: AddressDisplay = Field(serialization_alias="addressId")
+    address: AddressDisplay = Field(serialization_alias="addressId")
 
 
 class UserDisplay(BaseModel):

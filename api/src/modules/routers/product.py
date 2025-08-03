@@ -1,7 +1,7 @@
 from modules.service.product import ProductHandler
 from fastapi import APIRouter, Depends, status
 from typing import Annotated
-from modules.security.dependency import security, JWTBearer
+from modules.security.dependency import JWTBearer
 from modules.security.current_user import JWTPrincipal
 from modules.repository.request_models.product import (
     CreateProductRequest,
@@ -21,6 +21,7 @@ from modules.repository.request_models.product import (
     DeleteProductRequest,
     BaseResponse,
 )
+from modules.repository.validators.base import ValidateUUID
 
 
 class ProductRouter(ProductHandler):
@@ -99,7 +100,10 @@ class ProductRouter(ProductHandler):
             ),
         )
 
-    async def create_product_review(self, review: CreateProductReview) -> BaseResponse:
+    async def create_product_review(
+        self,
+        review: CreateProductReview,
+    ) -> BaseResponse:
         return await self._create_review(
             CreateProductReviewRequest(review=review),
         )
@@ -125,19 +129,19 @@ class ProductRouter(ProductHandler):
 
     async def get_product(
         self,
-        pid: str,
+        pid: ValidateUUID,
     ) -> BaseResponse:
         return await self._get_product(GetProductRequest(pid=pid))
 
     async def get_product_review(
         self,
-        rid: str,
+        rid: ValidateUUID,
     ) -> BaseResponse:
         return await self._get_product_review(GetProductReviewRequest(rid=rid))
 
     async def delete_product(
         self,
-        pid: str,
+        pid: ValidateUUID,
         current_user: Annotated[
             JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
         ],

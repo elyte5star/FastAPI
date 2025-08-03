@@ -1,4 +1,5 @@
 from sqlalchemy import ForeignKey, PickleType, UniqueConstraint
+from sqlalchemy.dialects.postgresql import ARRAY
 from modules.database.schema.base import (
     Audit,
     Base,
@@ -10,6 +11,7 @@ from modules.database.schema.base import (
     timestamp,
     bool_col,
     PydanticColumn,
+    JSONEncodedDict,
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.ext.mutable import MutableList
@@ -68,6 +70,7 @@ class User(Audit):
             f" is_locked:{self.is_locked}, "
             f" lock_time:{self.lock_time},"
             f" locations:{self.locations},"
+            f" bookings:{self.bookings},"
             f" username:{self.username},"
             f" email:{self.email},"
             f" created_at:{self.created_at},"
@@ -102,7 +105,7 @@ class Booking(Base):
         ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE")
     )
     cart: Mapped[MutableList] = mapped_column(
-        MutableList.as_mutable(PickleType), default=[]
+        MutableList.as_mutable(ARRAY(JSONEncodedDict)), default=[]
     )
     address: Mapped[ShippingAddress] = mapped_column(
         PydanticColumn(ShippingAddress), nullable=False
@@ -110,6 +113,18 @@ class Booking(Base):
     created_at: Mapped[timestamp]
     total_price: Mapped[float]
     user: Mapped["User"] = relationship(back_populates="bookings")
+
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__}("
+            f" id:{self.id}, "
+            f" user_id:{self.user_id}, "
+            f" address:{self.address}, "
+            f" created_at:{self.created_at},"
+            f" total_price:{self.total_price},"
+            f" cart:{self.cart}"
+            f")>"
+        )
 
 
 class UserLocation(Base):

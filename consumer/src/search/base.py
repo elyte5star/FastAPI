@@ -1,8 +1,10 @@
-from worker.src.models.base import SearchModel, Worker, QueueItem, Task, Job
+from models.base import SearchModel, QueueItem
+
 from psycopg.connection import Connection
 
 
 class SearchHandler:
+
     def __init__(self, queue_item: QueueItem, db_conn: Connection) -> None:
         self.queue_item = queue_item
         self.db_conn = db_conn

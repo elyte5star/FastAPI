@@ -15,6 +15,7 @@ from modules.repository.response_models.job import (
 )
 from typing_extensions import Annotated
 from modules.queue.models import Job
+from modules.repository.validators.base import ValidateUUID
 
 
 class JobRouter(JobHandler):
@@ -56,7 +57,7 @@ class JobRouter(JobHandler):
 
     async def get_job(
         self,
-        jobId: str,
+        jobId: ValidateUUID,
         current_user: Annotated[
             JWTPrincipal,
             Depends(security),

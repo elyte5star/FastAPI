@@ -60,13 +60,11 @@ services:
       - "RABBITMQ_DEFAULT_USER=rabbitUser"
       - "RABBITMQ_DEFAULT_PASS=elyteRQ"
       
-      
-    
   worker:
     image: worker
     container_name: main-worker
     build:
-      context: ./worker/src
+      context: ./consumer
       dockerfile: ./worker.dockerfile
     restart: on-failure
     env_file:
@@ -74,7 +72,7 @@ services:
     networks:
       - elyte_net
     volumes:
-      - ./api/src:/usr/src
+      - ./consumer/src:/usr/src
     links:
       - db
       - rabbitmq

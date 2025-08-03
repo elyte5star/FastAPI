@@ -122,7 +122,7 @@ def check_uuid(value: str) -> str:
         val = uuid.UUID(value, version=4)
         return str(val)
     except Exception:
-        raise RequestValidationError(f"{value} is an invalid userid")
+        raise RequestValidationError(f"{value} is an invalid ID")
 
 
 ValidateUUID = Annotated[str, AfterValidator(check_uuid)]

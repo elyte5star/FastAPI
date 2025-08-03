@@ -12,3 +12,4 @@ LICENSE
 # Folders
 .git/
 .github/
+env/

@@ -6,12 +6,13 @@ from modules.repository.request_models.job import (
 )
 from modules.repository.response_models.job import JobResponse, BaseResponse
 from datetime import datetime
-from modules.queue.enums import JobState, JobType
+from modules.queue.enums import JobState, JobType, ResultType, ResultState
 from modules.utils.misc import time_then, get_indent, date_time_now_utc
-from modules.repository.queries.common import CommonQueries
+from modules.queue.models import TaskResult, Task, QueueItem
+from modules.queue.base import RQHandler
 
 
-class JobHandler(CommonQueries):
+class JobHandler(RQHandler):
     def __init__(self, config):
         super().__init__(config)
         self.jobs = {}
@@ -112,4 +113,40 @@ class JobHandler(CommonQueries):
     async def _create_new_job(self, req: CreateJobRequest):
         if req.credentials is None:
             return req.req_failure("No valid user session found")
-        job = self._create_job(req.new_job.job_type, req.credentials.user_id)
+        job = self._create_job(JobType.JOBS, req.credentials.user_id)
+        tasks: list[Task] = job.tasks
+        if not tasks:
+            return req.req_failure("No tasks in job")
+        queue_items: list[QueueItem] = []
+        tasks_results: list[TaskResult] = []
+        for task in tasks:
+            task_result = self.create_task_result(ResultType.DATABASE, task.id)
+            tasks_results.append(task_result)
+            queue_items.append(
+                QueueItem(job=job, task=task, result=task_result),
+            )
+        job.number_of_tasks = len(tasks)
+        QUEUE = self.cf.queue_name[3]
+        success, message = await self._add_job_tasks_to_queue(
+            job,
+            tasks,
+            tasks_results,
+            QUEUE,
+            queue_items,
+        )
+        if success:
+            req.result.job_id = job.id
+            return req.req_success(message)
+        return req.req_failure(message)
+
+    def create_task_result(
+        self,
+        result_type: ResultType,
+        task_id: str,
+    ) -> TaskResult:
+        return TaskResult(
+            id=get_indent(),
+            task_id=task_id,
+            result_type=result_type,
+            result_state=ResultState.PENDING,
+        )

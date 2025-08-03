@@ -1,5 +1,4 @@
 from pydantic import Field
-from typing import Literal
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
@@ -7,7 +6,7 @@ from pydantic_settings import (
 )
 from dotenv import load_dotenv
 from pydantic import AliasChoices
-
+import logging
 
 load_dotenv()
 
@@ -16,7 +15,7 @@ class AppConfig(BaseSettings):
 
     # Database settings
     database_url: str = Field(
-        default="postgresql+psycopg://userExample:54321@localhost:5432/elyte",
+        default="postgresql://userExample:54321@localhost:5432/elyte",
         validation_alias=AliasChoices("DB_DNS", "postgres_url"),
     )
     amqp_url: str = Field(
@@ -24,11 +23,17 @@ class AppConfig(BaseSettings):
         validation_alias=AliasChoices("RQ_URL", "amqp_url"),
     )
 
-    queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM"] = "SEARCH"
+    queue_name: list = ["SEARCH", "BOOKING", "LOST_ITEM", "JOBS"]
+
+    logger: logging.Logger = logging.getLogger(__name__)
+
+    log_level: int | str = logging.NOTSET
 
     amqp_routing_key: str = ""
 
-    exchange_name: str = ""
+    exchange_name: str = "elyteExchange"
+
+    exchange_type: str = "direct"
 
     worker_type: str = ""
 

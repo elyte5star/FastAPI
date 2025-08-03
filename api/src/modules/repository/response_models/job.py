@@ -1,16 +1,21 @@
-from pydantic import Field, BaseModel
+from pydantic import Field, BaseModel, field_serializer
 from datetime import datetime
 from modules.queue.enums import JobType
-from modules.queue.models import Job
-from modules.queue.schema import JobStatus
+from modules.queue.models import Job, JobStatus
 from modules.repository.request_models.base import BaseResponse
 from modules.utils.misc import time_then
 
 
 class JobResponse(BaseModel):
     user_id: str = Field(default="", serialization_alias="userId")
-    start_time: datetime = Field(default=time_then(), serialization_alias="startTime")
-    stop_time: datetime = Field(default=time_then(), serialization_alias="stopTime")
+    start_time: datetime = Field(
+        default=time_then(),
+        serialization_alias="startTime",
+    )
+    stop_time: datetime = Field(
+        default=time_then(),
+        serialization_alias="stopTime",
+    )
     process_time: float = Field(default=0.0, serialization_alias="processTime")
     job_type: JobType = Field(
         default=JobType.EMPTY,
@@ -21,6 +26,10 @@ class JobResponse(BaseModel):
         default=JobStatus(),
         serialization_alias="jobStatus",
     )
+
+    @field_serializer("job_type")
+    def serialize_job_type(self, job_type: JobType) -> str:
+        return job_type.name
 
 
 class GetJobsResponse(BaseResponse):

@@ -1,13 +1,14 @@
-from modules.queue.enums import JobState, JobType, ResultType, ResultState
+from modules.queue.enums import JobState, ResultType
 from modules.queue import models
 from modules.queue import schema
 from modules.utils.misc import get_indent, date_time_now_utc, time_then
 import hashlib
 from aio_pika import Message, connect, DeliveryMode
-from modules.service.job import JobHandler
+from modules.repository.queries.common import CommonQueries
+from typing import Literal
 
 
-class RQHandler(JobHandler):
+class RQHandler(CommonQueries):
 
     def create_checksum(self, data: str) -> str:
         digest = hashlib.sha256()
@@ -17,22 +18,12 @@ class RQHandler(JobHandler):
     def validate_checksum(self, data: str, checksum: str) -> bool:
         return self.create_checksum(data) == checksum
 
-    def create_task_result(
-        self, result_type: ResultType, task_id: str
-    ) -> models.TaskResult:
-        return models.TaskResult(
-            id=get_indent(),
-            task_id=task_id,
-            result_type=result_type,
-            result_state=ResultState.PENDING,
-        )
-
     async def _add_job_tasks_to_queue(
         self,
         job: models.Job,
         tasks: list[models.Task],
         results: list[models.TaskResult],
-        queue_name: str,
+        queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM", "JOBS"],
         queue_items: list[models.QueueItem],
     ) -> tuple[bool, str]:
         try:
@@ -80,10 +71,13 @@ class RQHandler(JobHandler):
             self.cf.logger.error(f"Error creating JOB:: {str(e)}")
             return (False, f"Failed to create job. {str(e)}.")
         else:
-            return (True, f"Job with id '{job.id}' created.")
+            return (True, f"Job with id {job.id} created.")
 
     async def _add_job_with_one_task(
-        self, job: models.Job, queue_name: str, result_type: ResultType
+        self,
+        job: models.Job,
+        queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM", "JOBS"],
+        result_type: ResultType,
     ) -> tuple[bool, str]:
         job.number_of_tasks = 1
         task = models.Task(

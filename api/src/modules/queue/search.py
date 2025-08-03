@@ -1,11 +1,12 @@
-from modules.queue.base import RQHandler, JobType, ResultType
+from modules.queue.enums import JobType, ResultType
 from modules.repository.request_models.search import CreateSearchRequest
 from modules.repository.request_models.search import SearchResultRequest
 from modules.repository.response_models.base import BaseResponse
 from modules.queue.models import Job, TaskResult
+from modules.service.job import JobHandler
 
 
-class SearchHandler(RQHandler):
+class SearchHandler(JobHandler):
 
     async def _create_search(self, req: CreateSearchRequest) -> BaseResponse:
         if req.credentials is None:

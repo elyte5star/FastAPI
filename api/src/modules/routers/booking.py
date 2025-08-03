@@ -10,6 +10,7 @@ from modules.security.dependency import security
 from modules.security.current_user import JWTPrincipal
 from modules.repository.response_models.job import GetJobRequestResponse, BaseResponse
 from modules.repository.response_models.booking import GetBookingResponse
+from modules.repository.validators.base import ValidateUUID
 
 
 class BookingRouter(BookingHandler):
@@ -47,7 +48,7 @@ class BookingRouter(BookingHandler):
 
     async def get_booking_result(
         self,
-        jobId: str,
+        jobId: ValidateUUID,
         current_user: Annotated[
             JWTPrincipal,
             Depends(security),

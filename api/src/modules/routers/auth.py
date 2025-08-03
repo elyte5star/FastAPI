@@ -70,7 +70,11 @@ class AuthRouter(MFAHandler):
         response: Response,
     ) -> BaseResponse:
         return await self.authenticate_ext_user(
-            MFALoginRequest(claims=verified_claims, auth_method="MSAL"), response
+            MFALoginRequest(
+                claims=verified_claims,
+                auth_method="MSAL",
+            ),
+            response,
         )
 
     async def get_token_google(
@@ -85,7 +89,11 @@ class AuthRouter(MFAHandler):
         response: Response,
     ) -> BaseResponse:
         return await self.authenticate_ext_user(
-            MFALoginRequest(claims=verified_claims, auth_method="GOOGLE"), response
+            MFALoginRequest(
+                claims=verified_claims,
+                auth_method="GOOGLE",
+            ),
+            response,
         )
 
     async def login(

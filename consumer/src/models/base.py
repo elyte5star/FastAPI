@@ -2,14 +2,14 @@ from pydantic import BaseModel, Field, ConfigDict, Json, AfterValidator
 from datetime import datetime
 from typing_extensions import Annotated
 import uuid
-from worker.src.models.enums import (
+from models.enums import (
     JobState,
     JobType,
     ResultState,
     ResultType,
     WorkerType,
 )
-from worker.src.models.misc import date_time_now_utc
+from models.misc import date_time_now_utc
 
 
 def check_uuid(value: str) -> str:
@@ -106,7 +106,7 @@ class JobStatus(BaseModel):
     is_finished: bool = Field(default=False, serialization_alias="isFinished")
 
 
-class Result(BaseModel):
+class TaskResult(BaseModel):
     id: str = Field(validation_alias="resultId")
     result_type: ResultType = ResultType.DATABASE
     result_state: ResultState = ResultState.NOTSET
@@ -178,7 +178,7 @@ class ResultLog(BaseModel):
 class QueueItem(BaseModel):
     job: Job
     task: Task
-    result: Result
+    result: TaskResult
 
 
 class Worker(BaseModel):
