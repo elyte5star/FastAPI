@@ -10,14 +10,13 @@ from modules.repository.response_models.booking import (
 from modules.repository.response_models.job import BaseResponse
 from decimal import Decimal
 from modules.queue.base import RQHandler, JobType, ResultType, JobState
-from modules.repository.response_models.product import ProductDisplay
 from modules.queue.models import (
     BookingModel,
     CartItem,
     Task,
     QueueItem,
     JobStatus,
-    Result,
+    TaskResult,
     Job,
 )
 from modules.utils.misc import get_indent, date_time_now_utc, time_then
@@ -38,7 +37,7 @@ class BookingHandler(RQHandler):
                 f"illegal operation by {current_user.user_id}",
             )
             return req.req_failure("Forbidden: Access is denied")
-        cart :list[CartItem] = new_order.cart
+        cart: list[CartItem] = new_order.cart
         check_cart = await self.check_products(cart)
         avaliable_prods, unavaliable_items = check_cart
         if unavaliable_items:
@@ -52,7 +51,7 @@ class BookingHandler(RQHandler):
         if not check_payment:
             return req.req_failure("Problem with payment")
         await self.update_products_in_db(avaliable_prods)
-        job = await self._create_job(
+        job = self._create_job(
             JobType.BOOKING,
             current_user.user_id,
         )
@@ -90,13 +89,18 @@ class BookingHandler(RQHandler):
             return req.req_success(message)
         return req.req_failure(message)
 
-    async def update_products_in_db(self, avaliable_prods: list[tuple[Product,int]]):
+    async def update_products_in_db(
+        self,
+        avaliable_prods: list[tuple[Product, int]],
+    ):
         for item in avaliable_prods:
-            product_in_db,quantity_requested= item
+            product_in_db, quantity_requested = item
             pid = product_in_db.id
             new_quantity = product_in_db.stock_quantity - quantity_requested
-            await self.update_product_info_query(pid,dict(stock_quantity=new_quantity))
-            
+            await self.update_product_info_query(
+                pid,
+                dict(stock_quantity=new_quantity),
+            )
 
     async def _get_bookings(
         self,
@@ -129,7 +133,7 @@ class BookingHandler(RQHandler):
             return result
         for task in tasks:
             result_in_db = await self.find_result_by_task_id(task.id)
-            res = Result.model_validate(result_in_db)
+            res = TaskResult.model_validate(result_in_db)
             result[task.job_id] = (task.id, dict(res))
         return result
 
@@ -148,5 +152,5 @@ class BookingHandler(RQHandler):
             if product_in_db is None or product_in_db.stock_quantity < item.quantity:
                 unavaliable_prods.append(item)
             else:
-                avaliable_prods.append((product_in_db,item.quantity))
+                avaliable_prods.append((product_in_db, item.quantity))
         return (avaliable_prods, unavaliable_prods)

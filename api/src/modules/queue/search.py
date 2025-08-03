@@ -2,7 +2,7 @@ from modules.queue.base import RQHandler, JobType, ResultType
 from modules.repository.request_models.search import CreateSearchRequest
 from modules.repository.request_models.search import SearchResultRequest
 from modules.repository.response_models.base import BaseResponse
-from modules.queue.models import Job, Result
+from modules.queue.models import Job, TaskResult
 
 
 class SearchHandler(RQHandler):
@@ -11,7 +11,7 @@ class SearchHandler(RQHandler):
         if req.credentials is None:
             return req.req_failure("No valid user session found")
         current_user = req.credentials
-        job = await self._create_job(
+        job = self._create_job(
             JobType.SEARCH,
             current_user.user_id,
         )
@@ -43,7 +43,7 @@ class SearchHandler(RQHandler):
         result_in_db = await self.find_result_by_task_id(task_id)
         if result_in_db is None:
             return req.req_failure("No result in task of job")
-        result = Result.model_validate(result_in_db)
+        result = TaskResult.model_validate(result_in_db)
         req.result.data = {job.id: (task_id, dict(result))}
         return req.req_success(
             f"Success getting result for job with id: {job_id}.",

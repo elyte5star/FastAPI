@@ -35,7 +35,7 @@ class JobRouter(JobHandler):
             endpoint=self.get_job,
             response_model=GetJobResponse,
             methods=["GET"],
-            description="Get User",
+            description="Get Job Status",
         )
 
         self.router.add_api_route(
@@ -74,4 +74,6 @@ class JobRouter(JobHandler):
             Depends(security),
         ],
     ):
-        return CreateJobRequest(new_job=job, credentials=current_user)
+        return await self._create_new_job(
+            CreateJobRequest(new_job=job, credentials=current_user)
+        )

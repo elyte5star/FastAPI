@@ -100,7 +100,7 @@ class JobStatus(BaseModel):
     is_finished: bool = Field(default=False, serialization_alias="isFinished")
 
 
-class Result(BaseModel):
+class TaskResult(BaseModel):
     id: str = Field(default="", serialization_alias="resultId")
     result_type: ResultType = ResultType.DATABASE
     result_state: ResultState = ResultState.NOTSET
@@ -174,6 +174,6 @@ class ResultLog(BaseModel):
 
 
 class QueueItem(BaseModel):
-    job: Job | None = None
-    task: Task | None = None
-    result: Result | None = None
+    job: Job
+    task: Task
+    result: TaskResult

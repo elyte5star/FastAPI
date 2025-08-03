@@ -1,12 +1,20 @@
-from modules.repository.request_models.job import GetJobRequest, GetJobsRequest, Job
+from modules.repository.request_models.job import (
+    GetJobRequest,
+    CreateJobRequest,
+    GetJobsRequest,
+    Job,
+)
 from modules.repository.response_models.job import JobResponse, BaseResponse
 from datetime import datetime
-from modules.queue.enums import JobState
-from modules.utils.misc import time_then
+from modules.queue.enums import JobState, JobType
+from modules.utils.misc import time_then, get_indent, date_time_now_utc
 from modules.repository.queries.common import CommonQueries
 
 
 class JobHandler(CommonQueries):
+    def __init__(self, config):
+        super().__init__(config)
+        self.jobs = {}
 
     async def _get_job(self, req: GetJobRequest) -> BaseResponse:
         job_in_db = await self.find_job_by_id(req.job_id)
@@ -39,30 +47,30 @@ class JobHandler(CommonQueries):
             successes.append(task.status.success)
             stops.append(task.finished)
         if not tasks_exist:
-            job.job_status.state = JobState.NoTasks
+            job.job_status.state = JobState.NOTASKS
             job.job_status.success = False
             job.job_status.is_finished = True
             return self.create_job_response(job)
 
         stops.sort()
         success = True
-        state = JobState.FINISHED.name
+        state = JobState.FINISHED
         is_finished = True
-        
+
         if JobState.TIMEOUT in states:
-            state = JobState.TIMEOUT.name
+            state = JobState.TIMEOUT
             success = False
             is_finished = True
         elif JobState.NOTSET in states:
-            state = JobState.NOTSET.name
+            state = JobState.NOTSET
             success = False
             is_finished = False
         elif JobState.RECEIVED in states:
-            state = JobState.PENDING.name
+            state = JobState.PENDING
             success = False
             is_finished = False
         elif JobState.PENDING in states:
-            state = JobState.PENDING.name
+            state = JobState.PENDING
             success = False
             is_finished = False
 
@@ -90,3 +98,18 @@ class JobHandler(CommonQueries):
         if job.job_status.state != JobState.FINISHED:
             return False
         return job.job_status.success
+
+    def _create_job(self, job_type: JobType, user_id: str) -> Job:
+        job = Job()
+        job.user_id = user_id
+        job.job_type = job_type
+        job.id = get_indent()
+        job.job_status.state = JobState.PENDING
+        job.created_at = date_time_now_utc()
+        job.created_by = user_id
+        return job
+
+    async def _create_new_job(self, req: CreateJobRequest):
+        if req.credentials is None:
+            return req.req_failure("No valid user session found")
+        job = self._create_job(req.new_job.job_type, req.credentials.user_id)

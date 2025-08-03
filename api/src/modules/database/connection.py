@@ -25,7 +25,7 @@ from modules.database.schema.product import (
 )  # noqa: F401
 
 # noqa: F401
-from modules.queue.schema import Job, Task, Result, Worker  # noqa: F401
+from modules.queue.schema import Job, Task, TaskResult, Worker  # noqa: F401
 from modules.settings.configuration import ApiConfig
 
 
@@ -62,7 +62,7 @@ class AsyncDatabaseSession:
 
     async def create_tables(self):
         async with self._engine.begin() as conn:
-            #await conn.run_sync(Base.metadata.drop_all)
+            # await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
     async def drop_tables(self) -> None:

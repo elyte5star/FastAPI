@@ -43,7 +43,7 @@ class BaseReq(BaseModel):
     def req_process_time(self):
         self.result.stop_time = time.perf_counter()
         self.result.process_time = (
-            f"{(self.result.stop_time - self.result.start_time):.4f}"
+            f"{(self.result.stop_time - self.result.start_time):.4f} seconds"
         )
 
 

@@ -78,7 +78,7 @@ class Task(Base):
         ForeignKey("job.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
-    result: Mapped["Result"] = relationship(
+    task_result: Mapped["TaskResult"] = relationship(
         back_populates="task", cascade="all, delete-orphan"
     )
     status: Mapped[JobStatus] = mapped_column(
@@ -95,7 +95,7 @@ class Task(Base):
     )
 
 
-class Result(Base):
+class TaskResult(Base):
     id: Mapped[str_pk_60]
     result_type: Mapped[ResultType] = mapped_column(
         Enum(ResultType), default=ResultType.DATABASE
@@ -106,7 +106,7 @@ class Result(Base):
         nullable=False,
     )
     task: Mapped["Task"] = relationship(
-        back_populates="result",
+        back_populates="task_result",
         single_parent=True,
     )
     data: Mapped[dict[str, str] | None] = mapped_column(

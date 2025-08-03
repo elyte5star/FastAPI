@@ -22,7 +22,7 @@ class ApiConfig:
 
     def __init__(self) -> None:
         # API
-        self.log_level: logging._Level = logging.NOTSET
+        self.log_level: int | str = logging.NOTSET
         self.log_file_path: str = ""
         self.host_url: str = ""
         self.debug: bool = False
@@ -59,7 +59,6 @@ class ApiConfig:
         # Google AUTH
         self.google_client_id: str = ""
         self.google_client_secret: str = ""
-        
 
         # MSOFT AUTH
         self.msal_tenant_id: str = ""

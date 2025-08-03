@@ -22,7 +22,6 @@ os.makedirs(os.path.dirname(logs_target), exist_ok=True)
 os.makedirs(os.path.dirname(logs_error_target), exist_ok=True)
 
 
-
 fmt = "%(levelname)s::%(asctime)s::%(name)s::%(funcName)s:%(module)s:currentUser:%(currentUser)s::logId:%(logId)s::%(message)s"
 
 

@@ -1,4 +1,4 @@
-from modules.database.connection import AsyncDatabaseSession, Job, Result, Task
+from modules.database.connection import AsyncDatabaseSession, Job, TaskResult, Task
 from modules.utils.misc import get_indent, date_time_now_utc
 from itsdangerous import (
     URLSafeTimedSerializer,
@@ -31,7 +31,7 @@ class CommonQueries(AsyncDatabaseSession):
         else:
             return job
 
-    async def add_task_result_db_query(self, result: Result) -> Result:
+    async def add_task_result_db_query(self, result: TaskResult) -> TaskResult:
         try:
             self.async_session.add(result)
             await self.async_session.commit()
@@ -61,8 +61,8 @@ class CommonQueries(AsyncDatabaseSession):
         result = await self.async_session.execute(stmt)
         return result.scalars().all()
 
-    async def find_result_by_task_id(self, task_id: str) -> Result | None:
-        stmt = self.select(Result).where(Result.task_id == task_id)
+    async def find_result_by_task_id(self, task_id: str) -> TaskResult | None:
+        stmt = self.select(TaskResult).where(TaskResult.task_id == task_id)
         result = await self.async_session.execute(stmt)
         return result.scalars().first()
 
@@ -257,7 +257,7 @@ class CommonQueries(AsyncDatabaseSession):
             await self.async_session.rollback()
             self.logger.error("Failed to update user:", e)
             raise
-        
+
     async def update_product_info_query(self, pid: str, changes: dict):
         try:
             user = await self.async_session.get(Product, pid)
@@ -269,7 +269,6 @@ class CommonQueries(AsyncDatabaseSession):
             await self.async_session.rollback()
             self.logger.error("Failed to update user:", e)
             raise
-
 
     def get_app_url(self, request: Request) -> str | AnyHttpUrl:
         client_url = self.get_client_url()

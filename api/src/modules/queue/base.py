@@ -9,16 +9,6 @@ from modules.service.job import JobHandler
 
 class RQHandler(JobHandler):
 
-    async def _create_job(self, job_type: JobType, user_id: str) -> models.Job:
-        job = models.Job()
-        job.user_id = user_id
-        job.job_type = job_type
-        job.id = get_indent()
-        job.job_status.state = JobState.PENDING
-        job.created_at = date_time_now_utc()
-        job.created_by = user_id
-        return job
-
     def create_checksum(self, data: str) -> str:
         digest = hashlib.sha256()
         digest.update(data.encode("utf-8"))
@@ -29,8 +19,8 @@ class RQHandler(JobHandler):
 
     def create_task_result(
         self, result_type: ResultType, task_id: str
-    ) -> models.Result:
-        return models.Result(
+    ) -> models.TaskResult:
+        return models.TaskResult(
             id=get_indent(),
             task_id=task_id,
             result_type=result_type,
@@ -41,7 +31,7 @@ class RQHandler(JobHandler):
         self,
         job: models.Job,
         tasks: list[models.Task],
-        results: list[models.Result],
+        results: list[models.TaskResult],
         queue_name: str,
         queue_items: list[models.QueueItem],
     ) -> tuple[bool, str]:
@@ -55,7 +45,7 @@ class RQHandler(JobHandler):
             for task, result in zip(tasks, results):
                 new_task = schema.Task(**dict(task))
                 _ = await self.add_task_to_db_query(new_task)
-                new_result = schema.Result(**dict(result))
+                new_result = schema.TaskResult(**dict(result))
                 _ = await self.add_task_result_db_query(new_result)
 
             # Perform connection
