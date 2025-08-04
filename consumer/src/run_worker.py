@@ -19,18 +19,27 @@ def main(cfg: AppConfig):
         cfg, WorkerType.SEARCH, cfg.queue_name[0], cfg.queue_name[0]
     )
 
+    # GenericWorker
+    generic_worker = Consumer(
+        cfg, WorkerType.GENERIC, cfg.queue_name[0], cfg.queue_name[0]
+    )
+
     # Start processes
     booking_worker.start()
     search_worker.start()
+    generic_worker.start()
 
     end = time.perf_counter()
 
     cfg.logger.info(
-        f"Started processes: {booking_worker.pid}, {search_worker.pid} in {end - start:.4f} seconds. {date_time_now_utc()}"
+        f"""Started processes:{booking_worker.pid},{search_worker.pid},
+        {generic_worker.pid}
+        in {end - start:.4f} seconds. {date_time_now_utc()}"""
     )
     # Wait for both to finish
     booking_worker.join()
     search_worker.join()
+    generic_worker.join()
 
 
 if __name__ == "__main__":

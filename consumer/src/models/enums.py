@@ -5,6 +5,7 @@ class WorkerType(str, Enum):
     NONE = "0"
     BOOKING = "1"
     SEARCH = "2"
+    GENERIC = "3"
 
 
 class JobType(str, Enum):

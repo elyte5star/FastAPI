@@ -15,8 +15,7 @@ API with FastAPI.
     DB_DNS="postgresql://userExample:54321@localhost:5432/elyte"
     
   ```
-  ```
-
+  
 - Create virtual environment
 
 ```

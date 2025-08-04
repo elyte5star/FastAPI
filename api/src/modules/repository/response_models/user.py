@@ -2,7 +2,6 @@ from modules.repository.request_models.base import BaseResponse
 from pydantic import BaseModel, Field, Json, ConfigDict
 from datetime import datetime
 from typing import Optional, Annotated
-from decimal import Decimal
 
 
 class Address(BaseModel):
@@ -65,7 +64,10 @@ class UserDisplay(BaseModel):
     enabled: bool
     admin: bool
     telephone: str
-    failed_attempts: int = Field(serialization_alias="failedAttempts", exclude=True)
+    failed_attempts: int = Field(
+        serialization_alias="failedAttempts",
+        exclude=True,
+    )
     discount: float
     lock_time: Optional[datetime] = Field(serialization_alias="lockTime")
     is_using_mfa: bool = Field(serialization_alias="IsUsingMFA")
