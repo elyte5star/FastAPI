@@ -11,7 +11,7 @@ class JobType(str, Enum):
     EMPTY = "0"
     SEARCH = "10"
     BOOKING = "30"
-    JOBS = "40"
+    MANUAL = "40"
 
 
 class JobState(str, Enum):

@@ -12,6 +12,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from pika.spec import BasicProperties
 from pika.spec import Basic
 from psycopg.types.json import Jsonb
+from typing import Literal
 
 
 class Consumer(Process):
@@ -20,20 +21,20 @@ class Consumer(Process):
         self,
         config: AppConfig,
         worker_type: WorkerType,
-        queue_name: str,
+        queue: Literal["SEARCH", "BOOKING", "LOST_ITEM", "MANUAL"],
         routing_key: str,
     ) -> None:
         super().__init__()
         self.cfg = config
         self.worker_type = worker_type
-        self.queue_name = queue_name
+        self.queue: Literal["SEARCH", "BOOKING", "LOST_ITEM", "MANUAL"] = queue
         self.routing_key = routing_key
 
     def create_worker(self) -> Worker:
         worker = Worker()
         worker.id = get_indent()
         worker.worker_type = self.worker_type
-        worker.queue_name = self.queue_name
+        worker.queue_name = self.queue
         worker.queue_host = self.cfg.amqp_url
         worker.process_id = str(self.pid)
         return worker
@@ -119,12 +120,12 @@ class Consumer(Process):
 
     def do_work(self, queue_item: QueueItem):
         try:
-            task: Task = queue_item.task
-            result: TaskResult = queue_item.result
-            self.update_on_going_tasks_in_db(task.id)
-            job: Job = queue_item.job
+            task = queue_item.task
+            result = queue_item.result
+            job = queue_item.job
             success = False
             data = {}
+            self.update_on_going_tasks_in_db(task.id)
             match job.job_type:
                 case JobType.EMPTY:
                     raise SystemExit("No job on the queue")
@@ -134,8 +135,11 @@ class Consumer(Process):
                 case JobType.BOOKING:
                     booking = BookingHandler(queue_item, self.db_conn())
                     success, data = booking.handle()
+                case JobType.MANUAL:
+                    self.cfg.logger.info("Not Implemented")
                 case _:
-                    raise SystemExit(f"Unknown job type: {job.job_type}")
+                    pass
+                    # raise SystemExit(f"Unknown job type: {job.job_type}")
 
         except Exception as e:
             queue: Queue = Queue(self.cfg)
@@ -159,10 +163,10 @@ class Consumer(Process):
     def run(self) -> None:
         queue: Queue = Queue(self.cfg)
         queue.create_exchange(
-            self.queue_name,
+            self.queue,
             self.cfg.exchange_name,
             self.cfg.exchange_type,
             self.routing_key,
         )
         self.insert_worker_into_db(self.create_worker())
-        queue.listen_to_queue(self.queue_name, self.call_back)
+        queue.listen_to_queue(self.queue, self.call_back)

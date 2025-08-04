@@ -153,7 +153,7 @@ class UpdateUserPassword(BaseModel):
     confirm_password: ValidatePassword = Field(alias="confirmPassword")
 
     @model_validator(mode="after")
-    def verify_square(self) -> Self:
+    def verify_password(self) -> Self:
         if self.new_password == self.old_password:
             raise RequestValidationError(
                 "old password cannot be the same as new password."

@@ -24,7 +24,7 @@
 		"details": "Ergonomic product for small office.Ahead, a shopping guide we hope will make your at-home office feel less makeshift and more professionally aligned — broken down by what each ergonomic item is supporting, backed by people who actually felt supported by it",
 		"image": "3.png",
 		"category": "grey",
-		"stockQuantity": 1
+		"stockQuantity": 30
 	},
 	{
 		"name": "Angry Bird",
@@ -87,7 +87,7 @@
 		"details": "Ergonomic product for small office.Ahead, a shopping guide we hope will make your at-home office feel less makeshift and more professionally aligned — broken down by what each ergonomic item is supporting, backed by people who actually felt supported by it",
 		"image": "10.png",
 		"category": "pale",
-		"stockQuantity": 3
+		"stockQuantity": 300
 	},
 	{
 		"name": "Clash of clans-n",
@@ -105,6 +105,6 @@
 		"details": "Ergonomic product for small office.Ahead, a shopping guide we hope will make your at-home office feel less makeshift and more professionally aligned — broken down by what each ergonomic item is supporting, backed by people who actually felt supported by it",
 		"image": "12.png",
 		"category": "pale",
-		"stockQuantity": 3
+		"stockQuantity": 3000
 	}
 ]

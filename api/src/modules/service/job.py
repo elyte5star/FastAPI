@@ -113,14 +113,14 @@ class JobHandler(RQHandler):
     async def _create_new_job(self, req: CreateJobRequest):
         if req.credentials is None:
             return req.req_failure("No valid user session found")
-        job = self._create_job(JobType.JOBS, req.credentials.user_id)
+        job = self._create_job(JobType.MANUAL, req.credentials.user_id)
         tasks: list[Task] = job.tasks
         if not tasks:
             return req.req_failure("No tasks in job")
         queue_items: list[QueueItem] = []
         tasks_results: list[TaskResult] = []
         for task in tasks:
-            task_result = self.create_task_result(ResultType.DATABASE, task.id)
+            task_result = self.create_task_result(ResultType.UNKNOWN, task.id)
             tasks_results.append(task_result)
             queue_items.append(
                 QueueItem(job=job, task=task, result=task_result),

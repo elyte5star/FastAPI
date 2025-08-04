@@ -25,8 +25,6 @@ def main(cfg: AppConfig):
 
     end = time.perf_counter()
 
-    end = time.perf_counter()
-
     cfg.logger.info(
         f"Started processes: {booking_worker.pid}, {search_worker.pid} in {end - start:.4f} seconds. {date_time_now_utc()}"
     )

@@ -17,7 +17,7 @@ class Queue:
 
     def create_exchange(
         self,
-        queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM", "JOBS"],
+        queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM", "MANUAL"],
         exchange_name: str,
         exchange_type: str,
         key: str,
@@ -42,7 +42,7 @@ class Queue:
 
     def listen_to_queue(
         self,
-        queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM"],
+        queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM", "MANUAL"],
         call_back: Callable,
     ) -> None:
         try:
@@ -57,7 +57,8 @@ class Queue:
             )
             self.channel.start_consuming()
         except KeyboardInterrupt:
-            self.channel.stop_consuming()
+            if self.channel:
+                self.channel.stop_consuming()
             self.close_connection()
             self.cfg.logger.warning("[+] KeyboardInterruption")
         except Exception as e:

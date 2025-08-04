@@ -1,20 +1,40 @@
 from modules.repository.request_models.base import BaseResponse
 from pydantic import BaseModel, Field, Json, ConfigDict
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Annotated
 from decimal import Decimal
 
 
-class AddressDisplay(BaseModel):
+class Address(BaseModel):
+    first_name: Annotated[
+        str,
+        Field(serialization_alias="firstName"),
+    ]
+    last_name: Annotated[str, Field(serialization_alias="lastName")]
+    street_address: Annotated[
+        str,
+        Field(
+            serialization_alias="streetAddress",
+        ),
+    ]
+    country: str
+    state: str
+    email: str
+    zip_code: Annotated[
+        str,
+        Field(
+            serialization_alias="zipCode",
+        ),
+    ]
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+
+class AddressDisplay(Address):
     id: str
     user_id: str = Field(serialization_alias="userId")
-    first_name: str = Field(serialization_alias="firstName")
-    last_name: str = Field(serialization_alias="lastName")
     full_name: str = Field(serialization_alias="fullName")
-    street_address: str = Field(serialization_alias="streetAddress")
-    country: str
-    city: str
-    zip_code: str = Field(serialization_alias="zipCode")
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BookingDisplay(BaseModel):
@@ -23,7 +43,9 @@ class BookingDisplay(BaseModel):
     cart: list[dict]
     total_price: float
     created_at: datetime = Field(serialization_alias="createdAt")
-    address: AddressDisplay = Field(serialization_alias="addressId")
+    address: Address = Field(serialization_alias="shippingAddress")
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserDisplay(BaseModel):
