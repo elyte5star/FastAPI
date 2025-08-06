@@ -21,7 +21,7 @@ class EmailService:
         message = MessageSchema(
             subject=req.subject,
             recipients=req.recipients,
-            body=req.body,
+            body=str(req.body),
             subtype=MessageType.plain,
         )
         try:

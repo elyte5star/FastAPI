@@ -144,14 +144,14 @@ class Consumer(Process):
         except Exception as e:
             queue: Queue = Queue(self.cfg)
             queue.create_exchange(
-                self.cfg.queue_name[2],
+                self.cfg.queue_names[2],
                 self.cfg.exchange_name,
                 self.cfg.exchange_type,
-                self.cfg.queue_name[2],
+                self.cfg.queue_names[2],
             )
             queue.send_message(
-                self.cfg.queue_name[2],
-                self.cfg.queue_name[2],
+                self.cfg.queue_names[2],
+                self.cfg.queue_names[2],
                 queue_item.model_dump_json(by_alias=True).encode(),
             )
             # queue.close_connection()

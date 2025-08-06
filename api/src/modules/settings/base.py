@@ -1,7 +1,14 @@
 from pathlib import Path
 from dotenv import load_dotenv
 import logging
-from pydantic import AnyHttpUrl
+from pydantic import (
+    AnyHttpUrl,
+    DirectoryPath,
+    SecretStr,
+    EmailStr,
+    Field,
+    AliasChoices,
+)
 from fastapi_mail import ConnectionConfig
 from datetime import datetime
 from pydantic_settings import (
@@ -14,13 +21,14 @@ from pydantic_settings import (
 load_dotenv()
 
 toml_path = Path(__file__).parent.parent.parent.resolve() / "pyprojecttoml"
+email_template_path = Path(__file__).parent.parent.resolve() / "templates"
 
 
 class Settings(BaseSettings):
 
     # API
     log_level: int | str = logging.NOTSET
-    log_file_path: str = ""
+    log_file_path: DirectoryPath | str = ""
     host_url: str = ""
     debug: bool = False
     auth_methods: list = []
@@ -28,7 +36,6 @@ class Settings(BaseSettings):
     roles: list[str] = [""]
     pwd_len: int = 0
     encoding: str = ""
-    db_url: str = ""
     logger: logging.Logger = logging.getLogger(__name__)
     max_login_attempt: int = 0
     failed_login_attempt_count: int = 0
@@ -56,6 +63,11 @@ class Settings(BaseSettings):
     # Google AUTH
     google_client_id: str = ""
     google_client_secret: str = ""
+    google_issuer: str = ""
+    google_auth_url: str = ""
+    google_token_url: str = ""
+    google_token_info_url: str = ""
+    google_scopes: dict = {}
 
     # MSOFT AUTH
     msal_tenant_id: str = ""
@@ -70,26 +82,30 @@ class Settings(BaseSettings):
     msal_issuer: str = ""
 
     # EMAIL CONFIG
-    email: str = ""
+    mail_from: EmailStr | str = ""
     mail_username: str = ""
-    mail_password: str = ""
+    mail_password: SecretStr | str = ""
     mail_port: int = 0
     mail_server: str = ""
-    mail_from_name: str = ""
-    mail_starttls: bool = False
+    mail_from_name: str | None = None
+    mail_starttls: bool = True
     mail_ssl_tls: bool = False
     use_credentials: bool = False
     validate_certs: bool = False
-    email_config: ConnectionConfig = {}
+    template_folder: DirectoryPath | None = email_template_path
 
     # RabbitMQ
-    rabbit_host_name: str = ""
-    rabbit_host_port: str = ""
-    rabbit_connect_string: str = ""
-    queue_name: list = []
-    rabbit_user: str = ""
-    rabbit_pass: str = ""
-    rabbit_connect_string: str = ""
+    amqp_url: str = Field(
+        default="amqp://rabbitUser:elyteRQ@localhost:5672/",
+        validation_alias=AliasChoices("RQ_URL", "amqp_url"),
+    )
+    queue_names: list[str] = []
+
+    # Database
+    db_url: str = Field(
+        default="postgresql+asyncpg://userExample:54321@localhost:5432/elyte",
+        validation_alias=AliasChoices("DB_URL", "postgres_url"),
+    )
 
     # Visa Payment API
     visa_params: dict = {}
@@ -105,21 +121,23 @@ class Settings(BaseSettings):
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
-    ) -> tuple[PydanticBaseSettingsSource,]:
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
             env_settings,
-            init_settings,
             PyprojectTomlConfigSettingsSource(settings_cls, toml_path),
+            init_settings,
         )
 
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
         env_file_encoding="utf-8",
+        env_nested_delimiter="_",
+        env_nested_max_split=1,
         env_file="env",
-        pyproject_toml_table_header=(),
+        pyproject_toml_table_header=("tool", "google"),
     )
 
 
 aux = Settings()
 
-print(aux.log_level)
+print(aux.model_dump())

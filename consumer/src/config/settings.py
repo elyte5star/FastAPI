@@ -23,7 +23,7 @@ class AppConfig(BaseSettings):
         validation_alias=AliasChoices("RQ_URL", "amqp_url"),
     )
 
-    queue_name: list = ["SEARCH", "BOOKING", "LOST_ITEM", "MANUAL"]
+    queue_names: list = ["SEARCH", "BOOKING", "LOST_ITEM", "MANUAL"]
 
     logger: logging.Logger = logging.getLogger(__name__)
 

@@ -78,7 +78,7 @@ roles=["ADMIN","USER"]
 
 
 
-[database]
+[tool.database]
 db = "elyte"
 host = "db"
 port = 5432
@@ -86,12 +86,18 @@ pwd = "54321"
 user = "userExample"
 
 
-[queue.params]
+[tool.queue]
 host_name = "rabbitQ"
-my_queue = ["SEARCH", "BOOKING", "LOST_ITEM","JOBS"]
+queue_names = ["SEARCH", "BOOKING", "LOST_ITEM","MANUAL"]
 port = "5672"
 pwd = "elyteRQ"
 user = "rabbitUser"
+
+[tool.google]
+google_issuer = "https://accounts.google.com"
+google_auth_url = "https://accounts.google.com/o/oauth2/auth"
+google_token_url = "https://oauth2.googleapis.com/token"
+google_token_info_url= "https://www.googleapis.com/oauth2/v3/tokeninfo"
 
 [tool.black]
 line-length = 88
@@ -171,7 +177,7 @@ httpagentparser = "^1.9.5"
 toml="0.10.2"
 
 
-[visa.params]
+[tool.visa_params]
 apiKey = '' #put your api key here
 cert = '' #put the path to the certificate file here
 checkoutCallId = '' #{put your visa checkout callId here}

@@ -278,4 +278,4 @@ data/*
 /api/*.log
 .env
 *.local
-api/env/*
+consumer/env/*

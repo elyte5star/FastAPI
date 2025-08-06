@@ -90,7 +90,7 @@ class EmailRequestSchema(BaseModel):
     recipients: list[EmailStr]
     body: dict[str, Any]
     file: Optional[FilePath] = None
-    template_name: Optional[str] = None
+    template_name: str | None = None
 
 
 class OtpRequest(BaseReq):
