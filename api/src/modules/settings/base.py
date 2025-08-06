@@ -9,7 +9,6 @@ from pydantic import (
     Field,
     AliasChoices,
 )
-from fastapi_mail import ConnectionConfig
 from datetime import datetime
 from pydantic_settings import (
     BaseSettings,
@@ -32,8 +31,12 @@ class Settings(BaseSettings):
     host_url: str = ""
     debug: bool = False
     auth_methods: list = []
-    origins: list[str | AnyHttpUrl] = ["http://localhost:8000"]
-    roles: list[str] = [""]
+    origins: list[str | AnyHttpUrl] = Field(
+        default=["http://localhost:8000"],
+        validation_alias="cors_origins",
+    )
+
+    roles: list[str] = ["ADMIN", "USER"]
     pwd_len: int = 0
     encoding: str = ""
     logger: logging.Logger = logging.getLogger(__name__)
@@ -53,12 +56,22 @@ class Settings(BaseSettings):
     license: dict = {}
 
     # JWT PARAMS
-    algorithm: str = ""
-    secret_key: str = ""
-    rounds: int = 0
-    token_expire_min: int = 0
-    refresh_token_expire_min: int = 0
-    grant_type: str = ""
+    algorithm: str = Field(
+        default="HS256",
+    )
+    secret_key: str = Field(
+        default="",
+        validation_alias="api_secret",
+    )
+    rounds: int = 10
+    token_expire_min: int = Field(
+        default=0,
+        validation_alias="jwt_expire_minutes",
+    )
+    refresh_token_expire_min: int = Field(
+        default=0,
+        validation_alias="jwt_refresh_token_expire_minutes",
+    )
 
     # Google AUTH
     google_client_id: str = ""
@@ -74,7 +87,7 @@ class Settings(BaseSettings):
     msal_client_id: str = ""
     msal_client_secret: str = ""
     msal_scope_name: str = ""
-    msal_scope_desc: str = "user_impersonation"
+    msal_scope_desc: str = ""
     msal_scopes: dict = {}
     msal_jwks_url: str = ""
     msal_auth_url: str = ""
@@ -104,7 +117,7 @@ class Settings(BaseSettings):
     # Database
     db_url: str = Field(
         default="postgresql+asyncpg://userExample:54321@localhost:5432/elyte",
-        validation_alias=AliasChoices("DB_URL", "postgres_url"),
+        validation_alias=AliasChoices("db_url", "postgres_url"),
     )
 
     # Visa Payment API
@@ -124,8 +137,8 @@ class Settings(BaseSettings):
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
             env_settings,
-            PyprojectTomlConfigSettingsSource(settings_cls, toml_path),
             init_settings,
+            PyprojectTomlConfigSettingsSource(settings_cls, toml_path),
         )
 
     model_config = SettingsConfigDict(
@@ -133,8 +146,8 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         env_nested_delimiter="_",
         env_nested_max_split=1,
-        env_file="env",
-        pyproject_toml_table_header=("tool", "google"),
+        env_file=".env",
+        pyproject_toml_table_header=("tool", "queue-params"),
     )
 
 

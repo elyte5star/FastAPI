@@ -22,10 +22,9 @@ classifiers = [
 ]
 
 
-
 [api]
 debug = false
-auth_methods = ["LOCAL", "MSAL","GOOGLE","GITHUB","FACEBOOK","XTWITTER","LINKEDIN"]
+auth_methods = ["LOCAL", "MSAL","GOOGLE","GITHUB"]
 host_url = "http://localhost:8000/"
 log_level = "INFO"
 log_file_path="../extreme_api.log"
@@ -78,7 +77,7 @@ roles=["ADMIN","USER"]
 
 
 
-[tool.database]
+[database]
 db = "elyte"
 host = "db"
 port = 5432
@@ -86,14 +85,14 @@ pwd = "54321"
 user = "userExample"
 
 
-[tool.queue]
+[queue.params]
 host_name = "rabbitQ"
-queue_names = ["SEARCH", "BOOKING", "LOST_ITEM","MANUAL"]
+queue_names = ["SEARCH", "BOOKING", "LOST_ITEM","MANUALX"]
 port = "5672"
 pwd = "elyteRQ"
 user = "rabbitUser"
 
-[tool.google]
+[google]
 google_issuer = "https://accounts.google.com"
 google_auth_url = "https://accounts.google.com/o/oauth2/auth"
 google_token_url = "https://oauth2.googleapis.com/token"
@@ -177,7 +176,7 @@ httpagentparser = "^1.9.5"
 toml="0.10.2"
 
 
-[tool.visa_params]
+[visa.params]
 apiKey = '' #put your api key here
 cert = '' #put the path to the certificate file here
 checkoutCallId = '' #{put your visa checkout callId here}
