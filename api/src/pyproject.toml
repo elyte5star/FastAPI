@@ -22,7 +22,10 @@ classifiers = [
 ]
 
 
-[api_params]
+[tool.pydantic-settings]
+
+
+[tool.api_params]
 debug = false
 auth_methods = ["LOCAL", "MSAL","GOOGLE","GITHUB"]
 host_url = "http://localhost:8000/"
@@ -40,9 +43,14 @@ refresh_token_expire_min = 43200 #30 days
 secret_key = "295d51726d124a7601036ed4a8116418b8fa78e3188d8d1856d351fd27055d55" 
 token_expire_min = 50 
 roles=["ADMIN","USER"]
+google_issuer = "https://accounts.google.com"
+google_auth_url = "https://accounts.google.com/o/oauth2/auth"
+google_token_url = "https://oauth2.googleapis.com/token"
+google_token_info_url= "https://www.googleapis.com/oauth2/v3/tokeninfo"
+client_url= "https://accounts.google.com"
 
 
-[api_doc]
+[tool.api_doc]
 description = "Interactive Documentation for e-Market"
 name = "FastAPI Application"
 terms_of_service = "https://github.com/elyte5star/FastAPI.git"
@@ -52,7 +60,7 @@ version = "1.0"
 name = "Proprietary"
 url = "https://github.com/elyte5star"
 
-[api_contacts]
+[tool.api_contacts]
 email = "elyte5star@gmail.com"
 name = "Utimore Services AS"
 url =  "https://github.com/elyte5star/FastAPI.git"
@@ -61,14 +69,14 @@ telephone="889851919"
 password="$2b$10$rQcvrrW2JcvjV2XM5TG3zeJd6oHPthld3VfRLsvyV2UJFO0.BxACO"
 
 
-[db_params]
+[tool.db_params]
 db = "elyte"
 host = "db"
 port = 5432
 pwd = "54321"
 user = "userExample"
 
-[amqp_params]
+[tool.amqp_params]
 host_name = "rabbitQ"
 port = "5672"
 pwd = "elyteRQ"
@@ -76,14 +84,6 @@ user = "rabbitUser"
 exchange_name = "elyteExchange"
 exchange_type= "direct"
 
-
-
-
-[google]
-google_issuer = "https://accounts.google.com"
-google_auth_url = "https://accounts.google.com/o/oauth2/auth"
-google_token_url = "https://oauth2.googleapis.com/token"
-google_token_info_url= "https://www.googleapis.com/oauth2/v3/tokeninfo"
 
 [tool.black]
 line-length = 88
@@ -163,7 +163,7 @@ httpagentparser = "^1.9.5"
 toml="0.10.2"
 
 
-[visa.params]
+[visa_params]
 apiKey = '' #put your api key here
 cert = '' #put the path to the certificate file here
 checkoutCallId = '' #{put your visa checkout callId here}
