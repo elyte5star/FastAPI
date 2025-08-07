@@ -22,7 +22,7 @@ classifiers = [
 ]
 
 
-[api]
+[api_params]
 debug = false
 auth_methods = ["LOCAL", "MSAL","GOOGLE","GITHUB"]
 host_url = "http://localhost:8000/"
@@ -32,65 +32,52 @@ login_attempts=3
 lock_duration = 15
 enabled_geoip=false
 otp_expiry=30
-
-[api.doc]
-description = """
-   #   Interactive Documentation for e-Market
-   """
-name = "FastAPI Application"
-terms_of_service = "https://github.com/elyte5star/FastAPI.git"
-version = "1.0"
-
-[api.doc.contact]
-email = "elyte5star@gmail.com"
-name = "Utimore Services AS"
-url =  "https://github.com/elyte5star/FastAPI.git"
-username="elyte"
-telephone="889851919"
-password="$2b$10$rQcvrrW2JcvjV2XM5TG3zeJd6oHPthld3VfRLsvyV2UJFO0.BxACO"
-mail_from_name = 'E-COMMERCE APPLICATION'
-mail_port = 587
-mail_server = 'smtp.gmail.com'
-mail_ssl_tls = false
-mail_starttls = true
-mail_username = 'elyte5star'
-use_credentials = true
-validate_certs = true
-
-[api.doc.contact.license]
-name = "Proprietary"
-url = "https://github.com/elyte5star"
-
-
-
-
-[encryption]
 encoding = "utf-8"
-length = 16
+pwd_length = 16
 rounds = 10
 algorithm = "HS256" 
-grant_type = "refresh_token" 
 refresh_token_expire_min = 43200 #30 days
 secret_key = "295d51726d124a7601036ed4a8116418b8fa78e3188d8d1856d351fd27055d55" 
 token_expire_min = 50 
 roles=["ADMIN","USER"]
 
 
+[api_doc]
+description = "Interactive Documentation for e-Market"
+name = "FastAPI Application"
+terms_of_service = "https://github.com/elyte5star/FastAPI.git"
+version = "1.0"
 
-[database]
+[api_license]
+name = "Proprietary"
+url = "https://github.com/elyte5star"
+
+[api_contacts]
+email = "elyte5star@gmail.com"
+name = "Utimore Services AS"
+url =  "https://github.com/elyte5star/FastAPI.git"
+username="elyte"
+telephone="889851919"
+password="$2b$10$rQcvrrW2JcvjV2XM5TG3zeJd6oHPthld3VfRLsvyV2UJFO0.BxACO"
+
+
+[db_params]
 db = "elyte"
 host = "db"
 port = 5432
 pwd = "54321"
 user = "userExample"
 
-
-[queue.params]
+[amqp_params]
 host_name = "rabbitQ"
-queue_names = ["SEARCH", "BOOKING", "LOST_ITEM","MANUALX"]
 port = "5672"
 pwd = "elyteRQ"
 user = "rabbitUser"
+exchange_name = "elyteExchange"
+exchange_type= "direct"
+
+
+
 
 [google]
 google_issuer = "https://accounts.google.com"

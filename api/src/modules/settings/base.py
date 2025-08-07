@@ -8,70 +8,125 @@ from pydantic import (
     EmailStr,
     Field,
     AliasChoices,
+    BaseModel,
 )
 from datetime import datetime
+from pydantic.fields import FieldInfo
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
-    PyprojectTomlConfigSettingsSource,
     SettingsConfigDict,
 )
+from typing import Any
+from pyconfs import Configuration
+from os import path
 
 load_dotenv()
 
-toml_path = Path(__file__).parent.parent.parent.resolve() / "pyprojecttoml"
-email_template_path = Path(__file__).parent.parent.resolve() / "templates"
+project_root = Path(__file__).parent.parent.parent
+
+toml_path: str = path.join(project_root, "pyproject.toml")
+
+email_template_path: Path = Path(__file__).parent.parent.resolve() / "templates"
+
+
+class CustomTomlConfigSettingsSource(PydanticBaseSettingsSource):
+
+    def get_field_value(
+        self, field: FieldInfo, field_name: str
+    ) -> tuple[Any, str, bool]:
+
+        file_content = Configuration.from_file(file_path=toml_path).as_dict()
+        field_value = file_content.get(field_name)
+
+        return field_value, field_name, False
+
+    def prepare_field_value(
+        self, field_name: str, field: FieldInfo, value: Any, value_is_complex: bool
+    ) -> Any:
+        return value
+
+    def __call__(self) -> dict[str, Any]:
+        return_dict: dict[str, Any] = {}
+        for field_name, field in self.settings_cls.model_fields.items():
+            field_value, field_key, value_is_complex = self.get_field_value(
+                field, field_name
+            )
+            field_value = self.prepare_field_value(
+                field_name, field, field_value, value_is_complex
+            )
+            if field_value is not None:
+                return_dict[field_key] = field_value
+
+        return return_dict
+
+
+class ApiParams(BaseModel):
+    debug: bool = False
+    auth_methods: list[str] = ["LOCAL", "MSAL", "GOOGLE", "GITHUB"]
+    host_url: str = ""
+    log_level: int | str = logging.NOTSET
+    log_file_path: DirectoryPath | str = ""
+    login_attempts: int = 0
+    lock_duration: int = 15
+    enabled_geoip: bool = False
+    otp_expiry: int = 0
+    encoding: str = ""
+    pwd_length: int = 0
+    rounds: int = 0
+    algorithm: str = ""
+    refresh_token_expire_min: int = 0
+    secret_key: str = ""
+    token_expire_min: int = 0
+    roles: list = []
 
 
 class Settings(BaseSettings):
 
-    # API
-    log_level: int | str = logging.NOTSET
-    log_file_path: DirectoryPath | str = ""
-    host_url: str = ""
-    debug: bool = False
-    auth_methods: list = []
-    origins: list[str | AnyHttpUrl] = Field(
-        default=["http://localhost:8000"],
-        validation_alias="cors_origins",
-    )
-
-    roles: list[str] = ["ADMIN", "USER"]
-    pwd_len: int = 0
-    encoding: str = ""
-    logger: logging.Logger = logging.getLogger(__name__)
-    max_login_attempt: int = 0
-    failed_login_attempt_count: int = 0
-    lock_duration: int = 0
-    blocked_ips: dict[str, datetime] = {}
-    is_geo_ip_enabled: bool = False
-    otp_expiry: int = 0
-
     # PROJECT DETAILS
-    name: str = ""
-    version: str = ""
-    description: str = ""
-    terms: str = ""
-    contacts: dict = {}
-    license: dict = {}
+    # api_contacts: dict = {}
+    # api_doc: dict = {}
+    # api_license: dict = {}
 
-    # JWT PARAMS
-    algorithm: str = Field(
-        default="HS256",
-    )
-    secret_key: str = Field(
-        default="",
-        validation_alias="api_secret",
-    )
-    rounds: int = 10
-    token_expire_min: int = Field(
-        default=0,
-        validation_alias="jwt_expire_minutes",
-    )
-    refresh_token_expire_min: int = Field(
-        default=0,
-        validation_alias="jwt_refresh_token_expire_minutes",
-    )
+    # API
+    api_params: ApiParams
+    # debug: bool = False
+    # log_level: int | str = logging.NOTSET
+    # log_file_path: DirectoryPath | str = ""
+    # host_url: str = ""
+    # auth_methods: list[str] = ["LOCAL", "MSAL", "GOOGLE", "GITHUB"]
+    # origins: list[str | AnyHttpUrl] = Field(
+    #     default=["http://localhost:8000"],
+    #     validation_alias="cors_origins",
+    # )
+    # roles: list[str] = ["ADMIN", "USER"]
+    # pwd_length: int = 0
+    # encoding: str = ""
+    # logger: logging.Logger = logging.getLogger(__name__)
+    # max_login_attempt: int = 0
+    # failed_login_attempt_count: int = 0
+    # lock_duration: int = 0
+    # blocked_ips: dict[str, datetime] = {}
+    # is_geo_ip_enabled: bool = False
+    # otp_expiry: int = 0
+
+    # algorithm: str = Field(
+    #     default="HS256",
+    #     validation_alias="api_algorithm",
+    # )
+    # secret_key: str = Field(
+    #     default="",
+    #     validation_alias="api_secret",
+    # )
+    # rounds: int = 10
+    # token_expire_min: int = Field(
+    #     default=0,
+    #     validation_alias="jwt_expire_minutes",
+    # )
+    # refresh_token_expire_min: int = Field(
+    #     default=0,
+    #     validation_alias="jwt_refresh_token_expire_minutes",
+    # )
 
     # Google AUTH
     google_client_id: str = ""
@@ -108,13 +163,17 @@ class Settings(BaseSettings):
     template_folder: DirectoryPath | None = email_template_path
 
     # RabbitMQ
+    amqp_params: dict = {}
+
     amqp_url: str = Field(
         default="amqp://rabbitUser:elyteRQ@localhost:5672/",
         validation_alias=AliasChoices("RQ_URL", "amqp_url"),
     )
-    queue_names: list[str] = []
+    queue_names: list[str] = ["SEARCH", "BOOKING", "LOST_ITEM", "MANUAL"]
 
     # Database
+    db_params: dict = {}
+
     db_url: str = Field(
         default="postgresql+asyncpg://userExample:54321@localhost:5432/elyte",
         validation_alias=AliasChoices("db_url", "postgres_url"),
@@ -138,7 +197,8 @@ class Settings(BaseSettings):
         return (
             env_settings,
             init_settings,
-            PyprojectTomlConfigSettingsSource(settings_cls, toml_path),
+            CustomTomlConfigSettingsSource(settings_cls),
+            file_secret_settings,
         )
 
     model_config = SettingsConfigDict(
@@ -147,10 +207,9 @@ class Settings(BaseSettings):
         env_nested_delimiter="_",
         env_nested_max_split=1,
         env_file=".env",
-        pyproject_toml_table_header=("tool", "queue-params"),
     )
 
 
 aux = Settings()
 
-print(aux.model_dump())
+print(aux)
