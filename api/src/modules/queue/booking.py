@@ -77,7 +77,7 @@ class BookingHandler(JobHandler):
             tasks_result.append(result)
             queue_items.append(QueueItem(job=job, task=task, result=result))
         job.number_of_tasks = len(tasks)
-        QUEUE = self.cf.queue_name[1]
+        QUEUE = self.cf.queue_names[1]
         success, message = await self._add_job_tasks_to_queue(
             job,
             tasks,

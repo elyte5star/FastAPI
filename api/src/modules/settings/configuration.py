@@ -15,6 +15,7 @@ load_dotenv()
 
 project_root = Path(__file__).parent.parent.parent
 toml_path = path.join(project_root, "pyproject.toml")
+email_template_path: Path = Path(__file__).parent.parent.resolve() / "templates"
 config = Configuration.from_file(toml_path)
 
 
@@ -89,10 +90,12 @@ class ApiConfig:
         self.rabbit_host_name: str = ""
         self.rabbit_host_port: str = ""
         self.rabbit_connect_string: str = ""
-        self.queue_name: list = []
         self.rabbit_user: str = ""
         self.rabbit_pass: str = ""
-        self.rabbit_connect_string: str = ""
+        self.amqp_url: str = ""
+        self.exchange_name: str = ""
+        self.exchange_type: str = ""
+        self.queue_names: list[str] = []
 
         # Visa Payment API
         self.visa_params: dict = {}
@@ -109,56 +112,54 @@ class ApiConfig:
         self.db_url = f"""postgresql+asyncpg://{self.sql_username}:
         {self.sql_password}@{self.sql_host}:{self.sql_port}/{self.sql_db}
         """
-        self.log_level = getattr(logging, config.api["log_level"])
-        self.log_file_path = config.api["log_file_path"]
-        self.host_url = config.api["host_url"]
-        self.debug = config.api["debug"]
-        self.auth_methods = config.api["auth_methods"]
-        self.max_login_attempt = config.api["login_attempts"]
-        self.lock_duration = config.api["lock_duration"]
-        self.is_geo_ip_enabled = config.api["enabled_geoip"]
-        self.otp_expiry = config.api["otp_expiry"]
+        self.log_level = getattr(logging, config.api.params["log_level"])
+        self.log_file_path = config.api.params["log_file_path"]
+        self.host_url = config.api.params["host_url"]
+        self.debug = config.api.params["debug"]
+        self.auth_methods = config.api.params["auth_methods"]
+        self.max_login_attempts = config.api.params["max_login_attempts"]
+        self.lock_duration = config.api.params["lock_duration"]
+        self.is_geo_ip_enabled = config.api.params["enabled_geoip"]
+        self.otp_expiry = config.api.params["otp_expiry"]
 
-        self.pwd_len = config.encryption["length"]
-        self.rounds = config.encryption["rounds"]
-        self.encoding = config.encryption["encoding"]
-        self.roles = config.encryption["roles"]
+        self.pwd_len = config.api.params["pwd_length"]
+        self.rounds = config.api.params["rounds"]
+        self.encoding = config.api.params["encoding"]
+        self.roles = config.api.params["roles"]
 
         self.rabbit_host_name = config.queue.params["host_name"]
         self.rabbit_host_port = config.queue.params["port"]
         self.rabbit_user = config.queue.params["user"]
         self.rabbit_pass = config.queue.params["pwd"]
-        self.queue_name = config.queue.params["my_queue"]
-        self.rabbit_connect_string = (
+        self.queue_names = config.queue.params["queue_names"]
+        self.exchange_name = config.queue.params["exchange_name"]
+        self.exchange_type = config.queue.params["exchange_type"]
+        self.amqp_url = (
             f"amqp://{self.rabbit_user}:{self.rabbit_pass}@"
             + self.rabbit_host_name
             + ":"
             + self.rabbit_host_port
             + "/"
         )
-
-        self.mail_username = config.api.doc.contact["mail_username"]
-        self.mail_port = config.api.doc.contact["mail_port"]
-        self.mail_server = config.api.doc.contact["mail_server"]
-        self.mail_from_name = config.api.doc.contact["mail_from_name"]
-        self.mail_starttls = config.api.doc.contact["mail_starttls"]
-        self.mail_ssl_tls = config.api.doc.contact["mail_ssl_tls"]
-        self.use_credentials = config.api.doc.contact["use_credentials"]
-        self.validate_certs = config.api.doc.contact["validate_certs"]
-        self.email = config.api.doc.contact["email"]
+        self.mail_username = config.api.contact["username"]
+        self.mail_port = config.api.contact["mail_port"]
+        self.mail_server = config.api.contact["mail_server"]
+        self.mail_from_name = config.api.contact["mail_from_name"]
+        self.mail_starttls = config.api.contact["mail_starttls"]
+        self.mail_ssl_tls = config.api.contact["mail_ssl_tls"]
+        self.email = config.api.contact["email"]
 
         self.name = config.api.doc["name"]
         self.terms = config.api.doc["terms_of_service"]
         self.version = config.tool.poetry["version"]
         self.description = config.api.doc["description"]
-        self.contacts = config.api.doc.contact.as_dict()
-        self.license = config.api.doc.contact.license.as_dict()
+        self.contacts = config.api.contact.as_dict()
+        self.license = config.api.license.as_dict()
 
-        self.algorithm = config.encryption["algorithm"]
-        self.secret_key = config.encryption["secret_key"]
-        self.token_expire_min = config.encryption["token_expire_min"]
-        self.refresh_token_expire_min = config.encryption["refresh_token_expire_min"]
-        self.grant_type = config.encryption["grant_type"]
+        self.algorithm = config.api.params["algorithm"]
+        self.secret_key = config.api.params["secret_key"]
+        self.token_expire_min = config.api.params["token_expire_min"]
+        self.refresh_token_expire_min = config.api.params["refresh_token_expire_min"]
 
         # Visa Payment API
         self.visa_params = config.visa.params.as_dict()
@@ -166,7 +167,7 @@ class ApiConfig:
 
     def from_env_file(self) -> Self:
         self.db_url = str(getenv("DB_URL"))
-        self.rabbit_connect_string = str(getenv("RQ_URL"))
+        self.amqp_url = str(getenv("RQ_URL"))
         self.token_expire_min = int(
             getenv("API_JWT_EXPIRE_MINUTES", self.token_expire_min)
         )
@@ -180,8 +181,8 @@ class ApiConfig:
             MAIL_STARTTLS=self.mail_starttls,
             MAIL_SSL_TLS=self.mail_ssl_tls,
             MAIL_DEBUG=0,
-            MAIL_FROM_NAME="Elyte Application",
-            TEMPLATE_FOLDER=Path(__file__).parent.parent / "templates",
+            MAIL_FROM_NAME=self.mail_from_name,
+            TEMPLATE_FOLDER=email_template_path,
         )
         if self.log_file_path == "":
             self.log_file_path = str(getenv("LOG_PATH"))

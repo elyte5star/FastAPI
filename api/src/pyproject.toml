@@ -22,11 +22,11 @@ classifiers = [
 ]
 
 
-[tool.pydantic-settings]
+[api.params]
 debug = false
 auth_methods = ["LOCAL", "MSAL","GOOGLE","GITHUB"]
 host_url = "http://localhost:8000/"
-log_level = "INFO"
+log_level = "DEBUG"
 log_file_path="../extreme_api.log"
 max_login_attempts=3
 lock_duration = 15
@@ -51,39 +51,46 @@ google_token_info_url= "https://www.googleapis.com/oauth2/v3/tokeninfo"
 
 
 
-[api_doc]
+[api.doc]
 description = "Interactive Documentation for e-Market"
 name = "FastAPI Application"
 terms_of_service = "https://github.com/elyte5star/FastAPI.git"
 version = "1.0"
 
-[api_license]
+[api.license]
 name = "Proprietary"
 url = "https://github.com/elyte5star"
 
-[api_contact]
+[api.contact]
 email = "elyte5star@gmail.com"
 name = "Utimore Services AS"
 url =  "https://github.com/elyte5star/FastAPI.git"
-username="elyte"
+username="elyte5star"
 telephone="889851919"
+mail_port=587
+mail_server="smtp.gmail.com"
+mail_from_name="E-COMMERCE APPLICATION"
+mail_starttls=true
+mail_ssl_tls=false
 
 
 
-[db_params]
+
+[database]
 db = "elyte"
 host = "db"
 port = 5432
 pwd = "54321"
 user = "userExample"
 
-[amqp_params]
+[queue.params]
 host_name = "rabbitQ"
 port = "5672"
 pwd = "elyteRQ"
 user = "rabbitUser"
 exchange_name = "elyteExchange"
 exchange_type= "direct"
+queue_names= ["SEARCH", "BOOKING", "LOST_ITEM","MANUAL"]
 
 
 [tool.black]
@@ -164,7 +171,7 @@ httpagentparser = "^1.9.5"
 toml="0.10.2"
 
 
-[visa_params]
+[visa.params]
 apiKey = '' #put your api key here
 cert = '' #put the path to the certificate file here
 checkoutCallId = '' #{put your visa checkout callId here}

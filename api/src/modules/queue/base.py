@@ -23,7 +23,7 @@ class RQHandler(CommonQueries):
         job: models.Job,
         tasks: list[models.Task],
         results: list[models.TaskResult],
-        queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM", "JOBS"],
+        queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM", "MANUAL"],
         queue_items: list[models.QueueItem],
     ) -> tuple[bool, str]:
         try:
@@ -40,7 +40,7 @@ class RQHandler(CommonQueries):
                 _ = await self.add_task_result_db_query(new_result)
 
             # Perform connection
-            connection = await connect(self.cf.rabbit_connect_string)
+            connection = await connect(self.cf.amqp_url)
 
             async with connection:
                 # Creating a channel
@@ -48,7 +48,9 @@ class RQHandler(CommonQueries):
 
                 # Declaring exchange
                 exchange = await channel.declare_exchange(
-                    "elyteExchange", auto_delete=True
+                    name=self.cf.exchange_name,
+                    type=self.cf.exchange_type,
+                    auto_delete=True,
                 )
                 # Declaring queue
                 queue = await channel.declare_queue(queue_name, durable=True)

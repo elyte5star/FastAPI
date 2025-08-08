@@ -17,7 +17,7 @@ class SearchHandler(JobHandler):
             current_user.user_id,
         )
         job.search = req.search
-        QUEUE = self.cf.queue_name[0]
+        QUEUE = self.cf.queue_names[0]
         success, message = await self._add_job_with_one_task(
             job, QUEUE, ResultType.DATABASE
         )

@@ -126,7 +126,7 @@ class JobHandler(RQHandler):
                 QueueItem(job=job, task=task, result=task_result),
             )
         job.number_of_tasks = len(tasks)
-        QUEUE = self.cf.queue_name[3]
+        QUEUE = self.cf.queue_names[3]
         success, message = await self._add_job_tasks_to_queue(
             job,
             tasks,
