@@ -8,6 +8,8 @@ from pydantic import (
     EmailStr,
     Field,
     AliasChoices,
+    HttpUrl,
+    BaseModel,
 )
 from datetime import datetime
 from pydantic_settings import (
@@ -25,35 +27,71 @@ toml_path = Path(__file__).parent.parent.parent.resolve() / "pyproject.toml"
 email_template_path: Path = Path(__file__).parent.parent.resolve() / "templates"
 
 
+class ApiContact(BaseModel):
+    email: EmailStr | str = ""
+    name: str = ""
+    url: str | HttpUrl = ""
+    username: str = ""
+    telephone: str = ""
+
+
+class ApiDoc(BaseModel):
+    description: str = ""
+    name: str = ""
+    terms_of_service: str | HttpUrl = ""
+    version: str = ""
+
+
+class ApiLicense(BaseModel):
+    name: str = ""
+    url: str | HttpUrl = ""
+
+
+class DbParams(BaseModel):
+    db: str = ""
+    host: str = ""
+    port: int = 0
+    pwd: str = ""
+    user: str = ""
+
+
+class AmqpParams(BaseModel):
+    host_name: str = ""
+    port: str = ""
+    pwd: str = ""
+    user: str = ""
+    exchange_name: str = ""
+    exchange_type: str = ""
+
+
 class Settings(BaseSettings):
 
     # PROJECT DETAILS
-    api_contacts: dict = {}
-    api_doc: dict = {}
-    api_license: dict = {}
+    api_contact: ApiContact
+    api_doc: ApiDoc
+    api_license: ApiLicense
 
     # API
-    api_params: dict = {}
     debug: bool = False
+    auth_methods: list[str] = []
+    host_url: str = ""
     log_level: int | str = logging.NOTSET
     log_file_path: DirectoryPath | str = ""
     host_url: str = ""
-    auth_methods: list[str] = ["LOCAL", "MSAL", "GOOGLE", "GITHUB"]
-    origins: list[str | AnyHttpUrl] = Field(
+    max_login_attempt: int = 0
+    lock_duration: int = 0
+    cor_origins: list[str | AnyHttpUrl] = Field(
         default=["http://localhost:8000"],
         validation_alias="cors_origins",
     )
     roles: list[str] = ["ADMIN", "USER"]
     pwd_length: int = 0
+    rounds: int = 0
     encoding: str = ""
-    logger: logging.Logger = logging.getLogger(__name__)
-    max_login_attempt: int = 0
-    failed_login_attempt_count: int = 0
-    lock_duration: int = 0
-    blocked_ips: dict[str, datetime] = {}
-    is_geo_ip_enabled: bool = False
+    enabled_geoip: bool = False
     otp_expiry: int = 0
-
+    failed_login_attempt_count: int = 0
+    blocked_ips: dict[str, datetime] = {}
     algorithm: str = Field(
         default="HS256",
         validation_alias="api_algorithm",
@@ -62,15 +100,19 @@ class Settings(BaseSettings):
         default="",
         validation_alias="api_secret",
     )
-    rounds: int = 10
-    token_expire_min: int = Field(
-        default=0,
-        validation_alias="jwt_expire_minutes",
-    )
     refresh_token_expire_min: int = Field(
         default=0,
         validation_alias="jwt_refresh_token_expire_minutes",
     )
+    token_expire_min: int = Field(
+        default=0,
+        validation_alias="jwt_expire_minutes",
+    )
+
+    # CLIENT
+    client_url: str = ""
+    logger: logging.Logger = logging.getLogger(__name__)
+    password: str | SecretStr = ""
 
     # Google AUTH
     google_client_id: str = ""
@@ -107,17 +149,16 @@ class Settings(BaseSettings):
     template_folder: DirectoryPath | None = email_template_path
 
     # RabbitMQ
-    amqp_params: dict = {}
+    amqp_params: AmqpParams
 
     amqp_url: str = Field(
         default="amqp://rabbitUser:elyteRQ@localhost:5672/",
         validation_alias=AliasChoices("RQ_URL", "amqp_url"),
     )
-    queue_names: list[str] = ["SEARCH", "BOOKING", "LOST_ITEM", "MANUAL"]
+    queue_names: list[str] = []
 
     # Database
-    db_params: dict = {}
-
+    db_params: DbParams
     db_url: str = Field(
         default="postgresql+asyncpg://userExample:54321@localhost:5432/elyte",
         validation_alias=AliasChoices("db_url", "postgres_url"),
@@ -125,9 +166,6 @@ class Settings(BaseSettings):
 
     # Visa Payment API
     # visa_params: dict = {}
-
-    # CLIENT
-    client_url: str
 
     @classmethod
     def settings_customise_sources(
@@ -139,14 +177,14 @@ class Settings(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
-            env_settings,
+            # env_settings,
             PyprojectTomlConfigSettingsSource(settings_cls, toml_path),
             init_settings,
         )
 
     model_config = SettingsConfigDict(
         extra="ignore",
-        pyproject_toml_table_header=("tool", "api_params"),
+        pyproject_toml_table_header=(),
         env_ignore_empty=True,
         env_file_encoding="utf-8",
         env_nested_delimiter="_",
@@ -156,4 +194,4 @@ class Settings(BaseSettings):
 
 aux = Settings()
 
-print(aux)
+print(aux.model_dump())
