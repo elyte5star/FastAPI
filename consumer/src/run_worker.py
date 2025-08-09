@@ -36,7 +36,7 @@ def main(cfg: AppConfig):
         {generic_worker.pid}
         in {end - start:.4f} seconds. {date_time_now_utc()}"""
     )
-    # Wait for both to finish
+    # Wait for 3 to finish
     booking_worker.join()
     search_worker.join()
     generic_worker.join()
