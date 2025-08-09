@@ -168,9 +168,7 @@ class ApiConfig:
     def from_env_file(self) -> Self:
         self.db_url = str(getenv("DB_URL"))
         self.amqp_url = str(getenv("RQ_URL"))
-        self.token_expire_min = int(
-            getenv("API_JWT_EXPIRE_MINUTES", self.token_expire_min)
-        )
+        self.token_expire_min = int(getenv("JWT_EXPIRE_MINUTES", self.token_expire_min))
         self.mail_password = str(getenv("MAIL_PASSWORD"))
         self.email_config = ConnectionConfig(
             MAIL_USERNAME=self.mail_username,
@@ -186,12 +184,12 @@ class ApiConfig:
         )
         if self.log_file_path == "":
             self.log_file_path = str(getenv("LOG_PATH"))
-        self.origins = json.loads(getenv("API_CORS_ORIGINS", '["*"]'))
+        self.origins = json.loads(getenv("CORS_ORIGINS", '["*"]'))
         self.client_url = str(getenv("CLIENT_URL", self.client_url))
         self.log_level = getenv("LOG_LEVEL", self.log_level)
         self.refresh_token_expire_min = int(
             getenv(
-                "API_JWT_REFRESH_TOKEN_EXPIRE_MINUTES",
+                "JWT_REFRESH_TOKEN_EXPIRE_MINUTES",
                 self.refresh_token_expire_min,
             )
         )

@@ -4,7 +4,6 @@ from pydantic import (
     ConfigDict,
     Json,
     computed_field,
-    field_serializer,
 )
 from datetime import datetime
 from modules.utils.misc import date_time_now_utc
