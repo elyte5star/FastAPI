@@ -2,7 +2,6 @@ from pydantic import (
     BaseModel,
     Field,
     ConfigDict,
-    Json,
     computed_field,
 )
 from datetime import datetime
@@ -153,15 +152,10 @@ class Job(BaseModel):
         default=0,
         serialization_alias="numberOfTasks",
     )
-    booking: BookingModel | Json = Field(
+    job_request: BookingModel | SearchModel | dict = Field(
         default={},
-        serialization_alias="bookingRequest",
+        serialization_alias="jobRequest",
     )
-    search: SearchModel | Json = Field(
-        default={},
-        serialization_alias="searchRequest",
-    )
-
     created_by: str = Field(default="", serialization_alias="createdBy")
 
     model_config = ConfigDict(from_attributes=True)

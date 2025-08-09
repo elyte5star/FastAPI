@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, Json, AfterValidator
+from pydantic import BaseModel, Field, ConfigDict, AfterValidator
 from datetime import datetime
 from typing_extensions import Annotated
 import uuid
@@ -151,13 +151,9 @@ class Job(BaseModel):
         default=0,
         validation_alias="numberOfTasks",
     )
-    booking: BookingModel | Json = Field(
+    job_request: BookingModel | SearchModel | dict = Field(
         default={},
-        validation_alias="bookingRequest",
-    )
-    search: SearchModel | Json = Field(
-        default={},
-        validation_alias="searchRequest",
+        validation_alias="jobRequest",
     )
 
     created_by: str = Field(default="", validation_alias="createdBy")

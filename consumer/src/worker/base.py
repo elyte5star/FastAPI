@@ -120,9 +120,9 @@ class Consumer(Process):
 
     def do_work(self, queue_item: QueueItem):
         try:
-            task = queue_item.task
-            result = queue_item.result
-            job = queue_item.job
+            task:Task = queue_item.task
+            result:TaskResult = queue_item.result
+            job:Job = queue_item.job
             success = False
             data = {}
             self.update_on_going_tasks_in_db(task.id)

@@ -62,7 +62,7 @@ class BookingHandler(JobHandler):
             shipping_address=new_order.shipping_address,
             user_id=current_user.user_id,
         )
-        job.booking = booking_model
+        job.job_request = booking_model
         tasks, queue_items, tasks_result = ([], [], [])
         for item in cart:
             task = Task(

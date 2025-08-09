@@ -47,10 +47,7 @@ class Job(Audit):
         PydanticColumn(JobStatus), nullable=False
     )
     number_of_tasks: Mapped[int] = mapped_column(Integer, nullable=False)
-    booking: Mapped[dict[str, str] | None] = mapped_column(
-        MutableDict.as_mutable(JSONEncodedDict)
-    )
-    search: Mapped[dict[str, str] | None] = mapped_column(
+    job_request: Mapped[dict[str, str]] = mapped_column(
         MutableDict.as_mutable(JSONEncodedDict)
     )
 
@@ -62,8 +59,7 @@ class Job(Audit):
             f" status:{self.job_status},"
             f" number_of_tasks:{self.number_of_tasks},"
             f" tasks:{self.tasks}, "
-            f" booking_request:{self.booking},"
-            f" search_request:{self.search},"
+            f" job_request:{self.job_request},"
             f" created_at:{self.created_at},"
             f" created_by:{self.created_by},"
             f" modified_at:{self.modified_at},"

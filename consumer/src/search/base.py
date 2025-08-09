@@ -10,7 +10,7 @@ class SearchHandler:
         self.db_conn = db_conn
 
     def handle(self) -> tuple[bool, dict]:
-        search_request: SearchModel = self.queue_item.job.search
+        search_request: SearchModel = self.queue_item.job.job_request
         return (False, {})
 
     def query_generation(self, search_request: SearchModel):

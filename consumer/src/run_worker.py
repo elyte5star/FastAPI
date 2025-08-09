@@ -11,17 +11,17 @@ def main(cfg: AppConfig):
     start = time.perf_counter()
     # BookingWorker
     booking_worker = Consumer(
-        cfg, WorkerType.BOOKING, cfg.queue_names[1], cfg.queue_name[1]
+        cfg, WorkerType.BOOKING, cfg.queue_names[1], cfg.queue_names[1]
     )
 
     # SearchWorker
     search_worker = Consumer(
-        cfg, WorkerType.SEARCH, cfg.queue_names[0], cfg.queue_name[0]
+        cfg, WorkerType.SEARCH, cfg.queue_names[0], cfg.queue_names[0]
     )
 
     # GenericWorker
     generic_worker = Consumer(
-        cfg, WorkerType.GENERIC, cfg.queue_names[0], cfg.queue_name[0]
+        cfg, WorkerType.GENERIC, cfg.queue_names[3], cfg.queue_names[3]
     )
 
     # Start processes

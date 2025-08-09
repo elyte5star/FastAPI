@@ -11,8 +11,8 @@ class BookingHandler:
         self.db_conn = db_conn
 
     def handle(self) -> tuple[bool, dict]:
-        booking_request: BookingModel = self.queue_item.job.booking
-        num_of_tasks = self.queue_item.job.number_of_tasks
+        booking_request: BookingModel = self.queue_item.job.job_request
+        _ = self.queue_item.job.number_of_tasks
         cart = [cart_item.model_dump_json() for cart_item in booking_request.cart]
         with self.db_conn.cursor() as cur:
             stm = """INSERT INTO booking (id, user_id,cart,address,created_at,
