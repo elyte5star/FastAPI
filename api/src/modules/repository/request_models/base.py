@@ -3,6 +3,7 @@ from modules.utils.misc import get_indent
 from modules.repository.response_models.base import (
     BaseResponse,
     GetInfoResponse,
+    GetUUIDStrResponse,
 )
 from pydantic import BaseModel, ConfigDict
 from modules.security.current_user import JWTPrincipal
@@ -49,3 +50,11 @@ class BaseReq(BaseModel):
 
 class GetSystemInfoRequest(BaseReq):
     result: GetInfoResponse = GetInfoResponse()
+
+
+class ShutDownAPIRequest(BaseReq):
+    result: BaseResponse = BaseResponse()
+
+
+class GetUUIDStrRequest(BaseReq):
+    result: GetUUIDStrResponse = GetUUIDStrResponse()

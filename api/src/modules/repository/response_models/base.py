@@ -20,3 +20,7 @@ class BaseResponse(BaseModel):
 
 class GetInfoResponse(BaseResponse):
     info: dict = {}
+
+
+class GetUUIDStrResponse(BaseResponse):
+    id: str = ""

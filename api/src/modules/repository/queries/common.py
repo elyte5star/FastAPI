@@ -170,7 +170,7 @@ class CommonQueries(AsyncDatabaseSession):
             "databaseParameters": kwargs,
             "sqlalchemyVersion": __version__,
             "databaseTables": await self.async_inspect_schema(),
-            "rabbitMQParameters": self.cf.rabbit_connect_string,
+            "rabbitMQDns": self.cf.amqp_url,
             "cpuCount": cpu_count(),
             "apiVersion": self.cf.version,
         }

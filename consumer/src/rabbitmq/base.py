@@ -78,8 +78,8 @@ class Queue:
                 exchange_name,
                 key,
                 body=message,
-                properties=pika.BasicProperties(
-                    delivery_mode=pika.DeliveryMode.Persistent
+                properties=pika.spec.BasicProperties(
+                    delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
                 ),
             )
         except Exception as e:

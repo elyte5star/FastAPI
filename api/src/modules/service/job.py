@@ -2,14 +2,14 @@ from modules.repository.request_models.job import (
     GetJobRequest,
     CreateJobRequest,
     GetJobsRequest,
-    Job,
 )
 from modules.repository.response_models.job import JobResponse, BaseResponse
 from datetime import datetime
 from modules.queue.enums import JobState, JobType, ResultType, ResultState
 from modules.utils.misc import time_then, get_indent, date_time_now_utc
-from modules.queue.models import TaskResult, Task, QueueItem
+from modules.queue.models import TaskResult, QueueItem
 from modules.queue.base import RQHandler
+from modules.queue.models import Job
 
 
 class JobHandler(RQHandler):
@@ -113,29 +113,35 @@ class JobHandler(RQHandler):
     async def _create_new_job(self, req: CreateJobRequest):
         if req.credentials is None:
             return req.req_failure("No valid user session found")
-        job = self._create_job(JobType.MANUAL, req.credentials.user_id)
-        tasks: list[Task] = job.tasks
-        if not tasks:
+        job = self._create_job(req.new_job.job_type, req.credentials.user_id)
+        job.tasks = req.new_job.tasks
+        job.id = req.new_job.id
+        number_of_tasks = req.new_job.number_of_tasks
+        job.number_of_tasks = number_of_tasks
+        job.job_request = req.new_job.job_request
+        if number_of_tasks < 1:
             return req.req_failure("No tasks in job")
         queue_items: list[QueueItem] = []
         tasks_results: list[TaskResult] = []
-        for task in tasks:
+        for task in job.tasks:
+            task.status.state = JobState.RECEIVED
+            task.created_at = date_time_now_utc()
+            task.finished = time_then()
             task_result = self.create_task_result(ResultType.UNKNOWN, task.id)
             tasks_results.append(task_result)
             queue_items.append(
                 QueueItem(job=job, task=task, result=task_result),
             )
-        job.number_of_tasks = len(tasks)
         QUEUE = self.cf.queue_names[3]
         success, message = await self._add_job_tasks_to_queue(
             job,
-            tasks,
+            job.tasks,
             tasks_results,
             QUEUE,
             queue_items,
         )
         if success:
-            req.result.job_id = job.id
+            req.result.job = job
             return req.req_success(message)
         return req.req_failure(message)
 

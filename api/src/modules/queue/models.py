@@ -1,9 +1,4 @@
-from pydantic import (
-    BaseModel,
-    Field,
-    ConfigDict,
-    computed_field,
-)
+from pydantic import BaseModel, Field, ConfigDict, computed_field
 from datetime import datetime
 from modules.utils.misc import date_time_now_utc
 from typing_extensions import Annotated
@@ -115,6 +110,7 @@ class TaskResult(BaseModel):
         default=None,
         serialization_alias="dataChecksum",
     )
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -129,7 +125,7 @@ class Task(BaseModel):
 
     started: datetime | None = None
     finished: datetime | None = None
-
+    item: dict = {}
     model_config = ConfigDict(from_attributes=True)
 
 

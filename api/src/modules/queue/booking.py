@@ -21,6 +21,7 @@ from modules.queue.models import (
 )
 from modules.utils.misc import get_indent, date_time_now_utc, time_then
 from modules.service.job import JobHandler
+import json
 
 
 class BookingHandler(JobHandler):
@@ -64,10 +65,12 @@ class BookingHandler(JobHandler):
         )
         job.job_request = booking_model
         tasks, queue_items, tasks_result = ([], [], [])
-        for item in cart:
+        items_pairs = [(item, get_indent()) for item in cart]
+        for item, id in items_pairs:
             task = Task(
-                id=get_indent(),
+                id=id,
                 job_id=job.id,
+                item=item.model_dump(),
                 status=JobStatus(state=JobState.RECEIVED),
                 created_at=date_time_now_utc(),
                 finished=time_then(),
@@ -133,22 +136,24 @@ class BookingHandler(JobHandler):
         job = Job.model_validate(job_in_db)
         if job.job_type != JobType.BOOKING:
             return req.req_failure("Wrong job type")
-        req.result.job = await self.get_job_response(job)
+        _ = await self.get_job_response(job)
         if not self.is_job_result_available(job):
             return req.req_failure("No result for job")
-        req.result.data = await self.create_booking_result(job.tasks)
+        task_results = await self.create_booking_result(job.tasks)
+        req.result.task_result = task_results[0]  # TODO
         return req.req_success(
             f"Success getting result for job with id: {job_id}.",
         )
 
-    async def create_booking_result(self, tasks: list[Task]) -> dict:
-        result = {}
+    async def create_booking_result(self, tasks: list[Task]) -> list:
+        result = []
         if not tasks:
             return result
         for task in tasks:
             result_in_db = await self.find_result_by_task_id(task.id)
             res = TaskResult.model_validate(result_in_db)
-            result[task.job_id] = (task.id, dict(res))
+            res.data["cart"] = [json.loads(item) for item in res.data["cart"]]
+            result.append(res.model_dump())
         return result
 
     async def make_payment(

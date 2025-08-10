@@ -1,6 +1,5 @@
 from modules.repository.request_models.base import BaseResponse
 from pydantic import ConfigDict
-from modules.repository.response_models.job import JobResponse
 
 
 class CreateBookingResponse(BaseResponse):
@@ -14,5 +13,4 @@ class GetBookingsResponse(BaseResponse):
 
 
 class GetBookingResponse(BaseResponse):
-    job: JobResponse = JobResponse()
-    data: dict = {}
+    task_result: dict = {}

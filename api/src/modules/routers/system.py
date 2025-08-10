@@ -5,6 +5,9 @@ from modules.repository.request_models.base import (
     GetInfoResponse,
     GetSystemInfoRequest,
     BaseResponse,
+    ShutDownAPIRequest,
+    GetUUIDStrRequest,
+    GetUUIDStrResponse,
 )
 from typing import Annotated
 from modules.service.system import SystemHandler
@@ -23,6 +26,31 @@ class SystemInfoRouter(SystemHandler):
             response_model=GetInfoResponse,
             methods=["GET"],
         )
+        self.router.add_api_route(
+            path="/shut_down",
+            endpoint=self.shut_down_server,
+            response_model=BaseResponse,
+            methods=["GET"],
+        )
+
+        self.router.add_api_route(
+            path="/get_ident",
+            endpoint=self.get_ident_str,
+            response_model=GetUUIDStrResponse,
+            methods=["GET"],
+        )
+
+    def get_ident_str(
+        self,
+        current_user: Annotated[
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
+        ],
+    ):
+        return self._get_ident_str(
+            GetUUIDStrRequest(
+                credentials=current_user,
+            ),
+        )
 
     async def get_system_info(
         self,
@@ -32,6 +60,18 @@ class SystemInfoRouter(SystemHandler):
     ) -> BaseResponse:
         return await self._get_sys_info(
             GetSystemInfoRequest(
+                credentials=current_user,
+            ),
+        )
+
+    async def shut_down_server(
+        self,
+        current_user: Annotated[
+            JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
+        ],
+    ) -> BaseResponse:
+        return self.shut_down_api(
+            ShutDownAPIRequest(
                 credentials=current_user,
             ),
         )

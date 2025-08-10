@@ -74,6 +74,9 @@ class Task(Base):
         ForeignKey("job.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
+    item: Mapped[dict[str, str]] = mapped_column(
+        MutableDict.as_mutable(JSONEncodedDict)
+    )
     task_result: Mapped["TaskResult"] = relationship(
         back_populates="task", cascade="all, delete-orphan"
     )
@@ -96,7 +99,10 @@ class TaskResult(Base):
     result_type: Mapped[ResultType] = mapped_column(
         Enum(ResultType), default=ResultType.DATABASE
     )
-    result_state: Mapped[ResultState] = mapped_column(Enum(ResultState), nullable=False)
+    result_state: Mapped[ResultState] = mapped_column(
+        Enum(ResultState),
+        nullable=False,
+    )
     task_id: Mapped[str_60] = mapped_column(
         ForeignKey("task.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,

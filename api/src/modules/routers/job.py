@@ -6,6 +6,7 @@ from modules.repository.request_models.job import (
     GetJobRequest,
     GetJobsRequest,
     CreateJobRequest,
+    CreateJob,
 )
 from modules.repository.response_models.job import (
     GetJobResponse,
@@ -69,7 +70,7 @@ class JobRouter(JobHandler):
 
     async def create_job(
         self,
-        job: Job,
+        job: CreateJob,
         current_user: Annotated[
             JWTPrincipal,
             Depends(security),

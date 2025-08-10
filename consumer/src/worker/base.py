@@ -3,7 +3,7 @@ from booking.base import BookingHandler
 from search.base import SearchHandler
 from rabbitmq.base import Queue
 from config.settings import AppConfig
-from models.enums import WorkerType, JobType, JobState
+from models.enums import WorkerType, JobType, JobState, ResultState
 from models.misc import get_indent, date_time_now_utc
 from models.base import TaskResult, Worker, QueueItem, Task, Job
 import psycopg
@@ -12,6 +12,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from pika.spec import BasicProperties
 from pika.spec import Basic
 from psycopg.types.json import Jsonb
+from psycopg.rows import dict_row
 from typing import Literal
 
 
@@ -41,7 +42,7 @@ class Consumer(Process):
 
     def db_conn(self):
         try:
-            conn = psycopg.connect(self.cfg.database_url)
+            conn = psycopg.connect(self.cfg.database_url, row_factory=dict_row)
             return conn
         except psycopg.errors.DatabaseError as e:
             print(e)
@@ -97,7 +98,15 @@ class Consumer(Process):
                 conn.commit()
 
     def update_result(self, result_id: str, data: dict):
-        pass
+        with self.db_conn() as conn:
+            # Open a cursor to perform database operations
+            with conn.cursor() as cur:
+                stm = "UPDATE taskresult SET result_state= %s,data= %s WHERE id= %s"
+                data = json.dumps(data, indent=4, sort_keys=True, default=str)
+                values = (ResultState.PRESENT.name, data, result_id)
+                cur.execute(stm, values)
+                # Make the changes to the database persistent
+                conn.commit()
 
     def call_back(
         self,
@@ -120,9 +129,9 @@ class Consumer(Process):
 
     def do_work(self, queue_item: QueueItem):
         try:
-            task:Task = queue_item.task
-            result:TaskResult = queue_item.result
-            job:Job = queue_item.job
+            task: Task = queue_item.task
+            result: TaskResult = queue_item.result
+            job: Job = queue_item.job
             success = False
             data = {}
             self.update_on_going_tasks_in_db(task.id)

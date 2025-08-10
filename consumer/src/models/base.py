@@ -108,14 +108,15 @@ class JobStatus(BaseModel):
 
 class TaskResult(BaseModel):
     id: str = Field(validation_alias="resultId")
-    result_type: ResultType = ResultType.DATABASE
-    result_state: ResultState = ResultState.NOTSET
+    result_type: ResultType
+    result_state: ResultState
     task_id: str = Field(validation_alias="taskId")
     data: dict = {}
     data_checksum: str | None = Field(
         default=None,
         serialization_alias="dataChecksum",
     )
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -123,6 +124,7 @@ class Task(BaseModel):
     id: str = Field(validation_alias="taskId")
     job_id: str = Field(validation_alias="jobId")
     status: JobStatus = JobStatus()
+    item: dict = {}
     created_at: datetime | None = Field(
         default=None,
         validation_alias="createdAt",

@@ -32,6 +32,7 @@ from modules.repository.request_models.user import (
 from modules.security.dependency import security, JWTBearer
 from modules.security.current_user import JWTPrincipal
 from pydantic import EmailStr
+from modules.repository.validators.base import ValidateUUID
 
 
 class UserRouter(UserHandler):
@@ -164,7 +165,7 @@ class UserRouter(UserHandler):
 
     async def lock_user_account(
         self,
-        userId: str,
+        userId: ValidateUUID,
         current_user: Annotated[
             JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
         ],
@@ -178,7 +179,7 @@ class UserRouter(UserHandler):
 
     async def enable_ext_login(
         self,
-        userId: str,
+        userId: ValidateUUID,
         current_user: Annotated[JWTPrincipal, Depends(security)],
     ) -> BaseResponse:
         return await self._enable_ext_login(
@@ -188,7 +189,7 @@ class UserRouter(UserHandler):
 
     async def unlock_user_account(
         self,
-        userId: str,
+        userId: ValidateUUID,
         current_user: Annotated[
             JWTPrincipal, Depends(JWTBearer(allowed_roles=["ADMIN"]))
         ],
@@ -202,7 +203,7 @@ class UserRouter(UserHandler):
 
     async def get_user(
         self,
-        userId: str,
+        userId: ValidateUUID,
         current_user: Annotated[JWTPrincipal, Depends(security)],
     ) -> BaseResponse:
         return await self._get_user(
@@ -211,7 +212,7 @@ class UserRouter(UserHandler):
 
     async def delete_user(
         self,
-        userId: str,
+        userId: ValidateUUID,
         current_user: Annotated[
             JWTPrincipal,
             Depends(security),
@@ -271,7 +272,7 @@ class UserRouter(UserHandler):
 
     async def update_user_password(
         self,
-        userId: str,
+        userId: ValidateUUID,
         data: UpdateUserPassword,
         current_user: Annotated[JWTPrincipal, Depends(security)],
     ) -> BaseResponse:
