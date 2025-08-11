@@ -37,7 +37,9 @@ class GetJobsResponse(BaseResponse):
 
 
 class GetJobResponse(BaseResponse):
-    job_status: JobResponse | None = None
+    job_status: JobResponse | None = Field(
+        default=None, serialization_alias="jobResponse"
+    )
 
 
 class CreateJobResponse(BaseResponse):
