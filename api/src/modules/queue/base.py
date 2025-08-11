@@ -81,7 +81,7 @@ class RQHandler(CommonQueries):
     async def _add_job_with_one_task(
         self,
         job: models.Job,
-        queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM", "JOBS"],
+        queue_name: Literal["SEARCH", "BOOKING", "LOST_ITEM", "MANUAL"],
         result_type: ResultType,
     ) -> tuple[bool, str]:
         job.number_of_tasks = 1

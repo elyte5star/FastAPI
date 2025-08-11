@@ -96,7 +96,7 @@ class BookingHandler(JobHandler):
     async def check_products(
         self,
         cart: list[CartItem],
-    ) -> tuple[list[Product], list[CartItem]]:
+    ) -> tuple[list[tuple[Product, int]], list[CartItem]]:
         avaliable_prods, unavaliable_items = [], []
         for item in cart:
             product_in_db = await self.find_product_by_id(item.pid)
@@ -152,8 +152,8 @@ class BookingHandler(JobHandler):
         for task in tasks:
             result_in_db = await self.find_result_by_task_id(task.id)
             res = TaskResult.model_validate(result_in_db)
-            res.data["cart"] = [json.loads(item) for item in res.data["cart"]]
-            result.append(res.model_dump())
+            # res.data["cart"] = [json.loads(item) for item in res.data["cart"]]
+            result.append(res.data)
         return result
 
     async def make_payment(
